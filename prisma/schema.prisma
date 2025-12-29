@@ -1,0 +1,198 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Clubs/Tenants
+model Club {
+  id                String      @id @default(cuid())
+  name              String      @unique
+  slug              String      @unique
+  abn               String      @unique
+  domain            String      @unique
+  status            ClubStatus  @default(PENDING_VERIFICATION)
+  timezone          String      @default("Australia/Sydney")
+  address           String?
+  city              String?
+  state             String?
+  postalCode        String?
+  phone             String?
+  website           String?
+  
+  // Relations
+  users             User[]
+  clubDomains       ClubDomain[]
+  emailVerifications EmailVerification[]
+  services          ClubService[]
+  auditLogs         AuditLog[]
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  @@index([status])
+  @@index([domain])
+}
+
+model ClubDomain {
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  domain            String
+  verified          Boolean   @default(false)
+  verificationToken String?   @unique
+  
+  createdAt         DateTime  @default(now())
+  
+  @@unique([clubId, domain])
+  @@index([clubId])
+}
+
+enum ClubStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+// Users
+model User {
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  email             String
+  username          String
+  passwordHash      String
+  fullName          String
+  role              UserRole  @default(ADMIN)
+  isActive          Boolean   @default(true)
+  lastLogin         DateTime?
+  loginAttempts     Int       @default(0)
+  lockedUntil       DateTime?
+  
+  // Relations
+  sessions          Session[]
+  passwordResets    PasswordReset[]
+  auditLogs         AuditLog[]
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@unique([clubId, username])
+  @@unique([clubId, email])
+  @@index([clubId])
+  @@index([email])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+  READONLY
+}
+
+// Sessions & Auth
+model Session {
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  refreshToken      String    @unique
+  expiresAt         DateTime
+  createdAt         DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([clubId])
+  @@index([expiresAt])
+}
+
+model EmailVerification {
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  email             String
+  tokenHash         String    @unique
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  
+  createdAt         DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([clubId])
+  @@index([expiresAt])
+}
+
+model PasswordReset {
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  tokenHash         String    @unique
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  
+  createdAt         DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Services
+model Service {
+  id                String    @id @default(cuid())
+  key               String    @unique
+  name              String
+  description       String?
+  icon              String?
+  
+  // Relations
+  clubServices      ClubService[]
+  
+  createdAt         DateTime  @default(now())
+}
+
+model ClubService {
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  service           Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId         String
+  enabled           Boolean   @default(true)
+  plan              String    @default("basic")
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@unique([clubId, serviceId])
+  @@index([clubId])
+  @@index([serviceId])
+}
+
+// Audit Logging
+model AuditLog {
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?
+  action            String
+  entityType        String
+  entityId          String?
+  changes           Json?
+  ipAddress         String?
+  userAgent         String?
+  
+  createdAt         DateTime  @default(now())
+  
+  @@index([clubId])
+  @@index([userId])
+  @@index([createdAt])
+}
