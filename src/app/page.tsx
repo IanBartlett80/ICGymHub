@@ -8,7 +8,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="border-b border-neutral-700 bg-neutral-900/50 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
-          <div className="text-2xl font-bold text-primary">IC GymHub</div>
+          <div className="text-2xl font-bold text-primary">GymHub</div>
           <div className="flex gap-4">
             <Link href="/sign-in" className="text-neutral-300 hover:text-white transition">
               Sign In
@@ -23,7 +23,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20 text-center">
         <h1 className="text-5xl font-bold text-white mb-4">
-          Complete Management Platform for Australian Gymnastics Clubs
+          Club Management made easy through AI-Powered Business Intelligence!
         </h1>
         <p className="text-xl text-neutral-300 mb-8 max-w-2xl mx-auto">
           Streamline class rostering, safety management, incident tracking, and competition scores. All in one place.
@@ -83,10 +83,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why IC GymHub */}
+      {/* Why GymHub */}
       <section className="container mx-auto px-6 py-20">
         <h2 className="text-4xl font-bold text-white text-center mb-12">
-          Why Choose IC GymHub?
+          Why Choose GymHub?
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {[
@@ -121,7 +121,7 @@ export default function Home() {
           Ready to Simplify Club Management?
         </h2>
         <p className="text-primary-light mb-8 text-lg max-w-2xl mx-auto">
-          Join Australian gymnastics clubs already using IC GymHub to streamline their operations.
+          Join Australian gymnastics clubs already using GymHub to streamline their operations.
         </p>
         <Link href="/register" className="bg-white text-primary hover:bg-neutral-100 px-8 py-4 rounded-lg text-lg font-semibold transition inline-block">
           Get Started Free
@@ -173,7 +173,7 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-xl font-bold text-primary mb-4">IC GymHub</h3>
+              <h3 className="text-xl font-bold text-primary mb-4">GymHub</h3>
               <p className="text-neutral-400">Complete management platform for Australian gymnastics clubs.</p>
             </div>
             <div>
@@ -202,7 +202,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-neutral-700 pt-8 text-center text-neutral-400">
-            <p>&copy; 2025 IC GymHub. All rights reserved. Built for Australian gymnastics clubs.</p>
+            <p>&copy; 2025 GymHub. All rights reserved. Built for Australian gymnastics clubs.</p>
           </div>
         </div>
       </footer>

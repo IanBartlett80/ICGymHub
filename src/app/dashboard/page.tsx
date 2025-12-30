@@ -104,7 +104,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <Link href="/dashboard" className="text-2xl font-bold text-primary hover:text-primary-dark transition">
-                IC GymHub
+                GymHub
               </Link>
               <p className="text-sm text-neutral-400 mt-1">{user.clubName}</p>
             </div>
@@ -182,7 +182,14 @@ export default function DashboardPage() {
                   )}
 
                   {/* CTA */}
-                  <button className="w-full px-4 py-2 bg-primary/10 hover:bg-primary hover:text-white text-primary rounded-lg font-semibold transition text-sm">
+                  <button 
+                    onClick={() => {
+                      if (service.id === 'roster') {
+                        router.push('/dashboard/rosters')
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-primary/10 hover:bg-primary hover:text-white text-primary rounded-lg font-semibold transition text-sm"
+                  >
                     {service.cta}
                   </button>
                 </div>
@@ -196,7 +203,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-bold text-white mb-6">Announcements</h2>
           <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-8 text-center">
             <p className="text-neutral-400">
-              Welcome to IC GymHub! Your platform is ready to use. Explore the solutions above to get started.
+              Welcome to GymHub! Your platform is ready to use. Explore the solutions above to get started.
             </p>
             <p className="text-neutral-500 text-sm mt-4">
               New features coming soon • Next update: January 2025
@@ -252,7 +259,7 @@ export default function DashboardPage() {
       {/* Footer */}
       <footer className="border-t border-neutral-700 bg-neutral-900 py-8 mt-16">
         <div className="container mx-auto px-6 text-center text-neutral-400 text-sm">
-          <p>&copy; 2025 IC GymHub. All rights reserved.</p>
+          <p>&copy; 2025 GymHub. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -1,10 +1,10 @@
-# IC GymHub
+# GymHub
 
 A comprehensive SaaS platform for Australian gymnastics clubs to manage classes, safety, incidents, competitions, and maintenance.
 
 ## Project Overview
 
-IC GymHub is a multi-tenant web application designed specifically for Australian gymnastics clubs. It provides integrated solutions for:
+GymHub is a multi-tenant web application designed specifically for Australian gymnastics clubs. It provides integrated solutions for:
 
 1. **Class Rostering** - Manage class schedules, instructors, and student enrollment
 2. **Injury / Incident Management** - Track incidents and maintain compliance records
@@ -161,4 +161,4 @@ npm run lint
 
 ## License
 
-All rights reserved © 2025 IC GymHub
+All rights reserved © 2025 GymHub

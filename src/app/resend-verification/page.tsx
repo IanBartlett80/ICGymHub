@@ -75,7 +75,7 @@ export default function ResendVerificationPage() {
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-primary hover:text-primary-dark transition">
-            IC GymHub
+            GymHub
           </Link>
           <h1 className="text-3xl font-bold text-white mt-6">Resend Verification Email</h1>
           <p className="text-neutral-400 mt-2">Enter your email to receive a new verification link</p>

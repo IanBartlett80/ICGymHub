@@ -208,7 +208,7 @@ export default function RegisterPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-primary hover:text-primary-dark transition">
-            IC GymHub
+            GymHub
           </Link>
           <h1 className="text-4xl font-bold text-white mt-4">Register Your Club</h1>
           <p className="text-neutral-400 mt-2">Step {step} of 4</p>

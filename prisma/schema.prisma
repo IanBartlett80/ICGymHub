@@ -10,6 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enum stand-ins for SQLite (use string values)
+// Keep constants in code to validate values consistently.
+
 // Clubs/Tenants
 model Club {
   id                 String              @id @default(cuid())
@@ -33,6 +36,14 @@ model Club {
   services           ClubService[]
   auditLogs          AuditLog[]
   sessions           Session[]
+  zones              Zone[]
+  coaches            Coach[]
+  classTemplates     ClassTemplate[]
+  classSessions      ClassSession[]
+  rosters            Roster[]
+  coachImportJobs    CoachImportJob[]
+  rosterExports      RosterExport[]
+  rosterSlots        RosterSlot[]
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -75,6 +86,8 @@ model User {
   passwordResets     PasswordReset[]
   auditLogs          AuditLog[]
   emailVerifications EmailVerification[]
+  generatedSessions  ClassSession[] @relation("SessionGeneratedBy")
+  generatedRosters   Roster[]       @relation("RosterGeneratedBy")
   
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -183,4 +196,223 @@ model AuditLog {
   @@index([clubId])
   @@index([userId])
   @@index([createdAt])
+}
+
+// Gym Zones
+model Zone {
+  id           String   @id @default(cuid())
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  name         String
+  description  String?
+  allowOverlap Boolean  @default(false)
+  active       Boolean  @default(true)
+
+  // Relations
+  templatesAllowed TemplateAllowedZone[]
+  sessionsAllowed  SessionAllowedZone[]
+  rosterSlots      RosterSlot[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([clubId, name])
+  @@index([clubId])
+}
+
+// Coaches
+model Coach {
+  id                  String   @id @default(cuid())
+  club                Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId              String
+  name                String
+  accreditationLevel  String?
+  membershipNumber    String?
+  email               String?
+  phone               String?
+  importedFromCsv     Boolean  @default(false)
+
+  // Relations
+  templateLinks TemplateCoach[]
+  sessionLinks  SessionCoach[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([clubId])
+  @@unique([clubId, email])
+}
+
+// Class templates (recurring definitions)
+model ClassTemplate {
+  id                     String                  @id @default(cuid())
+  club                   Club                    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId                 String
+  name                   String
+  level                  String                  // Rec, LEVEL_1..LEVEL_10, SNR, ADULT, SCHOOL, OTHER
+  lengthMinutes          Int
+  defaultRotationMinutes Int
+  allowOverlap           Boolean                 @default(false)
+  activeDays             String                 // comma-separated days e.g. MON,TUE,WED
+  startTimeLocal         String                  // HH:MM in club timezone
+  endTimeLocal           String                  // HH:MM in club timezone
+  notes                  String?
+
+  // Relations
+  allowedZones   TemplateAllowedZone[]
+  defaultCoaches TemplateCoach[]
+  sessions       ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clubId])
+  @@unique([clubId, name])
+}
+
+model TemplateAllowedZone {
+  id           String @id @default(cuid())
+  template     ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   String
+  zone         Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId       String
+
+  @@unique([templateId, zoneId])
+}
+
+model TemplateCoach {
+  id           String @id @default(cuid())
+  template     ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   String
+  coach        Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId      String
+
+  @@unique([templateId, coachId])
+}
+
+// Specific class occurrences
+model ClassSession {
+  id                   String             @id @default(cuid())
+  club                 Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId               String
+  template             ClassTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId           String?
+  date                 DateTime           // Local date (00:00 in club timezone)
+  startTimeLocal       String             // HH:MM in club timezone
+  endTimeLocal         String             // HH:MM in club timezone
+  rotationMinutes      Int
+  allowOverlap         Boolean            @default(false)
+  assignedZoneSequence String                  // JSON string array of zoneIds in sequence
+  status               String             @default("DRAFT") // DRAFT or PUBLISHED
+  conflictFlag         Boolean            @default(false)
+  generatedBy          User?              @relation("SessionGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
+  generatedById        String?
+
+  // Relations
+  allowedZones SessionAllowedZone[]
+  coaches      SessionCoach[]
+  rosterSlots  RosterSlot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clubId])
+  @@index([templateId])
+  @@index([date])
+}
+
+model SessionAllowedZone {
+  id         String @id @default(cuid())
+  session    ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  zone       Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId     String
+
+  @@unique([sessionId, zoneId])
+}
+
+model SessionCoach {
+  id         String @id @default(cuid())
+  session    ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  coach      Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId    String
+
+  @@unique([sessionId, coachId])
+}
+
+// Rosters
+model Roster {
+  id            String        @id @default(cuid())
+  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  scope         String        // DAY or WEEK
+  startDate     DateTime
+  endDate       DateTime
+  status        String        @default("DRAFT") // DRAFT or PUBLISHED
+  generatedAt   DateTime?
+  generatedBy   User?         @relation("RosterGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
+  generatedById String?
+
+  // Relations
+  slots RosterSlot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clubId])
+  @@index([scope])
+  @@index([startDate])
+}
+
+model RosterSlot {
+  id           String        @id @default(cuid())
+  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  roster       Roster        @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+  rosterId     String
+  session      ClassSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId    String
+  zone         Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId       String
+  startsAt     DateTime
+  endsAt       DateTime
+  conflictFlag Boolean       @default(false)
+  allowOverlap Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+
+  @@index([clubId])
+  @@index([rosterId])
+  @@index([sessionId])
+  @@index([zoneId])
+  @@index([startsAt])
+}
+
+// Coach import jobs
+model CoachImportJob {
+  id            String    @id @default(cuid())
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  totalRows     Int?
+  importedRows  Int?
+  errorText     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([clubId])
+  @@index([status])
+}
+
+// Roster export logs
+model RosterExport {
+  id            String    @id @default(cuid())
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  exportType    String
+  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  targetEmails  String?
+  createdAt     DateTime  @default(now())
+
+  @@index([clubId])
+  @@index([status])
 }

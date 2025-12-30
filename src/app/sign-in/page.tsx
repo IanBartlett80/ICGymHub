@@ -55,10 +55,10 @@ export default function SignInPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-primary hover:text-primary-dark transition">
-            IC GymHub
+            GymHub
           </Link>
           <h1 className="text-4xl font-bold text-white mt-6">Sign In</h1>
-          <p className="text-neutral-400 mt-2">Welcome back to IC GymHub</p>
+          <p className="text-neutral-400 mt-2">Welcome back to GymHub</p>
         </div>
 
         {/* Success Message */}
