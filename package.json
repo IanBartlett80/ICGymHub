@@ -2,6 +2,7 @@
   "name": "ic-gymhub",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,7 +22,7 @@
     "@hookform/resolvers": "^3.3.0",
     "react-hook-form": "^7.51.0",
     "zod": "^3.22.0",
-    "jsonwebtoken": "^9.1.0",
+    "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3",
     "js-cookie": "^3.0.5",
     "axios": "^1.6.0",

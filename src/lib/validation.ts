@@ -1,17 +1,9 @@
 import { z } from 'zod'
 
-// ABN validation (11 digits, basic format check)
+// ABN validation: accept any 11-digit numeric (relaxed for onboarding UX)
 export const validateABN = (abn: string): boolean => {
   const cleanABN = abn.replace(/[^0-9]/g, '')
-  if (cleanABN.length !== 11) return false
-  
-  // Basic ABN checksum validation
-  const weights = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-  let sum = 0
-  for (let i = 0; i < 11; i++) {
-    sum += parseInt(cleanABN[i]) * weights[i]
-  }
-  return sum % 89 === 0
+  return cleanABN.length === 11
 }
 
 // Extract domain from email
@@ -20,13 +12,41 @@ export const extractDomainFromEmail = (email: string): string | null => {
   return match ? match[1] : null
 }
 
+// Normalize club domain (accept bare domain or URL)
+export const normalizeDomain = (domain: string): string | null => {
+  if (!domain) return null
+  const trimmed = domain.trim()
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      return new URL(trimmed).hostname.toLowerCase()
+    } catch {
+      return null
+    }
+  }
+  return trimmed.toLowerCase()
+}
+
 // Validate if domain matches club domain
 export const validateDomainMatch = (email: string, clubDomain: string): boolean => {
-  const emailDomain = extractDomainFromEmail(email)
-  if (!emailDomain) return false
-  
-  // Allow exact match or allow consumer domains to be explicitly added
-  return emailDomain.toLowerCase() === clubDomain.toLowerCase()
+  const emailDomain = extractDomainFromEmail(email)?.toLowerCase()
+  const normalizedClubDomain = normalizeDomain(clubDomain)
+  if (!emailDomain || !normalizedClubDomain) return false
+  return emailDomain === normalizedClubDomain
+}
+
+const domainPattern = /^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/
+
+export const isValidDomainOrUrl = (value: string): boolean => {
+  const trimmed = value.trim()
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      new URL(trimmed)
+      return true
+    } catch {
+      return false
+    }
+  }
+  return domainPattern.test(trimmed)
 }
 
 // Check for common consumer email domains
@@ -39,8 +59,8 @@ export const isConsumerEmail = (email: string): boolean => {
 // Validation schemas
 export const clubRegistrationSchema = z.object({
   clubName: z.string().min(2, 'Club name must be at least 2 characters').max(255),
-  abn: z.string().refine((abn) => validateABN(abn), 'Invalid ABN format'),
-  clubDomain: z.string().url('Please enter a valid domain').or(z.string().email()),
+  abn: z.string().refine((abn) => validateABN(abn), 'ABN must be 11 digits'),
+  clubDomain: z.string().refine((d) => isValidDomainOrUrl(d), 'Enter a domain like example.com or https://example.com'),
   address: z.string().min(5, 'Please enter a valid address'),
   city: z.string().min(2, 'Please enter a valid city'),
   state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']),

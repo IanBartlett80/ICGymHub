@@ -37,6 +37,8 @@ export default function SignInPage() {
 
     try {
       const response = await axios.post('/api/auth/login', formData)
+      // Store user data in localStorage
+      localStorage.setItem('userData', JSON.stringify(response.data.user))
       // Redirect to dashboard
       router.push('/dashboard')
     } catch (err: any) {

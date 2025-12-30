@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, hashToken } from '@/lib/auth'
-import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, extractDomainFromEmail } from '@/lib/validation'
+import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, extractDomainFromEmail, normalizeDomain } from '@/lib/validation'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -11,8 +11,10 @@ export async function POST(req: NextRequest) {
     // Validate input
     const result = clubRegistrationSchema.safeParse(body)
     if (!result.success) {
+      const flat = result.error.flatten()
+      const firstMessage = flat.fieldErrors && Object.values(flat.fieldErrors)[0]?.[0]
       return NextResponse.json(
-        { errors: result.error.flatten() },
+        { error: firstMessage || 'Invalid input. Please review the form fields.' },
         { status: 400 }
       )
     }
@@ -31,6 +33,8 @@ export async function POST(req: NextRequest) {
       adminUsername,
       adminPassword,
     } = result.data
+
+    const normalizedClubDomain = normalizeDomain(clubDomain) || clubDomain
 
     // Check for duplicate club (name or domain or ABN)
     const existingClub = await prisma.club.findFirst({
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     // Validate email/domain match - allow consumer emails with note
     const emailDomain = extractDomainFromEmail(adminEmail)
-    const isDomainMatch = validateDomainMatch(adminEmail, clubDomain)
+    const isDomainMatch = validateDomainMatch(adminEmail, normalizedClubDomain)
     const isConsumer = isConsumerEmail(adminEmail)
 
     if (!isDomainMatch && !isConsumer) {
@@ -98,7 +102,7 @@ export async function POST(req: NextRequest) {
         name: clubName,
         slug: clubSlug,
         abn,
-        domain: clubDomain,
+        domain: normalizedClubDomain,
         address,
         city,
         state,
@@ -117,7 +121,7 @@ export async function POST(req: NextRequest) {
         },
         clubDomains: {
           create: {
-            domain: clubDomain,
+            domain: normalizedClubDomain,
             verified: isConsumer, // Auto-verify consumer domains; require verification for club domains
           },
         },
