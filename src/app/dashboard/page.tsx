@@ -185,7 +185,7 @@ export default function DashboardPage() {
                   <button 
                     onClick={() => {
                       if (service.id === 'roster') {
-                        router.push('/dashboard/rosters')
+                        router.push('/dashboard/class-rostering')
                       }
                     }}
                     className="w-full px-4 py-2 bg-primary/10 hover:bg-primary hover:text-white text-primary rounded-lg font-semibold transition text-sm"
