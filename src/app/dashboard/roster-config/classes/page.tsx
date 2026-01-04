@@ -44,6 +44,20 @@ type ClassTemplate = {
 const CLASS_LEVELS = ['REC', 'LEVEL_1', 'LEVEL_2', 'LEVEL_3', 'LEVEL_4', 'LEVEL_5', 'LEVEL_6', 'LEVEL_7', 'LEVEL_8', 'LEVEL_9', 'LEVEL_10', 'SNR', 'ADULT', 'SCHOOL', 'OTHER']
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
+// Helper function to calculate session length in minutes
+function calculateSessionLength(startTime: string, endTime: string): number {
+  if (!startTime || !endTime) return 60 // default to 60 minutes if times are invalid
+  
+  const [startHour, startMin] = startTime.split(':').map(Number)
+  const [endHour, endMin] = endTime.split(':').map(Number)
+  
+  const startMinutes = startHour * 60 + startMin
+  const endMinutes = endHour * 60 + endMin
+  
+  const diff = endMinutes - startMinutes
+  return diff > 0 ? diff : 60 // default to 60 if end time is before start time
+}
+
 export default function ClassesPage() {
   const [classes, setClasses] = useState<ClassTemplate[]>([])
   const [zones, setZones] = useState<Zone[]>([])
@@ -55,10 +69,13 @@ export default function ClassesPage() {
   const [success, setSuccess] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [showLevelDropdown, setShowLevelDropdown] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     gymsportId: '',
     level: 'REC',
+    levels: [] as string[],
     lengthMinutes: 60,
     defaultRotationMinutes: 15,
     allowOverlap: false,
@@ -74,6 +91,20 @@ export default function ClassesPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.level-dropdown-container')) {
+        setShowLevelDropdown(false)
+      }
+    }
+    if (showLevelDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showLevelDropdown])
 
   const fetchData = async () => {
     try {
@@ -124,6 +155,7 @@ export default function ClassesPage() {
         ...formData,
         gymsportId: formData.gymsportId || undefined,
         activeDays: formData.activeDays.join(','),
+        level: formData.levels.join(','),
       }
 
       const res = await fetch(url, {
@@ -140,6 +172,7 @@ export default function ClassesPage() {
           name: '',
           gymsportId: '',
           level: 'REC',
+          levels: [],
           lengthMinutes: 60,
           defaultRotationMinutes: 15,
           allowOverlap: false,
@@ -162,10 +195,14 @@ export default function ClassesPage() {
   }
 
   const handleEdit = (classTemplate: ClassTemplate) => {
+    // Parse level field for backwards compatibility
+    const levels = classTemplate.level ? classTemplate.level.split(',').filter(Boolean) : []
+    
     setFormData({
       name: classTemplate.name,
       gymsportId: classTemplate.gymsportId || '',
       level: classTemplate.level,
+      levels: levels,
       lengthMinutes: classTemplate.lengthMinutes,
       defaultRotationMinutes: classTemplate.defaultRotationMinutes,
       allowOverlap: classTemplate.allowOverlap,
@@ -192,14 +229,15 @@ export default function ClassesPage() {
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this class?')) return
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return
 
     try {
-      const res = await fetch(`/api/classes/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/classes/${deleteConfirmId}`, { method: 'DELETE' })
       if (res.ok) {
         await fetchData()
         setSuccess('Class deleted successfully')
+        setDeleteConfirmId(null)
       } else {
         setError('Failed to delete class')
       }
@@ -275,6 +313,7 @@ export default function ClassesPage() {
                 name: '',
                 gymsportId: '',
                 level: 'REC',
+                levels: [],
                 lengthMinutes: 60,
                 defaultRotationMinutes: 15,
                 allowOverlap: false,
@@ -340,31 +379,59 @@ export default function ClassesPage() {
                     </p>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Level *</label>
-                  <select
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                    required
-                  >
-                    {CLASS_LEVELS.map((level) => (
-                      <option key={level} value={level}>
-                        {level.replace('LEVEL_', '')}
-                      </option>
-                    ))}
-                  </select>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">Levels *</label>
+                  <div className="relative level-dropdown-container">
+                    <button
+                      type="button"
+                      onClick={() => setShowLevelDropdown(!showLevelDropdown)}
+                      className="w-full border rounded px-3 py-2 text-left flex items-center justify-between bg-white"
+                    >
+                      <span className="text-sm">
+                        {formData.levels.length === 0 
+                          ? 'Select levels...' 
+                          : formData.levels.map(l => l.replace('LEVEL_', '')).join(', ')}
+                      </span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showLevelDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-64 overflow-y-auto">
+                        {CLASS_LEVELS.map((level) => (
+                          <label
+                            key={level}
+                            className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.levels.includes(level)}
+                              onChange={(e) => {
+                                const newLevels = e.target.checked
+                                  ? [...formData.levels, level]
+                                  : formData.levels.filter((l) => l !== level)
+                                setFormData({ ...formData, levels: newLevels })
+                              }}
+                              className="rounded mr-2"
+                            />
+                            <span className="text-sm">{level.replace('LEVEL_', '')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{formData.levels.length} level(s) selected</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Length (minutes) *</label>
+                  <label className="block text-sm font-medium mb-1">Session Length (minutes)</label>
                   <input
                     type="number"
                     value={formData.lengthMinutes}
-                    onChange={(e) => setFormData({ ...formData, lengthMinutes: parseInt(e.target.value) })}
-                    className="w-full border rounded px-3 py-2"
-                    min="1"
-                    required
+                    className="w-full border rounded px-3 py-2 bg-gray-100"
+                    readOnly
+                    title="Automatically calculated from start and end time"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Auto-calculated from start and end time</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Rotation Time (minutes) *</label>
@@ -378,21 +445,29 @@ export default function ClassesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Start Time *</label>
+                  <label className="block text-sm font-medium mb-1">Session Start Time *</label>
                   <input
                     type="time"
                     value={formData.startTimeLocal}
-                    onChange={(e) => setFormData({ ...formData, startTimeLocal: e.target.value })}
+                    onChange={(e) => {
+                      const newStartTime = e.target.value
+                      const calculatedLength = calculateSessionLength(newStartTime, formData.endTimeLocal)
+                      setFormData({ ...formData, startTimeLocal: newStartTime, lengthMinutes: calculatedLength })
+                    }}
                     className="w-full border rounded px-3 py-2"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">End Time *</label>
+                  <label className="block text-sm font-medium mb-1">Session End Time *</label>
                   <input
                     type="time"
                     value={formData.endTimeLocal}
-                    onChange={(e) => setFormData({ ...formData, endTimeLocal: e.target.value })}
+                    onChange={(e) => {
+                      const newEndTime = e.target.value
+                      const calculatedLength = calculateSessionLength(formData.startTimeLocal, newEndTime)
+                      setFormData({ ...formData, endTimeLocal: newEndTime, lengthMinutes: calculatedLength })
+                    }}
                     className="w-full border rounded px-3 py-2"
                     required
                   />
@@ -533,7 +608,7 @@ export default function ClassesPage() {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(classTemplate.id)}
+                      onClick={() => setDeleteConfirmId(classTemplate.id)}
                       className="text-red-600 hover:text-red-800"
                     >
                       Delete
@@ -547,6 +622,32 @@ export default function ClassesPage() {
             <div className="text-center py-8 text-gray-500">No classes configured yet.</div>
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirmId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this class template? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="px-4 py-2 border rounded hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     </DashboardLayout>
