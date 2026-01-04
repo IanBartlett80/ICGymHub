@@ -112,8 +112,7 @@ ICGymHub/
 │   ├── schema.prisma
 │   ├── seed.js
 │   └── dev.db (auto-created)
-├── .env.local
-├── docker-compose.yml (optional for production setup)
+├── .env.local (or .env) pointing to prisma/dev.db
 └── package.json
 ```
 

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Create new verification record
-    const verification = await prisma.emailVerification.create({
+    await prisma.emailVerification.create({
       data: {
         userId: user.id,
         clubId: user.clubId,

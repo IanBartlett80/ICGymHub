@@ -41,15 +41,16 @@ const classSchema = z.object({
 })
 
 // GET /api/classes/[id] - Get a specific class template
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const classTemplate = await prisma.classTemplate.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
       include: {
         allowedZones: { include: { zone: true } },
         defaultCoaches: { include: { coach: true } },
@@ -68,15 +69,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // PATCH /api/classes/[id] - Update a class template
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const classTemplate = await prisma.classTemplate.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!classTemplate) {
@@ -106,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     // Check for duplicate name (excluding current class)
     if (name !== classTemplate.name) {
       const existing = await prisma.classTemplate.findFirst({
-        where: { clubId: user.clubId, name, id: { not: params.id } },
+        where: { clubId: user.clubId, name, id: { not: id } },
       })
 
       if (existing) {
@@ -115,7 +117,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const updated = await prisma.classTemplate.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         level,
@@ -131,14 +133,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     // Update allowed zones
     await prisma.templateAllowedZone.deleteMany({
-      where: { templateId: params.id },
+      where: { templateId: id },
     })
 
     if (allowedZoneIds?.length) {
       for (const zoneId of allowedZoneIds) {
         await prisma.templateAllowedZone.create({
           data: {
-            templateId: params.id,
+            templateId: id,
             zoneId,
           },
         })
@@ -147,14 +149,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     // Update default coaches
     await prisma.templateCoach.deleteMany({
-      where: { templateId: params.id },
+      where: { templateId: id },
     })
 
     if (defaultCoachIds?.length) {
       for (const coachId of defaultCoachIds) {
         await prisma.templateCoach.create({
           data: {
-            templateId: params.id,
+            templateId: id,
             coachId,
           },
         })
@@ -169,15 +171,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE /api/classes/[id] - Delete a class template
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const classTemplate = await prisma.classTemplate.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!classTemplate) {
@@ -185,7 +188,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     await prisma.classTemplate.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Class deleted successfully' }, { status: 200 })

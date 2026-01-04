@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface Zone {
@@ -13,7 +12,6 @@ interface Zone {
 }
 
 export default function ZonesPage() {
-  const router = useRouter()
   const [zones, setZones] = useState<Zone[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

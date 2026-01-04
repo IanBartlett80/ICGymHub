@@ -26,15 +26,16 @@ async function getAuthenticatedUser(req: NextRequest) {
 }
 
 // GET /api/rosters/[id]/export - Export roster as CSV
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const roster = await prisma.roster.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
       include: {
         slots: {
           include: {

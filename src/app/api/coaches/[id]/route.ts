@@ -35,15 +35,16 @@ const coachSchema = z.object({
 })
 
 // GET /api/coaches/[id] - Get a specific coach
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const coach = await prisma.coach.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!coach) {
@@ -58,15 +59,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // PATCH /api/coaches/[id] - Update a coach
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const coach = await prisma.coach.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!coach) {
@@ -84,7 +86,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     // Check for duplicate email (excluding current coach)
     if (email && email !== coach.email) {
       const existing = await prisma.coach.findFirst({
-        where: { clubId: user.clubId, email, id: { not: params.id } },
+        where: { clubId: user.clubId, email, id: { not: id } },
       })
 
       if (existing) {
@@ -93,7 +95,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const updated = await prisma.coach.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         accreditationLevel: accreditationLevel || null,
@@ -111,15 +113,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE /api/coaches/[id] - Delete a coach
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const coach = await prisma.coach.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!coach) {
@@ -127,7 +130,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     await prisma.coach.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Coach deleted successfully' }, { status: 200 })

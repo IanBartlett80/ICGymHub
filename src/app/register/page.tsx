@@ -23,6 +23,28 @@ type FormData = {
 
 const australianStates = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
 
+// Normalize domain - strip www. prefix and extract hostname from URLs
+const normalizeDomainForDisplay = (domain: string): string => {
+  if (!domain) return ''
+  let normalized = domain.trim().toLowerCase()
+  
+  // Extract hostname from URL if provided
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    try {
+      normalized = new URL(normalized).hostname
+    } catch {
+      // If URL parsing fails, continue with the raw string
+    }
+  }
+  
+  // Strip www. prefix
+  if (normalized.startsWith('www.')) {
+    normalized = normalized.substring(4)
+  }
+  
+  return normalized
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
@@ -59,10 +81,6 @@ export default function RegisterPage() {
     if (currentStep === 1) {
       if (!formData.clubName) {
         setError('Club name is required')
-        return false
-      }
-      if (!formData.abn) {
-        setError('ABN is required')
         return false
       }
       if (!formData.clubDomain) {
@@ -130,8 +148,13 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
+    const normalizedDomain = normalizeDomainForDisplay(formData.clubDomain)
+
     try {
-      const response = await axios.post('/api/auth/register', formData)
+      await axios.post('/api/auth/register', {
+        ...formData,
+        clubDomain: normalizedDomain,
+      })
       setSuccess(true)
       // Redirect after 2 seconds
       setTimeout(() => {
@@ -248,7 +271,19 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">ABN (Australian Business Number)</label>
+                <label className="block text-white font-medium mb-2">Club Domain</label>
+                <input
+                  type="text"
+                  name="clubDomain"
+                  value={formData.clubDomain}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  placeholder="e.g., contoso.com"
+                />
+                <p className="text-sm text-neutral-400 mt-2">Enter your organization's domain name (e.g., contoso.com)</p>
+              </div>
+              <div>
+                <label className="block text-white font-medium mb-2">ABN (Australian Business Number) <span className="text-neutral-400 font-normal">- Optional</span></label>
                 <input
                   type="text"
                   name="abn"
@@ -256,18 +291,6 @@ export default function RegisterPage() {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
                   placeholder="e.g., 12 345 678 901"
-                />
-                <p className="text-sm text-neutral-400 mt-2">We require ABN for verification purposes.</p>
-              </div>
-              <div>
-                <label className="block text-white font-medium mb-2">Club Domain or Website</label>
-                <input
-                  type="text"
-                  name="clubDomain"
-                  value={formData.clubDomain}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
-                  placeholder="e.g., example.com.au or https://example.com.au"
                 />
               </div>
             </div>
@@ -368,15 +391,23 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label className="block text-white font-medium mb-2">Username</label>
-                <input
-                  type="text"
-                  name="adminUsername"
-                  value={formData.adminUsername}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
-                  placeholder="e.g., johnsmith"
-                />
-                <p className="text-sm text-neutral-400 mt-2">You'll use this to sign in.</p>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="adminUsername"
+                    value={formData.adminUsername}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none pr-32"
+                    placeholder="e.g., Admin"
+                    style={{ paddingRight: formData.clubDomain ? `${(normalizeDomainForDisplay(formData.clubDomain).length + 1) * 9 + 16}px` : '16px' }}
+                  />
+                  {formData.clubDomain && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none select-none">
+                      @{normalizeDomainForDisplay(formData.clubDomain)}
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-neutral-400 mt-2">You'll use this to sign in (with your domain).</p>
               </div>
               <div>
                 <label className="block text-white font-medium mb-2">Password</label>
@@ -412,7 +443,7 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <p className="text-neutral-400 text-sm">Admin Username</p>
-                  <p className="text-white font-semibold">{formData.adminUsername}</p>
+                  <p className="text-white font-semibold">{formData.adminUsername}@{normalizeDomainForDisplay(formData.clubDomain)}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

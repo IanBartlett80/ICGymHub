@@ -18,7 +18,7 @@ model Club {
   id                 String              @id @default(cuid())
   name               String              @unique
   slug               String              @unique
-  abn                String              @unique
+  abn                String?             @unique
   domain             String              @unique
   status             String              @default("PENDING_VERIFICATION")
   timezone           String              @default("Australia/Sydney")

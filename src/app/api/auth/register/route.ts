@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, hashToken } from '@/lib/auth'
-import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, extractDomainFromEmail, normalizeDomain } from '@/lib/validation'
+import { hashPassword } from '@/lib/auth'
+import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, normalizeDomain } from '@/lib/validation'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -35,15 +35,24 @@ export async function POST(req: NextRequest) {
     } = result.data
 
     const normalizedClubDomain = normalizeDomain(clubDomain) || clubDomain
+    const domainForUse = normalizedClubDomain
 
-    // Check for duplicate club (name or domain or ABN)
+    // Create full username with domain: username@domain
+    const fullUsername = `${adminUsername}@${domainForUse}`
+
+    // Check for duplicate club (name or domain or ABN if provided)
+    const clubOrConditions: any[] = [
+      { name: clubName },
+      { domain: domainForUse },
+    ]
+    
+    if (abn) {
+      clubOrConditions.push({ abn })
+    }
+
     const existingClub = await prisma.club.findFirst({
       where: {
-        OR: [
-          { name: clubName },
-          { domain: clubDomain },
-          { abn },
-        ],
+        OR: clubOrConditions,
       },
     })
 
@@ -54,13 +63,13 @@ export async function POST(req: NextRequest) {
           { status: 409 }
         )
       }
-      if (existingClub.domain === clubDomain) {
+      if (existingClub.domain === domainForUse) {
         return NextResponse.json(
           { error: 'A club with this domain already exists' },
           { status: 409 }
         )
       }
-      if (existingClub.abn === abn) {
+      if (abn && existingClub.abn === abn) {
         return NextResponse.json(
           { error: 'A club with this ABN already exists' },
           { status: 409 }
@@ -70,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     // Check for duplicate username (globally unique across all clubs)
     const existingUsername = await prisma.user.findFirst({
-      where: { username: adminUsername },
+      where: { username: fullUsername },
     })
 
     if (existingUsername) {
@@ -81,8 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate email/domain match - allow consumer emails with note
-    const emailDomain = extractDomainFromEmail(adminEmail)
-    const isDomainMatch = validateDomainMatch(adminEmail, normalizedClubDomain)
+    const isDomainMatch = validateDomainMatch(adminEmail, domainForUse)
     const isConsumer = isConsumerEmail(adminEmail)
 
     if (!isDomainMatch && !isConsumer) {
@@ -97,35 +105,42 @@ export async function POST(req: NextRequest) {
     const clubSlug = clubName.toLowerCase().replace(/\s+/g, '-')
     let verificationToken: string | null = null
 
-    const club = await prisma.club.create({
-      data: {
-        name: clubName,
-        slug: clubSlug,
-        abn,
-        domain: normalizedClubDomain,
-        address,
-        city,
-        state,
-        postalCode,
-        phone,
-        status: 'PENDING_VERIFICATION',
-        timezone: 'Australia/Sydney',
-        users: {
-          create: {
-            email: adminEmail,
-            username: adminUsername,
-            passwordHash: hashedPassword,
-            fullName: adminFullName,
-            role: 'ADMIN',
-          },
-        },
-        clubDomains: {
-          create: {
-            domain: normalizedClubDomain,
-            verified: isConsumer, // Auto-verify consumer domains; require verification for club domains
-          },
+    const clubData: Parameters<typeof prisma.club.create>[0]['data'] = {
+      name: clubName,
+      slug: clubSlug,
+      abn: null as any, // optional; overwritten when provided
+      domain: domainForUse,
+      address,
+      city,
+      state,
+      postalCode,
+      phone,
+      status: 'PENDING_VERIFICATION',
+      timezone: 'Australia/Sydney',
+      users: {
+        create: {
+          email: adminEmail,
+          username: fullUsername,
+          passwordHash: hashedPassword,
+          fullName: adminFullName,
+          role: 'ADMIN',
         },
       },
+      clubDomains: {
+        create: {
+          domain: domainForUse,
+          verified: isConsumer, // Auto-verify consumer domains; require verification for club domains
+        },
+      },
+    }
+
+    if (abn) {
+      // Only set ABN when provided to avoid unique constraint conflicts on null
+      ;(clubData as any).abn = abn
+    }
+
+    const club = await prisma.club.create({
+      data: clubData,
       include: {
         users: true,
       },

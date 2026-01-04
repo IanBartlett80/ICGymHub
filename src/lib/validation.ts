@@ -12,18 +12,28 @@ export const extractDomainFromEmail = (email: string): string | null => {
   return match ? match[1] : null
 }
 
-// Normalize club domain (accept bare domain or URL)
+// Normalize club domain (accept bare domain or URL, strip www prefix)
 export const normalizeDomain = (domain: string): string | null => {
   if (!domain) return null
   const trimmed = domain.trim()
+  let normalized: string
+  
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     try {
-      return new URL(trimmed).hostname.toLowerCase()
+      normalized = new URL(trimmed).hostname.toLowerCase()
     } catch {
       return null
     }
+  } else {
+    normalized = trimmed.toLowerCase()
   }
-  return trimmed.toLowerCase()
+  
+  // Strip www. prefix if present
+  if (normalized.startsWith('www.')) {
+    normalized = normalized.substring(4)
+  }
+  
+  return normalized
 }
 
 // Validate if domain matches club domain
@@ -59,8 +69,8 @@ export const isConsumerEmail = (email: string): boolean => {
 // Validation schemas
 export const clubRegistrationSchema = z.object({
   clubName: z.string().min(2, 'Club name must be at least 2 characters').max(255),
-  abn: z.string().refine((abn) => validateABN(abn), 'ABN must be 11 digits'),
-  clubDomain: z.string().refine((d) => isValidDomainOrUrl(d), 'Enter a domain like example.com or https://example.com'),
+  abn: z.string().optional().refine((abn) => !abn || validateABN(abn), 'ABN must be 11 digits'),
+  clubDomain: z.string().refine((d) => isValidDomainOrUrl(d), 'Enter a domain like example.com'),
   address: z.string().min(5, 'Please enter a valid address'),
   city: z.string().min(2, 'Please enter a valid city'),
   state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']),
@@ -71,7 +81,7 @@ export const clubRegistrationSchema = z.object({
   adminUsername: z.string()
     .min(3, 'Username must be at least 3 characters')
     .max(50)
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
+    .regex(/^[a-zA-Z0-9_.-]+$/, 'Username can only contain letters, numbers, underscores, hyphens, and periods'),
   adminPassword: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain an uppercase letter')

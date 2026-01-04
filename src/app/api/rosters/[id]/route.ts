@@ -26,15 +26,16 @@ async function getAuthenticatedUser(req: NextRequest) {
 }
 
 // GET /api/rosters/[id] - Get a specific roster with all slots
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const roster = await prisma.roster.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
       include: {
         slots: {
           include: {
@@ -62,15 +63,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE /api/rosters/[id] - Delete a roster
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const roster = await prisma.roster.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!roster) {
@@ -78,7 +80,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     await prisma.roster.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Roster deleted successfully' }, { status: 200 })

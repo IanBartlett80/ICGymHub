@@ -34,15 +34,16 @@ const zoneSchema = z.object({
 })
 
 // GET /api/zones/[id] - Get a specific zone
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const zone = await prisma.zone.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!zone) {
@@ -57,15 +58,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // PATCH /api/zones/[id] - Update a zone
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const zone = await prisma.zone.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!zone) {
@@ -83,7 +85,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     // Check for duplicate name (excluding current zone)
     if (name !== zone.name) {
       const existing = await prisma.zone.findFirst({
-        where: { clubId: user.clubId, name, id: { not: params.id } },
+        where: { clubId: user.clubId, name, id: { not: id } },
       })
 
       if (existing) {
@@ -92,7 +94,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const updated = await prisma.zone.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         description: description || null,
@@ -109,15 +111,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE /api/zones/[id] - Delete a zone
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getAuthenticatedUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const zone = await prisma.zone.findFirst({
-      where: { id: params.id, clubId: user.clubId },
+      where: { id, clubId: user.clubId },
     })
 
     if (!zone) {
@@ -125,7 +128,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     await prisma.zone.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Zone deleted successfully' }, { status: 200 })
