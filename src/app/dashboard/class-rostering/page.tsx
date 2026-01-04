@@ -86,6 +86,8 @@ export default function ClassRosteringPage() {
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([])
   const [zoneScope, setZoneScope] = useState<'single' | 'all'>('single')
   const [isEditingCoaches, setIsEditingCoaches] = useState(false)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState('')
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -104,6 +106,16 @@ export default function ClassRosteringPage() {
       fetchRosterSlots()
     }
   }, [selectedTemplates, currentDate])
+
+  // Update selected slot when roster slots change (after save)
+  useEffect(() => {
+    if (selectedSlot && rosterSlots.length > 0) {
+      const updatedSlot = rosterSlots.find(slot => slot.id === selectedSlot.id)
+      if (updatedSlot) {
+        setSelectedSlot(updatedSlot)
+      }
+    }
+  }, [rosterSlots])
 
   const fetchTemplates = async () => {
     try {
@@ -180,15 +192,37 @@ export default function ClassRosteringPage() {
       })
 
       if (res.ok) {
+        // Switch back to view mode
         setIsEditingCoaches(false)
-        setSelectedCoachIds([])
         setZoneScope('single')
-        await fetchRosterSlots() // Refresh data
+        
+        // Show success notification
+        const scopeText = zoneScope === 'all' ? 'all zones' : 'this zone'
+        setNotificationMessage(`Coaches successfully updated for ${scopeText}`)
+        setShowNotification(true)
+        
+        // Refresh the roster slots data (useEffect will update selectedSlot)
+        await fetchRosterSlots()
+        
+        // Hide notification after 3 seconds
+        setTimeout(() => {
+          setShowNotification(false)
+        }, 3000)
       } else {
         console.error('Failed to update coaches')
+        setNotificationMessage('Failed to update coaches')
+        setShowNotification(true)
+        setTimeout(() => {
+          setShowNotification(false)
+        }, 3000)
       }
     } catch (err) {
       console.error('Failed to update coaches:', err)
+      setNotificationMessage('Failed to update coaches')
+      setShowNotification(true)
+      setTimeout(() => {
+        setShowNotification(false)
+      }, 3000)
     }
   }
 
@@ -522,6 +556,18 @@ export default function ClassRosteringPage() {
             )}
           </div>
         </div>
+
+        {/* Success Notification */}
+        {showNotification && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in">
+            <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{notificationMessage}</span>
+            </div>
+          </div>
+        )}
 
         {/* Modal for Slot Details */}
         {showModal && selectedSlot && (
