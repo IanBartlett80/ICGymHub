@@ -23,19 +23,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Fetching rosters for:', { templateIds, startDate, endDate, clubId: payload.clubId });
+    // Parse dates and set to end of day for endDate to include full day
+    const startDateObj = new Date(startDate + 'T00:00:00.000Z');
+    const endDateObj = new Date(endDate + 'T23:59:59.999Z');
+    
+    console.log('Fetching rosters for:', { 
+      templateIds, 
+      startDate: startDateObj.toISOString(), 
+      endDate: endDateObj.toISOString(), 
+      clubId: payload.clubId 
+    });
 
     // Fetch all rosters within date range that belong to selected templates
     const rosters = await prisma.roster.findMany({
       where: {
         clubId: payload.clubId,
         templateId: templateIds.length > 0 ? { in: templateIds } : undefined,
-        startDate: {
-          lte: new Date(endDate),
-        },
-        endDate: {
-          gte: new Date(startDate),
-        },
+        OR: [
+          {
+            // Roster starts within the range
+            startDate: {
+              gte: startDateObj,
+              lte: endDateObj,
+            },
+          },
+          {
+            // Roster ends within the range
+            endDate: {
+              gte: startDateObj,
+              lte: endDateObj,
+            },
+          },
+          {
+            // Roster spans the entire range
+            AND: [
+              { startDate: { lte: startDateObj } },
+              { endDate: { gte: endDateObj } },
+            ],
+          },
+        ],
       },
       include: {
         slots: {
