@@ -382,6 +382,7 @@ export default function RosterBuilderPage() {
             View Existing Rosters
           </button>
         </div>
+        </div>
       </div>
     </DashboardLayout>
   )
