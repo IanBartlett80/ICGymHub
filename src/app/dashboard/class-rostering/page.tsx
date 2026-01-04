@@ -66,6 +66,7 @@ export default function ClassRosteringPage() {
   const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('calendar')
   const [selectedClass, setSelectedClass] = useState<string>('all')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [calendarView, setCalendarView] = useState<'week' | 'day'>('week')
   const [showModal, setShowModal] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<RosterSlot | null>(null)
 
@@ -117,20 +118,6 @@ export default function ClassRosteringPage() {
     } catch (error) {
       console.error('Error fetching roster slots:', error)
     }
-  }
-
-  const toggleTemplate = (templateId: string) => {
-    setSelectedTemplates(prev =>
-      prev.includes(templateId)
-        ? prev.filter(id => id !== templateId)
-        : [...prev, templateId]
-    )
-  }
-
-  const toggleAllTemplates = () => {
-    setSelectedTemplates(prev =>
-      prev.length === templates.length ? [] : templates.map(t => t.id)
-    )
   }
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -230,52 +217,27 @@ export default function ClassRosteringPage() {
               <h2 className="text-xl font-bold text-gray-900">Roster Calendar</h2>
               
               {/* Template Filter Dropdown */}
-              <div className="relative">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700">Templates:</label>
-                  <div className="relative">
-                    <select
-                      multiple
-                      className="hidden"
-                      value={selectedTemplates}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions, option => option.value)
-                        setSelectedTemplates(selected)
-                      }}
-                    >
-                      {templates.map(template => (
-                        <option key={template.id} value={template.id}>
-                          {template.name}
-                        </option>
-                      ))}
-                    </select>
-                    
-                    {/* Custom Multi-Select UI */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={toggleAllTemplates}
-                        className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        {selectedTemplates.length === templates.length ? 'Deselect All' : 'Select All'}
-                      </button>
-                      <div className="flex flex-wrap gap-1 max-w-md">
-                        {templates.map(template => (
-                          <button
-                            key={template.id}
-                            onClick={() => toggleTemplate(template.id)}
-                            className={`px-2 py-1 text-xs rounded ${
-                              selectedTemplates.includes(template.id)
-                                ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                                : 'bg-gray-100 text-gray-600 border border-gray-300'
-                            }`}
-                          >
-                            {template.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700">View Template:</label>
+                <select
+                  value={selectedTemplates.length === 1 ? selectedTemplates[0] : 'all'}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value === 'all') {
+                      setSelectedTemplates(templates.map(t => t.id))
+                    } else {
+                      setSelectedTemplates([value])
+                    }
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Templates</option>
+                  {templates.map(template => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -307,28 +269,99 @@ export default function ClassRosteringPage() {
           {/* Content */}
           <div className="p-4">
             {activeTab === 'calendar' ? (
-              <div className="h-[600px]">
-                <Calendar
-                  localizer={localizer}
-                  events={calendarEvents}
-                  startAccessor="start"
-                  endAccessor="end"
-                  style={{ height: '100%' }}
-                  defaultView="week"
-                  views={['week', 'day']}
-                  step={15}
-                  timeslots={4}
-                  defaultDate={currentDate}
-                  onNavigate={(date) => setCurrentDate(date)}
-                  eventPropGetter={(event) => ({
-                    style: {
-                      backgroundColor: event.resource.session.template.color || '#3b82f6',
-                      borderColor: event.resource.conflictFlag ? '#ef4444' : event.resource.session.template.color || '#3b82f6',
-                      borderWidth: event.resource.conflictFlag ? '2px' : '1px',
-                    },
-                  })}
-                  onSelectEvent={handleEventClick}
-                />
+              <div>
+                {/* Calendar Navigation and View Controls */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentDate(new Date())}
+                      className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded border border-gray-300"
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newDate = new Date(currentDate)
+                        if (calendarView === 'week') {
+                          newDate.setDate(newDate.getDate() - 7)
+                        } else {
+                          newDate.setDate(newDate.getDate() - 1)
+                        }
+                        setCurrentDate(newDate)
+                      }}
+                      className="px-3 py-1.5 text-sm bg-white hover:bg-gray-50 rounded border border-gray-300"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newDate = new Date(currentDate)
+                        if (calendarView === 'week') {
+                          newDate.setDate(newDate.getDate() + 7)
+                        } else {
+                          newDate.setDate(newDate.getDate() + 1)
+                        }
+                        setCurrentDate(newDate)
+                      }}
+                      className="px-3 py-1.5 text-sm bg-white hover:bg-gray-50 rounded border border-gray-300"
+                    >
+                      Next →
+                    </button>
+                    <span className="text-sm font-medium text-gray-700 ml-2">
+                      {calendarView === 'week'
+                        ? `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM dd, yyyy')}`
+                        : format(currentDate, 'MMMM dd, yyyy')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCalendarView('week')}
+                      className={`px-3 py-1.5 text-sm rounded border ${
+                        calendarView === 'week'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Week View
+                    </button>
+                    <button
+                      onClick={() => setCalendarView('day')}
+                      className={`px-3 py-1.5 text-sm rounded border ${
+                        calendarView === 'day'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Day View
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-[600px]">
+                  <Calendar
+                    localizer={localizer}
+                    events={calendarEvents}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: '100%' }}
+                    view={calendarView}
+                    onView={(view) => setCalendarView(view as 'week' | 'day')}
+                    views={['week', 'day']}
+                    step={15}
+                    timeslots={4}
+                    date={currentDate}
+                    onNavigate={(date) => setCurrentDate(date)}
+                    eventPropGetter={(event) => ({
+                      style: {
+                        backgroundColor: event.resource.session.template.color || '#3b82f6',
+                        borderColor: event.resource.conflictFlag ? '#ef4444' : event.resource.session.template.color || '#3b82f6',
+                        borderWidth: event.resource.conflictFlag ? '2px' : '1px',
+                      },
+                    })}
+                    onSelectEvent={handleEventClick}
+                  />
+                </div>
               </div>
             ) : (
               <div>
