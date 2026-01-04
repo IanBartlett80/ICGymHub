@@ -252,6 +252,14 @@ export default function ClassRosteringPage() {
     resource: slot,
   }))
 
+  console.log('Calendar state:', { 
+    calendarView, 
+    currentDate: currentDate.toISOString(), 
+    rosterSlotsCount: rosterSlots.length, 
+    filteredSlotsCount: filteredSlots.length,
+    calendarEventsCount: calendarEvents.length 
+  })
+
   const configSteps = [
     {
       title: 'Gymsports',
@@ -463,7 +471,6 @@ export default function ClassRosteringPage() {
 
                 <div className="h-[600px]">
                   <Calendar
-                    key={`${calendarView}-${currentDate.toISOString()}`}
                     localizer={localizer}
                     events={calendarEvents}
                     startAccessor="start"
