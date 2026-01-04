@@ -410,6 +410,7 @@ model RosterTemplate {
   startDate     DateTime      // Start of date range
   endDate       DateTime      // End of date range
   activeDays    String        // Comma-separated days: MON,WED,FRI
+  classConfig   String        // JSON string of class template selections and configurations
   status        String        @default("ACTIVE") // ACTIVE or ARCHIVED
   createdBy     User?         @relation("RosterTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdById   String?

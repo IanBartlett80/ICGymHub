@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth';
 import { addDays, format } from 'date-fns';
+import { generateDailyRoster } from '@/lib/rosterGenerator';
 
 // POST /api/roster-templates/[id]/regenerate - Regenerate all rosters from template
 export async function POST(
@@ -27,8 +28,19 @@ export async function POST(
       return NextResponse.json({ error: 'Template not found' }, { status: 404 });
     }
 
-    // Parse active days
+    // Get user for timezone
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      include: { club: true },
+    });
+
+    if (!user || !user.club) {
+      return NextResponse.json({ error: 'User or club not found' }, { status: 404 });
+    }
+
+    // Parse active days and class configurations
     const activeDays = template.activeDays.split(',');
+    const classTemplates = JSON.parse(template.classConfig);
 
     // Delete all existing rosters for this template
     await prisma.roster.deleteMany({
@@ -37,7 +49,7 @@ export async function POST(
       },
     });
 
-    // Generate new empty rosters for each matching day
+    // Generate new rosters for each matching day
     const createdRosters = [];
     let currentDate = new Date(template.startDate);
     const endDate = new Date(template.endDate);
@@ -46,16 +58,43 @@ export async function POST(
       const dayOfWeek = format(currentDate, 'EEE').toUpperCase().substring(0, 3);
       
       if (activeDays.includes(dayOfWeek)) {
-        // Create empty roster for this day
-        const roster = await prisma.roster.create({
+        // Use the roster generator to create a proper roster with sessions
+        const result = await generateDailyRoster(prisma, {
+          clubId: payload.clubId,
+          date: format(currentDate, 'yyyy-MM-dd'),
+          selections: classTemplates,
+          generatedById: payload.userId,
+          timezone: user.club.timezone,
+        });
+
+        // Update the roster to link it to the template
+        await prisma.roster.update({
+          where: { id: result.rosterId },
           data: {
-            startDate: currentDate,
-            endDate: currentDate,
-            scope: 'WEEK',
-            status: 'DRAFT',
-            clubId: payload.clubId,
             templateId: params.id,
             dayOfWeek: dayOfWeek,
+          },
+        });
+
+        // Fetch the roster with its slots
+        const roster = await prisma.roster.findUnique({
+          where: { id: result.rosterId },
+          include: {
+            slots: {
+              include: {
+                session: {
+                  include: {
+                    template: true,
+                    coaches: {
+                      include: {
+                        coach: true,
+                      },
+                    },
+                  },
+                },
+                zone: true,
+              },
+            },
           },
         });
 

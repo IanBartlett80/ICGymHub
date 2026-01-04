@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth';
 import { addDays, format } from 'date-fns';
+import { generateDailyRoster } from '@/lib/rosterGenerator';
 
 // POST /api/rosters/generate-from-template - Generate rosters from a template
 export async function POST(request: NextRequest) {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, startDate, endDate, activeDays, scope } = body;
+    const { name, startDate, endDate, activeDays, scope, classTemplates } = body;
 
     // Validation
     if (!name || !startDate || !endDate || !activeDays || activeDays.length === 0) {
@@ -23,19 +24,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create the roster template first
+    if (!classTemplates || classTemplates.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one class template must be selected' },
+        { status: 400 }
+      );
+    }
+
+    // Get user for timezone
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      include: { club: true },
+    });
+
+    if (!user || !user.club) {
+      return NextResponse.json({ error: 'User or club not found' }, { status: 404 });
+    }
+
+    // Create the roster template with class configuration
     const template = await prisma.rosterTemplate.create({
       data: {
         name,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         activeDays: activeDays.join(','),
+        classConfig: JSON.stringify(classTemplates), // Store class template configurations
         clubId: payload.clubId,
         createdById: payload.userId,
       },
     });
 
-    // Generate empty rosters for each matching day
+    // Generate rosters for each matching day
     const createdRosters = [];
     let currentDate = new Date(startDate);
     const end = new Date(endDate);
@@ -44,16 +63,43 @@ export async function POST(request: NextRequest) {
       const dayOfWeek = format(currentDate, 'EEE').toUpperCase().substring(0, 3);
       
       if (activeDays.includes(dayOfWeek)) {
-        // Create empty roster for this day
-        const roster = await prisma.roster.create({
+        // Use the roster generator to create a proper roster with sessions
+        const result = await generateDailyRoster(prisma, {
+          clubId: payload.clubId,
+          date: format(currentDate, 'yyyy-MM-dd'),
+          selections: classTemplates,
+          generatedById: payload.userId,
+          timezone: user.club.timezone,
+        });
+
+        // Update the roster to link it to the template
+        await prisma.roster.update({
+          where: { id: result.rosterId },
           data: {
-            startDate: currentDate,
-            endDate: currentDate,
-            scope: scope || 'WEEK',
-            status: 'DRAFT',
-            clubId: payload.clubId,
             templateId: template.id,
             dayOfWeek: dayOfWeek,
+          },
+        });
+
+        // Fetch the roster with its slots
+        const roster = await prisma.roster.findUnique({
+          where: { id: result.rosterId },
+          include: {
+            slots: {
+              include: {
+                session: {
+                  include: {
+                    template: true,
+                    coaches: {
+                      include: {
+                        coach: true,
+                      },
+                    },
+                  },
+                },
+                zone: true,
+              },
+            },
           },
         });
 

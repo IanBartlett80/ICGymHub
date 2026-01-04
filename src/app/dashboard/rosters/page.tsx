@@ -58,14 +58,15 @@ export default function RostersPage() {
     }
   }
 
-  const groupRostersByTemplate = (): GroupedRosters[] => {
-    const grouped = new Map<string, GroupedRosters>()
+  const groupRostersByTemplate = (): (GroupedRosters & { groupKey: string })[] => {
+    const grouped = new Map<string, GroupedRosters & { groupKey: string }>()
     
     rosters.forEach(roster => {
       const key = roster.templateId || `standalone-${roster.id}`
       
       if (!grouped.has(key)) {
         grouped.set(key, {
+          groupKey: key,
           templateId: roster.templateId,
           templateName: roster.template?.name || format(new Date(roster.startDate), 'MMM dd, yyyy'),
           startDate: roster.template?.startDate || roster.startDate,
@@ -187,18 +188,19 @@ export default function RostersPage() {
           ) : (
             <div className="space-y-4">
               {groupedRosters.map((group) => {
-                const isExpanded = expandedTemplates.has(group.templateId || 'standalone')
+                const isExpanded = expandedTemplates.has(group.groupKey)
                 const isTemplate = group.templateId !== null
 
                 return (
-                  <div key={group.templateId || 'standalone'} className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                      <div className="flex items-center gap-3">
+                  <div key={group.groupKey} className="bg-white rounded-lg shadow overflow-hidden">
+                    {/* Template Header - Always Visible */}
+                    <div 
+                      className={`p-5 flex justify-between items-center ${isTemplate ? 'cursor-pointer hover:bg-gray-50' : 'bg-white'} transition-colors`}
+                      onClick={isTemplate ? () => toggleTemplate(group.groupKey) : undefined}
+                    >
+                      <div className="flex items-center gap-3 flex-1">
                         {isTemplate && (
-                          <button
-                            onClick={() => toggleTemplate(group.templateId!)}
-                            className="text-gray-600 hover:text-gray-900"
-                          >
+                          <div className="text-gray-500">
                             {isExpanded ? (
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -208,86 +210,103 @@ export default function RostersPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
                             )}
-                          </button>
+                          </div>
                         )}
-                        <div>
-                          <h3 className="font-semibold text-lg">{group.templateName}</h3>
-                          <p className="text-sm text-gray-600">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {isTemplate && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                Template
+                              </span>
+                            )}
+                            <h3 className="font-semibold text-lg text-gray-900">{group.templateName}</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
                             {format(new Date(group.startDate), 'MMM dd, yyyy')} - {format(new Date(group.endDate), 'MMM dd, yyyy')}
-                            {isTemplate && ` • ${group.rosters.length} roster(s)`}
+                            <span className="mx-2">•</span>
+                            <span className="font-medium">{group.rosters.length} roster{group.rosters.length !== 1 ? 's' : ''}</span>
+                            {isTemplate && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <span className="text-gray-500">Click to {isExpanded ? 'collapse' : 'expand'}</span>
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
                       {isTemplate && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleRegenerateTemplate(group.templateId!)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-600 rounded transition-colors"
                           >
                             Regenerate
                           </button>
                           <button
                             onClick={() => handleDeleteTemplate(group.templateId!)}
-                            className="text-red-600 hover:text-red-800 text-sm font-medium"
+                            className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-white hover:bg-red-600 border border-red-600 rounded transition-colors"
                           >
-                            Delete Template
+                            Delete
                           </button>
                         </div>
                       )}
                     </div>
 
+                    {/* Individual Rosters - Only shown when expanded (or for standalone rosters) */}
                     {(!isTemplate || isExpanded) && (
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Day</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Scope</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {group.rosters.map((roster) => (
-                            <tr key={roster.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap font-medium">
-                                {format(new Date(roster.startDate), 'MMM dd, yyyy')}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {roster.dayOfWeek || format(new Date(roster.startDate), 'EEE').toUpperCase()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">{roster.scope}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`px-2 py-1 text-xs rounded font-medium ${
-                                    roster.status === 'PUBLISHED'
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}
-                                >
-                                  {roster.status}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <button
-                                  onClick={() => router.push(`/dashboard/rosters/${roster.id}`)}
-                                  className="text-blue-600 hover:text-blue-800 mr-3 font-medium"
-                                >
-                                  View
-                                </button>
-                                {!isTemplate && (
-                                  <button
-                                    onClick={() => handleDelete(roster.id)}
-                                    className="text-red-600 hover:text-red-800 font-medium"
-                                  >
-                                    Delete
-                                  </button>
-                                )}
-                              </td>
+                      <div className="border-t">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {group.rosters.map((roster) => (
+                              <tr key={roster.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {format(new Date(roster.startDate), 'MMM dd, yyyy')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                  {roster.dayOfWeek || format(new Date(roster.startDate), 'EEE').toUpperCase()}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{roster.scope}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span
+                                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                      roster.status === 'PUBLISHED'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}
+                                  >
+                                    {roster.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <button
+                                    onClick={() => router.push(`/dashboard/rosters/${roster.id}`)}
+                                    className="text-blue-600 hover:text-blue-800 mr-4 font-medium"
+                                  >
+                                    View
+                                  </button>
+                                  {!isTemplate && (
+                                    <button
+                                      onClick={() => handleDelete(roster.id)}
+                                      className="text-red-600 hover:text-red-800 font-medium"
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
                 )
