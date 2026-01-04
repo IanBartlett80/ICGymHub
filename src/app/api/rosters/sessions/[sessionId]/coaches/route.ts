@@ -123,7 +123,6 @@ export async function PATCH(
         })
       }
     }
-    }
 
     // Update session times if provided
     if (startTime || endTime) {
