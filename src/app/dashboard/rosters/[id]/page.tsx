@@ -154,11 +154,20 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     if (!editingSlot) return
 
     try {
-      // TODO: Create API endpoint to update session coaches
-      // For now, just close the modal and show message
-      alert('Coach update functionality will be implemented with a new API endpoint')
-      setEditingSlot(null)
-      // await fetchRoster() // Refresh after update
+      const res = await fetch(`/api/rosters/sessions/${editingSlot.session.id}/coaches`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coachIds: selectedCoachIds }),
+      })
+
+      if (res.ok) {
+        setEditingSlot(null)
+        setSelectedCoachIds([])
+        await fetchRoster() // Refresh to show updated coaches
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to update coaches')
+      }
     } catch (err) {
       setError('Failed to update coaches')
     }
