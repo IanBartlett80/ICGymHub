@@ -134,14 +134,6 @@ export default function ClassRosteringPage() {
     router.push(`/dashboard/rosters/${rosterId}`)
   }
 
-  const calendarEvents: CalendarEvent[] = rosterSlots.map(slot => ({
-    id: slot.id,
-    title: `${slot.session.template.name} - ${slot.zoneName}`,
-    start: new Date(slot.startsAt),
-    end: new Date(slot.endsAt),
-    resource: slot,
-  }))
-
   const uniqueClasses = Array.from(
     new Set(rosterSlots.map(slot => slot.session.template.name))
   )
@@ -149,6 +141,14 @@ export default function ClassRosteringPage() {
   const filteredSlots = selectedClass === 'all'
     ? rosterSlots
     : rosterSlots.filter(slot => slot.session.template.name === selectedClass)
+
+  const calendarEvents: CalendarEvent[] = filteredSlots.map(slot => ({
+    id: slot.id,
+    title: `${slot.session.template.name} - ${slot.zoneName}`,
+    start: new Date(slot.startsAt),
+    end: new Date(slot.endsAt),
+    resource: slot,
+  }))
 
   const configSteps = [
     {
@@ -221,28 +221,44 @@ export default function ClassRosteringPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Roster Calendar</h2>
               
-              {/* Template Filter Dropdown */}
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium text-gray-700">View Template:</label>
-                <select
-                  value={selectedTemplates.length === 1 ? selectedTemplates[0] : 'all'}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    if (value === 'all') {
-                      setSelectedTemplates(templates.map(t => t.id))
-                    } else {
-                      setSelectedTemplates([value])
-                    }
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Templates</option>
-                  {templates.map(template => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
+              {/* Template and Class Filter Dropdowns */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">View Template:</label>
+                  <select
+                    value={selectedTemplates.length === 1 ? selectedTemplates[0] : 'all'}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value === 'all') {
+                        setSelectedTemplates(templates.map(t => t.id))
+                      } else {
+                        setSelectedTemplates([value])
+                      }
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Templates</option>
+                    {templates.map(template => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">Filter by Class:</label>
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Classes</option>
+                    {uniqueClasses.map(className => (
+                      <option key={className} value={className}>{className}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
