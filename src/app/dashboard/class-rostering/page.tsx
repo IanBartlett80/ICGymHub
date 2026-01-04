@@ -81,6 +81,13 @@ export default function ClassRosteringPage() {
       status: 'pending' as const,
     },
     {
+      title: 'Gymsports',
+      description: 'Configure gymsports offered at your club',
+      icon: '🤸',
+      href: '/dashboard/roster-config/gymsports',
+      status: 'pending' as const,
+    },
+    {
       title: 'Coaches',
       description: 'Add coaches with their gymsports and availability',
       icon: '👨‍🏫',

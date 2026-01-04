@@ -169,6 +169,18 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
                       Class Templates
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      href="/dashboard/roster-config/gymsports"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/roster-config/gymsports')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Gymsports
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>
