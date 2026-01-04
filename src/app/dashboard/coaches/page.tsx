@@ -2,6 +2,22 @@
 
 import { useState, useEffect } from 'react'
 
+type Gymsport = {
+  id: string
+  name: string
+}
+
+type CoachGymsport = {
+  gymsport: Gymsport
+}
+
+type CoachAvailability = {
+  id?: string
+  dayOfWeek: string
+  startTimeLocal: string
+  endTimeLocal: string
+}
+
 type Coach = {
   id: string
   name: string
@@ -10,39 +26,63 @@ type Coach = {
   email: string | null
   phone: string | null
   importedFromCsv: boolean
+  gymsports: CoachGymsport[]
+  availability: CoachAvailability[]
 }
+
+const DAYS = [
+  { value: 'MON', label: 'Monday' },
+  { value: 'TUE', label: 'Tuesday' },
+  { value: 'WED', label: 'Wednesday' },
+  { value: 'THU', label: 'Thursday' },
+  { value: 'FRI', label: 'Friday' },
+  { value: 'SAT', label: 'Saturday' },
+  { value: 'SUN', label: 'Sunday' },
+]
 
 export default function CoachesPage() {
   const [coaches, setCoaches] = useState<Coach[]>([])
+  const [gymsports, setGymsports] = useState<Gymsport[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
+  const [showCustomGymsport, setShowCustomGymsport] = useState(false)
+  const [customGymsportName, setCustomGymsportName] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     accreditationLevel: '',
     membershipNumber: '',
     email: '',
     phone: '',
+    gymsportIds: [] as string[],
+    availability: [] as CoachAvailability[],
   })
 
   useEffect(() => {
-    fetchCoaches()
+    fetchData()
   }, [])
 
-  const fetchCoaches = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch('/api/coaches')
-      if (res.ok) {
-        const data = await res.json()
+      const [coachesRes, gymsportsRes] = await Promise.all([
+        fetch('/api/coaches'),
+        fetch('/api/gymsports'),
+      ])
+
+      if (coachesRes.ok) {
+        const data = await coachesRes.json()
         setCoaches(data.coaches)
-      } else {
-        setError('Failed to load coaches')
+      }
+
+      if (gymsportsRes.ok) {
+        const data = await gymsportsRes.json()
+        setGymsports(data.gymsports)
       }
     } catch (err) {
-      setError('Failed to load coaches')
+      setError('Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -64,10 +104,10 @@ export default function CoachesPage() {
       })
 
       if (res.ok) {
-        await fetchCoaches()
+        await fetchData()
         setShowForm(false)
         setEditingId(null)
-        setFormData({ name: '', accreditationLevel: '', membershipNumber: '', email: '', phone: '' })
+        resetForm()
         setSuccess('Coach saved successfully')
       } else {
         const data = await res.json()
@@ -78,6 +118,18 @@ export default function CoachesPage() {
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      accreditationLevel: '',
+      membershipNumber: '',
+      email: '',
+      phone: '',
+      gymsportIds: [],
+      availability: [],
+    })
+  }
+
   const handleEdit = (coach: Coach) => {
     setFormData({
       name: coach.name,
@@ -85,6 +137,12 @@ export default function CoachesPage() {
       membershipNumber: coach.membershipNumber || '',
       email: coach.email || '',
       phone: coach.phone || '',
+      gymsportIds: coach.gymsports.map((cg) => cg.gymsport.id),
+      availability: coach.availability.map((a) => ({
+        dayOfWeek: a.dayOfWeek,
+        startTimeLocal: a.startTimeLocal,
+        endTimeLocal: a.endTimeLocal,
+      })),
     })
     setEditingId(coach.id)
     setShowForm(true)
@@ -96,7 +154,7 @@ export default function CoachesPage() {
     try {
       const res = await fetch(`/api/coaches/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        await fetchCoaches()
+        await fetchData()
         setSuccess('Coach deleted successfully')
       } else {
         setError('Failed to delete coach')
@@ -134,18 +192,18 @@ export default function CoachesPage() {
     setSuccess('')
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
 
       const res = await fetch('/api/coaches/import', {
         method: 'POST',
-        body: formData,
+        body: formDataUpload,
       })
 
       const data = await res.json()
 
       if (res.ok) {
-        await fetchCoaches()
+        await fetchData()
         setSuccess(data.message)
         if (data.errors) {
           setError(`Import completed with errors:\n${data.errors.join('\n')}`)
@@ -161,11 +219,89 @@ export default function CoachesPage() {
     }
   }
 
+  const handleGymsportChange = (gymsportId: string) => {
+    // Check if "Other" is selected
+    const otherGymsport = gymsports.find((g) => g.name === 'Other')
+    if (otherGymsport && gymsportId === otherGymsport.id) {
+      setShowCustomGymsport(true)
+      return
+    }
+
+    setFormData((prev) => {
+      const exists = prev.gymsportIds.includes(gymsportId)
+      return {
+        ...prev,
+        gymsportIds: exists
+          ? prev.gymsportIds.filter((id) => id !== gymsportId)
+          : [...prev.gymsportIds, gymsportId],
+      }
+    })
+  }
+
+  const handleAddCustomGymsport = async () => {
+    if (!customGymsportName.trim()) return
+
+    try {
+      const res = await fetch('/api/gymsports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: customGymsportName.trim() }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setGymsports([...gymsports, data.gymsport])
+        setFormData((prev) => ({
+          ...prev,
+          gymsportIds: [...prev.gymsportIds, data.gymsport.id],
+        }))
+        setCustomGymsportName('')
+        setShowCustomGymsport(false)
+        setSuccess('Custom gymsport added successfully')
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to add custom gymsport')
+      }
+    } catch (err) {
+      setError('Failed to add custom gymsport')
+    }
+  }
+
+  const handleAddAvailability = () => {
+    setFormData((prev) => ({
+      ...prev,
+      availability: [
+        ...prev.availability,
+        { dayOfWeek: 'MON', startTimeLocal: '16:00', endTimeLocal: '20:00' },
+      ],
+    }))
+  }
+
+  const handleRemoveAvailability = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      availability: prev.availability.filter((_, i) => i !== index),
+    }))
+  }
+
+  const handleAvailabilityChange = (
+    index: number,
+    field: keyof CoachAvailability,
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      availability: prev.availability.map((a, i) =>
+        i === index ? { ...a, [field]: value } : a
+      ),
+    }))
+  }
+
   if (loading) return <div className="p-8">Loading...</div>
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Coaches</h1>
           <div className="flex gap-2">
@@ -177,13 +313,19 @@ export default function CoachesPage() {
             </button>
             <label className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 cursor-pointer">
               {importing ? 'Importing...' : 'Import CSV'}
-              <input type="file" accept=".csv" onChange={handleImport} className="hidden" disabled={importing} />
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleImport}
+                className="hidden"
+                disabled={importing}
+              />
             </label>
             <button
               onClick={() => {
                 setShowForm(!showForm)
                 setEditingId(null)
-                setFormData({ name: '', accreditationLevel: '', membershipNumber: '', email: '', phone: '' })
+                resetForm()
               }}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
@@ -206,7 +348,9 @@ export default function CoachesPage() {
 
         {showForm && (
           <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 className="text-xl font-semibold mb-4">{editingId ? 'Edit Coach' : 'Add New Coach'}</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {editingId ? 'Edit Coach' : 'Add New Coach'}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -229,11 +373,23 @@ export default function CoachesPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="+61 400 000 000"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium mb-1">Accreditation Level</label>
                   <input
                     type="text"
                     value={formData.accreditationLevel}
-                    onChange={(e) => setFormData({ ...formData, accreditationLevel: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, accreditationLevel: e.target.value })
+                    }
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
@@ -242,36 +398,153 @@ export default function CoachesPage() {
                   <input
                     type="text"
                     value={formData.membershipNumber}
-                    onChange={(e) => setFormData({ ...formData, membershipNumber: e.target.value })}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Phone</label>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, membershipNumber: e.target.value })
+                    }
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
               </div>
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Gymsport Accreditations</label>
+                <div className="grid grid-cols-2 gap-2 border rounded p-3 bg-gray-50">
+                  {gymsports.map((gymsport) => (
+                    <label key={gymsport.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.gymsportIds.includes(gymsport.id)}
+                        onChange={() => handleGymsportChange(gymsport.id)}
+                        className="rounded"
+                      />
+                      <span>{gymsport.name}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {showCustomGymsport && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={customGymsportName}
+                      onChange={(e) => setCustomGymsportName(e.target.value)}
+                      placeholder="Enter custom gymsport name"
+                      className="flex-1 border rounded px-3 py-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomGymsport}
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomGymsport(false)
+                        setCustomGymsportName('')
+                      }}
+                      className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium">Availability</label>
+                  <button
+                    type="button"
+                    onClick={handleAddAvailability}
+                    className="bg-blue-500 text-white text-sm px-3 py-1 rounded hover:bg-blue-600"
+                  >
+                    + Add Availability
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {formData.availability.map((avail, index) => (
+                    <div key={index} className="flex gap-2 items-center border rounded p-2">
+                      <select
+                        value={avail.dayOfWeek}
+                        onChange={(e) =>
+                          handleAvailabilityChange(index, 'dayOfWeek', e.target.value)
+                        }
+                        className="border rounded px-2 py-1 flex-1"
+                      >
+                        {DAYS.map((day) => (
+                          <option key={day.value} value={day.value}>
+                            {day.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="time"
+                        value={avail.startTimeLocal}
+                        onChange={(e) =>
+                          handleAvailabilityChange(index, 'startTimeLocal', e.target.value)
+                        }
+                        className="border rounded px-2 py-1"
+                      />
+                      <span>to</span>
+                      <input
+                        type="time"
+                        value={avail.endTimeLocal}
+                        onChange={(e) =>
+                          handleAvailabilityChange(index, 'endTimeLocal', e.target.value)
+                        }
+                        className="border rounded px-2 py-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAvailability(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  {formData.availability.length === 0 && (
+                    <div className="text-gray-500 text-sm italic">
+                      No availability set. Click "Add Availability" to add days and times.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
                 {editingId ? 'Update Coach' : 'Create Coach'}
               </button>
             </form>
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Accreditation</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Membership #</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Phone
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Gymsports
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Availability
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -284,8 +557,36 @@ export default function CoachesPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{coach.email || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{coach.accreditationLevel || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{coach.membershipNumber || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{coach.phone || '-'}</td>
+                  <td className="px-6 py-4">
+                    {coach.gymsports.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {coach.gymsports.map((cg) => (
+                          <span
+                            key={cg.gymsport.id}
+                            className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                          >
+                            {cg.gymsport.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {coach.availability.length > 0 ? (
+                      <div className="text-xs space-y-1">
+                        {coach.availability.map((avail, idx) => (
+                          <div key={idx}>
+                            {avail.dayOfWeek}: {avail.startTimeLocal}-{avail.endTimeLocal}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button
                       onClick={() => handleEdit(coach)}

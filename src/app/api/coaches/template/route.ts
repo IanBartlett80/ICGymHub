@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const csv = 'Name,Accreditation Level,Membership Number,Email\nJohn Doe,Advanced,MEM-001,john.doe@example.com\nJane Smith,Intermediate,MEM-002,jane.smith@example.com\n'
+    const csv = 'Name,Accreditation Level,Membership Number,Email,Phone Number,Gymsports (separated by |),Availability Days (separated by |),Availability Start Times (separated by |),Availability End Times (separated by |)\nJohn Doe,Advanced,MEM-001,john.doe@example.com,+61 400 000 000,"Artistic Gymnastics (Women\'s)|Recreation Gymnastics",MON|WED|FRI,16:00|16:00|16:00,20:00|20:00|20:00\nJane Smith,Intermediate,MEM-002,jane.smith@example.com,+61 400 000 001,Recreation Gymnastics,TUE|THU,17:00|17:00,21:00|21:00\n'
 
     return new NextResponse(csv, {
       status: 200,

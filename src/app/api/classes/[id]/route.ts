@@ -28,6 +28,7 @@ async function getAuthenticatedUser(req: NextRequest) {
 
 const classSchema = z.object({
   name: z.string().min(1).max(200),
+  gymsportId: z.string().optional(),
   level: z.string().min(1),
   lengthMinutes: z.number().int().positive(),
   defaultRotationMinutes: z.number().int().positive(),
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const classTemplate = await prisma.classTemplate.findFirst({
       where: { id, clubId: user.clubId },
       include: {
+        gymsport: true,
         allowedZones: { include: { zone: true } },
         defaultCoaches: { include: { coach: true } },
       },
@@ -93,6 +95,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const {
       name,
+      gymsportId,
       level,
       lengthMinutes,
       defaultRotationMinutes,
@@ -120,6 +123,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data: {
         name,
+        gymsportId: gymsportId || null,
         level,
         lengthMinutes,
         defaultRotationMinutes,

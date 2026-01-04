@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
     const classes = await prisma.classTemplate.findMany({
       where: { clubId: user.clubId },
       include: {
+        gymsport: true,
         allowedZones: { include: { zone: true } },
         defaultCoaches: { include: { coach: true } },
       },
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest) {
 
 const classSchema = z.object({
   name: z.string().min(1).max(200),
+  gymsportId: z.string().optional(),
   level: z.string().min(1),
   lengthMinutes: z.number().int().positive(),
   defaultRotationMinutes: z.number().int().positive(),
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
 
     const {
       name,
+      gymsportId,
       level,
       lengthMinutes,
       defaultRotationMinutes,
@@ -105,6 +108,7 @@ export async function POST(req: NextRequest) {
       data: {
         clubId: user.clubId,
         name,
+        gymsportId: gymsportId || null,
         level,
         lengthMinutes,
         defaultRotationMinutes,

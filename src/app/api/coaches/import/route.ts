@@ -29,11 +29,12 @@ function parseCSV(content: string): Array<Record<string, string>> {
   const lines = content.split('\n').filter((line) => line.trim())
   if (lines.length < 2) return []
 
-  const headers = lines[0].split(',').map((h) => h.trim())
+  // Parse header line (handle quoted fields)
+  const headers = parseCSVLine(lines[0])
   const rows: Array<Record<string, string>> = []
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map((v) => v.trim())
+    const values = parseCSVLine(lines[i])
     const row: Record<string, string> = {}
     headers.forEach((header, idx) => {
       row[header] = values[idx] || ''
@@ -42,6 +43,33 @@ function parseCSV(content: string): Array<Record<string, string>> {
   }
 
   return rows
+}
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+    
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"'
+        i++ // Skip next quote
+      } else {
+        inQuotes = !inQuotes
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim())
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  
+  result.push(current.trim())
+  return result
 }
 
 // POST /api/coaches/import - Import coaches from CSV
@@ -82,11 +110,32 @@ export async function POST(req: NextRequest) {
     let imported = 0
     const errors: string[] = []
 
+    // Get all gymsports for the club
+    const clubGymsports = await prisma.gymsport.findMany({
+      where: { clubId: user.clubId, active: true },
+    })
+    const gymsportByName = Object.fromEntries(clubGymsports.map((g) => [g.name.toLowerCase(), g]))
+
+    const DAYS_MAP: Record<string, string> = {
+      'monday': 'MON', 'mon': 'MON',
+      'tuesday': 'TUE', 'tue': 'TUE',
+      'wednesday': 'WED', 'wed': 'WED',
+      'thursday': 'THU', 'thu': 'THU',
+      'friday': 'FRI', 'fri': 'FRI',
+      'saturday': 'SAT', 'sat': 'SAT',
+      'sunday': 'SUN', 'sun': 'SUN',
+    }
+
     for (const [index, row] of rows.entries()) {
       const name = row['Name'] || row['name']
       const accreditationLevel = row['Accreditation Level'] || row['accreditation level'] || row['accreditationLevel']
       const membershipNumber = row['Membership Number'] || row['membership number'] || row['membershipNumber']
       const email = row['Email'] || row['email']
+      const phone = row['Phone Number'] || row['Phone'] || row['phone']
+      const gymsportsStr = row['Gymsports (separated by |)'] || row['Gymsports'] || row['gymsports'] || ''
+      const availDaysStr = row['Availability Days (separated by |)'] || row['Availability Days'] || row['days'] || ''
+      const availStartStr = row['Availability Start Times (separated by |)'] || row['Start Times'] || row['startTimes'] || ''
+      const availEndStr = row['Availability End Times (separated by |)'] || row['End Times'] || row['endTimes'] || ''
 
       if (!name) {
         errors.push(`Row ${index + 2}: Missing name`)
@@ -106,16 +155,70 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        await prisma.coach.create({
+        const coach = await prisma.coach.create({
           data: {
             clubId: user.clubId,
             name,
             accreditationLevel: accreditationLevel || null,
             membershipNumber: membershipNumber || null,
             email: email || null,
+            phone: phone || null,
             importedFromCsv: true,
           },
         })
+
+        // Parse and link gymsports
+        if (gymsportsStr) {
+          const gymsportNames = gymsportsStr.split('|').map(s => s.trim()).filter(s => s)
+          for (const gymsportName of gymsportNames) {
+            const gymsport = gymsportByName[gymsportName.toLowerCase()]
+            if (gymsport) {
+              await prisma.coachGymsport.create({
+                data: {
+                  coachId: coach.id,
+                  gymsportId: gymsport.id,
+                },
+              })
+            } else {
+              errors.push(`Row ${index + 2}: Gymsport "${gymsportName}" not found`)
+            }
+          }
+        }
+
+        // Parse and create availability
+        if (availDaysStr && availStartStr && availEndStr) {
+          const days = availDaysStr.split('|').map(s => s.trim()).filter(s => s)
+          const starts = availStartStr.split('|').map(s => s.trim()).filter(s => s)
+          const ends = availEndStr.split('|').map(s => s.trim()).filter(s => s)
+
+          if (days.length === starts.length && days.length === ends.length) {
+            for (let i = 0; i < days.length; i++) {
+              const dayOfWeek = DAYS_MAP[days[i].toLowerCase()] || days[i].toUpperCase()
+              const validDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+              
+              if (!validDays.includes(dayOfWeek)) {
+                errors.push(`Row ${index + 2}: Invalid day "${days[i]}"`)
+                continue
+              }
+
+              if (!/^\d{2}:\d{2}$/.test(starts[i]) || !/^\d{2}:\d{2}$/.test(ends[i])) {
+                errors.push(`Row ${index + 2}: Invalid time format for ${days[i]}`)
+                continue
+              }
+
+              await prisma.coachAvailability.create({
+                data: {
+                  coachId: coach.id,
+                  dayOfWeek,
+                  startTimeLocal: starts[i],
+                  endTimeLocal: ends[i],
+                },
+              })
+            }
+          } else {
+            errors.push(`Row ${index + 2}: Availability days, start times, and end times must have the same count`)
+          }
+        }
 
         imported += 1
       } catch (error) {

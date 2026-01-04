@@ -44,6 +44,7 @@ model Club {
   coachImportJobs    CoachImportJob[]
   rosterExports      RosterExport[]
   rosterSlots        RosterSlot[]
+  gymsports          Gymsport[]
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -220,6 +221,26 @@ model Zone {
   @@index([clubId])
 }
 
+// Gymsports
+model Gymsport {
+  id              String   @id @default(cuid())
+  club            Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId          String
+  name            String
+  isPredefined    Boolean  @default(false)
+  active          Boolean  @default(true)
+
+  // Relations
+  coachGymsports  CoachGymsport[]
+  classTemplates  ClassTemplate[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([clubId, name])
+  @@index([clubId])
+}
+
 // Coaches
 model Coach {
   id                  String   @id @default(cuid())
@@ -233,8 +254,10 @@ model Coach {
   importedFromCsv     Boolean  @default(false)
 
   // Relations
-  templateLinks TemplateCoach[]
-  sessionLinks  SessionCoach[]
+  templateLinks    TemplateCoach[]
+  sessionLinks     SessionCoach[]
+  gymsports        CoachGymsport[]
+  availability     CoachAvailability[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -243,12 +266,45 @@ model Coach {
   @@unique([clubId, email])
 }
 
+// Coach to Gymsport relationship (many-to-many)
+model CoachGymsport {
+  id          String    @id @default(cuid())
+  coach       Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId     String
+  gymsport    Gymsport  @relation(fields: [gymsportId], references: [id], onDelete: Cascade)
+  gymsportId  String
+
+  createdAt   DateTime  @default(now())
+
+  @@unique([coachId, gymsportId])
+  @@index([coachId])
+  @@index([gymsportId])
+}
+
+// Coach availability (day and time ranges)
+model CoachAvailability {
+  id              String   @id @default(cuid())
+  coach           Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId         String
+  dayOfWeek       String   // MON, TUE, WED, THU, FRI, SAT, SUN
+  startTimeLocal  String   // HH:MM format
+  endTimeLocal    String   // HH:MM format
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([coachId])
+  @@index([dayOfWeek])
+}
+
 // Class templates (recurring definitions)
 model ClassTemplate {
   id                     String                  @id @default(cuid())
   club                   Club                    @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId                 String
   name                   String
+  gymsport               Gymsport?               @relation(fields: [gymsportId], references: [id], onDelete: SetNull)
+  gymsportId             String?
   level                  String                  // Rec, LEVEL_1..LEVEL_10, SNR, ADULT, SCHOOL, OTHER
   lengthMinutes          Int
   defaultRotationMinutes Int
@@ -267,6 +323,7 @@ model ClassTemplate {
   updatedAt DateTime @updatedAt
 
   @@index([clubId])
+  @@index([gymsportId])
   @@unique([clubId, name])
 }
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import DashboardLayout from '@/components/DashboardLayout'
 
 interface Zone {
   id: string
@@ -84,29 +85,17 @@ export default function ZonesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
+      <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}>
+        <div className="p-6">
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900">
-      {/* Navigation */}
-      <nav className="border-b border-neutral-700 bg-neutral-900/50 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-white hover:text-blue-400 transition">
-              ← Back to Dashboard
-            </Link>
-            <span className="text-neutral-500">•</span>
-            <h1 className="text-xl font-bold text-white">Manage Gym Zones</h1>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-8 max-w-4xl">
+    <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}>
+      <div className="p-6 max-w-6xl mx-auto">
         {error && (
           <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -240,7 +229,6 @@ export default function ZonesPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  )
+      </DashboardLayout>
+    )
 }

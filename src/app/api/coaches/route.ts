@@ -36,6 +36,14 @@ export async function GET(req: NextRequest) {
 
     const coaches = await prisma.coach.findMany({
       where: { clubId: user.clubId },
+      include: {
+        gymsports: {
+          include: {
+            gymsport: true,
+          },
+        },
+        availability: true,
+      },
       orderBy: { name: 'asc' },
     })
 
@@ -52,6 +60,12 @@ const coachSchema = z.object({
   membershipNumber: z.string().max(100).optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
+  gymsportIds: z.array(z.string()).optional(),
+  availability: z.array(z.object({
+    dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']),
+    startTimeLocal: z.string().regex(/^\d{2}:\d{2}$/),
+    endTimeLocal: z.string().regex(/^\d{2}:\d{2}$/),
+  })).optional(),
 })
 
 // POST /api/coaches - Create a new coach
@@ -68,7 +82,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, accreditationLevel, membershipNumber, email, phone } = parsed.data
+    const { name, accreditationLevel, membershipNumber, email, phone, gymsportIds, availability } = parsed.data
 
     // Check for duplicate email if provided
     if (email) {
@@ -93,7 +107,46 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ coach }, { status: 201 })
+    // Link gymsports
+    if (gymsportIds && gymsportIds.length > 0) {
+      for (const gymsportId of gymsportIds) {
+        await prisma.coachGymsport.create({
+          data: {
+            coachId: coach.id,
+            gymsportId,
+          },
+        })
+      }
+    }
+
+    // Create availability entries
+    if (availability && availability.length > 0) {
+      for (const avail of availability) {
+        await prisma.coachAvailability.create({
+          data: {
+            coachId: coach.id,
+            dayOfWeek: avail.dayOfWeek,
+            startTimeLocal: avail.startTimeLocal,
+            endTimeLocal: avail.endTimeLocal,
+          },
+        })
+      }
+    }
+
+    // Fetch the created coach with relations
+    const createdCoach = await prisma.coach.findUnique({
+      where: { id: coach.id },
+      include: {
+        gymsports: {
+          include: {
+            gymsport: true,
+          },
+        },
+        availability: true,
+      },
+    })
+
+    return NextResponse.json({ coach: createdCoach }, { status: 201 })
   } catch (error) {
     console.error('Failed to create coach', error)
     return NextResponse.json({ error: 'Failed to create coach' }, { status: 500 })

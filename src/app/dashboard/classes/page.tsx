@@ -7,14 +7,26 @@ type Zone = {
   name: string
 }
 
+type Gymsport = {
+  id: string
+  name: string
+}
+
+type CoachGymsport = {
+  gymsport: Gymsport
+}
+
 type Coach = {
   id: string
   name: string
+  gymsports: CoachGymsport[]
 }
 
 type ClassTemplate = {
   id: string
   name: string
+  gymsport: Gymsport | null
+  gymsportId: string | null
   level: string
   lengthMinutes: number
   defaultRotationMinutes: number
@@ -33,7 +45,9 @@ const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 export default function ClassesPage() {
   const [classes, setClasses] = useState<ClassTemplate[]>([])
   const [zones, setZones] = useState<Zone[]>([])
+  const [gymsports, setGymsports] = useState<Gymsport[]>([])
   const [coaches, setCoaches] = useState<Coach[]>([])
+  const [allCoaches, setAllCoaches] = useState<Coach[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -41,6 +55,7 @@ export default function ClassesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
+    gymsportId: '',
     level: 'REC',
     lengthMinutes: 60,
     defaultRotationMinutes: 15,
@@ -59,9 +74,10 @@ export default function ClassesPage() {
 
   const fetchData = async () => {
     try {
-      const [classesRes, zonesRes, coachesRes] = await Promise.all([
+      const [classesRes, zonesRes, gymsportsRes, coachesRes] = await Promise.all([
         fetch('/api/classes'),
         fetch('/api/zones'),
+        fetch('/api/gymsports'),
         fetch('/api/coaches'),
       ])
 
@@ -75,8 +91,14 @@ export default function ClassesPage() {
         setZones(data.zones)
       }
 
+      if (gymsportsRes.ok) {
+        const data = await gymsportsRes.json()
+        setGymsports(data.gymsports)
+      }
+
       if (coachesRes.ok) {
         const data = await coachesRes.json()
+        setAllCoaches(data.coaches)
         setCoaches(data.coaches)
       }
     } catch (err) {
@@ -97,6 +119,7 @@ export default function ClassesPage() {
 
       const payload = {
         ...formData,
+        gymsportId: formData.gymsportId || undefined,
         activeDays: formData.activeDays.join(','),
       }
 
@@ -112,6 +135,7 @@ export default function ClassesPage() {
         setEditingId(null)
         setFormData({
           name: '',
+          gymsportId: '',
           level: 'REC',
           lengthMinutes: 60,
           defaultRotationMinutes: 15,
@@ -136,6 +160,7 @@ export default function ClassesPage() {
   const handleEdit = (classTemplate: ClassTemplate) => {
     setFormData({
       name: classTemplate.name,
+      gymsportId: classTemplate.gymsportId || '',
       level: classTemplate.level,
       lengthMinutes: classTemplate.lengthMinutes,
       defaultRotationMinutes: classTemplate.defaultRotationMinutes,
@@ -147,6 +172,17 @@ export default function ClassesPage() {
       allowedZoneIds: classTemplate.allowedZones.map((z) => z.zone.id),
       defaultCoachIds: classTemplate.defaultCoaches.map((c) => c.coach.id),
     })
+    
+    // Filter coaches by gymsport when editing
+    if (classTemplate.gymsportId) {
+      const filteredCoaches = allCoaches.filter((coach) =>
+        coach.gymsports.some((cg) => cg.gymsport.id === classTemplate.gymsportId)
+      )
+      setCoaches(filteredCoaches.length > 0 ? filteredCoaches : allCoaches)
+    } else {
+      setCoaches(allCoaches)
+    }
+    
     setEditingId(classTemplate.id)
     setShowForm(true)
   }
@@ -194,6 +230,25 @@ export default function ClassesPage() {
     })
   }
 
+  const handleGymsportChange = (gymsportId: string) => {
+    // Filter coaches by selected gymsport
+    if (gymsportId) {
+      const filteredCoaches = allCoaches.filter((coach) =>
+        coach.gymsports.some((cg) => cg.gymsport.id === gymsportId)
+      )
+      setCoaches(filteredCoaches.length > 0 ? filteredCoaches : allCoaches)
+    } else {
+      setCoaches(allCoaches)
+    }
+    
+    // Reset selected coaches when gymsport changes
+    setFormData({
+      ...formData,
+      gymsportId,
+      defaultCoachIds: [],
+    })
+  }
+
   if (loading) return <div className="p-8">Loading...</div>
 
   return (
@@ -205,8 +260,10 @@ export default function ClassesPage() {
             onClick={() => {
               setShowForm(!showForm)
               setEditingId(null)
+              setCoaches(allCoaches)
               setFormData({
                 name: '',
+                gymsportId: '',
                 level: 'REC',
                 lengthMinutes: 60,
                 defaultRotationMinutes: 15,
@@ -251,6 +308,26 @@ export default function ClassesPage() {
                     className="w-full border rounded px-3 py-2"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Gymsport</label>
+                  <select
+                    value={formData.gymsportId}
+                    onChange={(e) => handleGymsportChange(e.target.value)}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">-- Select Gymsport --</option>
+                    {gymsports.map((gymsport) => (
+                      <option key={gymsport.id} value={gymsport.id}>
+                        {gymsport.name}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.gymsportId && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Only coaches accredited in this gymsport will be available to select.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Level *</label>

@@ -47,6 +47,48 @@ const zonedDate = (date: string, time: string, timeZone: string): Date => {
   return new Date(utcDate.getTime() - diff)
 }
 
+const getDayOfWeek = (date: string): string => {
+  const d = new Date(date + 'T00:00:00')
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+  return days[d.getUTCDay()]
+}
+
+const isCoachAvailable = (coach: any, dayOfWeek: string, startTime: string, endTime: string): boolean => {
+  if (!coach.availability || coach.availability.length === 0) {
+    return true // If no availability set, assume available
+  }
+
+  // Check if coach has availability for this day
+  const dayAvailability = coach.availability.filter((a: any) => a.dayOfWeek === dayOfWeek)
+  if (dayAvailability.length === 0) {
+    return false // Coach not available on this day
+  }
+
+  // Check if the session time overlaps with any availability window
+  const startMinutes = timeToMinutes(startTime)
+  const endMinutes = timeToMinutes(endTime)
+
+  return dayAvailability.some((avail: any) => {
+    const availStart = timeToMinutes(avail.startTimeLocal)
+    const availEnd = timeToMinutes(avail.endTimeLocal)
+    
+    // Session must be completely within availability window
+    return startMinutes >= availStart && endMinutes <= availEnd
+  })
+}
+
+const isCoachAccreditedForGymsport = (coach: any, gymsportId: string | null): boolean => {
+  if (!gymsportId) {
+    return true // If no gymsport specified, any coach can be assigned
+  }
+
+  if (!coach.gymsports || coach.gymsports.length === 0) {
+    return false // Coach has no gymsport accreditations
+  }
+
+  return coach.gymsports.some((cg: any) => cg.gymsport.id === gymsportId)
+}
+
 export async function generateDailyRoster(
   prisma: PrismaClient,
   input: GenerateDailyRosterInput
@@ -70,8 +112,22 @@ export async function generateDailyRoster(
   const templates = await prisma.classTemplate.findMany({
     where: { clubId, id: { in: selections.map((s) => s.templateId) } },
     include: {
+      gymsport: true,
       allowedZones: true,
-      defaultCoaches: true,
+      defaultCoaches: {
+        include: {
+          coach: {
+            include: {
+              gymsports: {
+                include: {
+                  gymsport: true,
+                },
+              },
+              availability: true,
+            },
+          },
+        },
+      },
     },
   })
 
@@ -123,6 +179,45 @@ export async function generateDailyRoster(
       ? selection.coachIds
       : template.defaultCoaches.map((c) => c.coachId))
 
+    // Get the day of week for availability checking
+    const dayOfWeek = getDayOfWeek(date)
+
+    // Validate coaches - filter out those not available or not accredited
+    const validCoachIds: string[] = []
+    const invalidCoaches: string[] = []
+
+    for (const coachId of coachIds) {
+      const coachLink = template.defaultCoaches.find((c) => c.coachId === coachId)
+      if (!coachLink) continue
+
+      const coach = coachLink.coach
+
+      // Check gymsport accreditation
+      if (!isCoachAccreditedForGymsport(coach, template.gymsportId)) {
+        invalidCoaches.push(`${coach.name} (not accredited for ${template.gymsport?.name || 'this gymsport'})`)
+        continue
+      }
+
+      // Check availability
+      if (!isCoachAvailable(coach, dayOfWeek, startTimeLocal, endTimeLocal)) {
+        invalidCoaches.push(`${coach.name} (not available on ${dayOfWeek})`)
+        continue
+      }
+
+      validCoachIds.push(coachId)
+    }
+
+    // If no valid coaches, flag as conflict
+    if (validCoachIds.length === 0 && coachIds.length > 0) {
+      conflicts.push({
+        sessionId: sessionKey,
+        reason: `No valid coaches available: ${invalidCoaches.join(', ')}`,
+      })
+    }
+
+    // Use valid coaches or all coaches if no validation issues
+    const finalCoachIds = validCoachIds.length > 0 ? validCoachIds : coachIds
+
     const sessionStart = zonedDate(date, startTimeLocal, timezone)
     const sessionEnd = zonedDate(date, endTimeLocal, timezone)
 
@@ -155,7 +250,7 @@ export async function generateDailyRoster(
         zoneConflict = !allowOverlap
       }
 
-      const coachConflicts = coachIds.some((coachId) => {
+      const coachConflicts = finalCoachIds.some((coachId) => {
         const entries = coachSchedule.get(coachId) || []
         return entries.some((e) => overlaps(cursor, segmentEnd, e.start, e.end))
       })
@@ -168,7 +263,7 @@ export async function generateDailyRoster(
       zoneEntries.push({ start: cursor, end: segmentEnd, sessionKey })
       zoneSchedule.set(assignedZone, zoneEntries)
 
-      for (const coachId of coachIds) {
+      for (const coachId of finalCoachIds) {
         const list = coachSchedule.get(coachId) || []
         list.push({ start: cursor, end: segmentEnd, sessionKey })
         coachSchedule.set(coachId, list)
@@ -207,7 +302,7 @@ export async function generateDailyRoster(
       })
     }
 
-    for (const coachId of coachIds) {
+    for (const coachId of finalCoachIds) {
       await prisma.sessionCoach.create({
         data: {
           sessionId: session.id,

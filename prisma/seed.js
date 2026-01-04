@@ -22,6 +22,17 @@ async function main() {
     { name: 'Tumble Track', description: 'Tumble track and pit' },
   ]
 
+  const predefinedGymsports = [
+    'Artistic Gymnastics (Men\'s)',
+    'Artistic Gymnastics (Women\'s)',
+    'Rhythmic',
+    'Trampoline & Tumbling',
+    'Acrobatics',
+    'Recreation Gymnastics',
+    'KinderGym',
+    'School',
+  ]
+
   const coaches = [
     { name: 'Emma Coach', accreditationLevel: 'Advanced', membershipNumber: 'MEM-001', email: 'emma.coach@elitegymnastics.com.au' },
     { name: 'Liam Coach', accreditationLevel: 'Intermediate', membershipNumber: 'MEM-002', email: 'liam.coach@elitegymnastics.com.au' },
@@ -161,6 +172,24 @@ async function main() {
 
   const zoneRecords = await prisma.zone.findMany({ where: { clubId: testClub.id } })
   const zoneByName = Object.fromEntries(zoneRecords.map((z) => [z.name, z]))
+
+  // Gymsports
+  for (const gymsportName of predefinedGymsports) {
+    await prisma.gymsport.upsert({
+      where: { clubId_name: { clubId: testClub.id, name: gymsportName } },
+      update: { isPredefined: true, active: true },
+      create: {
+        clubId: testClub.id,
+        name: gymsportName,
+        isPredefined: true,
+        active: true,
+      },
+    })
+  }
+  console.log('✓ Seeded gymsports')
+
+  const gymsportRecords = await prisma.gymsport.findMany({ where: { clubId: testClub.id } })
+  const gymsportByName = Object.fromEntries(gymsportRecords.map((g) => [g.name, g]))
 
   // Coaches
   for (const coach of coaches) {
