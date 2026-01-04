@@ -488,7 +488,7 @@ export default function ClassRosteringPage() {
                 <div className="h-[600px]">
                   {rosterSlots.length > 0 ? (
                     <Calendar
-                      key={calendarKey}
+                      key={`${calendarView}-${calendarKey}`}
                       localizer={localizer}
                       events={calendarEvents}
                       startAccessor="start"
