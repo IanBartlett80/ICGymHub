@@ -229,24 +229,38 @@ export async function generateDailyRoster(
 
     const segments: Array<{ start: Date; end: Date; zoneId: string; conflict: boolean }> = []
     let cursor = sessionStart
+    let zoneRotationIndex = 0 // Track which zone we're on in the rotation
+    
     while (cursor < sessionEnd) {
       const remainingMinutes = Math.max(1, Math.ceil((sessionEnd.getTime() - cursor.getTime()) / MINUTE_MS))
       const next = addMinutes(cursor, Math.min(rotationMinutes, remainingMinutes))
       const segmentEnd = next <= sessionEnd ? next : sessionEnd
 
+      // Rotate through zones in order, starting from the current rotation index
       let assignedZone: string | null = null
       let zoneConflict = false
-      for (const zoneId of resolvedAllowedZones) {
+      let checkedZones = 0
+      
+      // Try to find an available zone starting from current rotation position
+      while (checkedZones < resolvedAllowedZones.length) {
+        const zoneIndex = (zoneRotationIndex + checkedZones) % resolvedAllowedZones.length
+        const zoneId = resolvedAllowedZones[zoneIndex]
         const entries = zoneSchedule.get(zoneId) || []
         const conflict = entries.some((e) => !allowOverlap && overlaps(cursor, segmentEnd, e.start, e.end))
+        
         if (!conflict) {
           assignedZone = zoneId
+          // Move to next zone for next rotation
+          zoneRotationIndex = (zoneIndex + 1) % resolvedAllowedZones.length
           break
         }
+        checkedZones++
       }
 
+      // If no zone available without conflict, use the next zone in rotation anyway
       if (!assignedZone) {
-        assignedZone = resolvedAllowedZones[0]
+        assignedZone = resolvedAllowedZones[zoneRotationIndex % resolvedAllowedZones.length]
+        zoneRotationIndex = (zoneRotationIndex + 1) % resolvedAllowedZones.length
         zoneConflict = !allowOverlap
       }
 

@@ -238,9 +238,16 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         .rbc-event {
           padding: 4px;
           border-radius: 4px;
-          font-size: 0.75rem;
-          line-height: 1.2;
+          font-size: 0.8rem;
+          line-height: 1.3;
           white-space: pre-wrap;
+          font-weight: 500;
+        }
+        .rbc-time-slot {
+          min-height: 40px;
+        }
+        .rbc-timeslot-group {
+          min-height: 80px;
         }
         .rbc-toolbar button {
           color: #1f2937;
@@ -352,6 +359,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                   date={calendarDate}
                   onNavigate={handleNavigate}
                   onView={handleViewChange}
+                  min={new Date(1970, 1, 1, 5, 0, 0)} // 5:00 AM
+                  max={new Date(1970, 1, 1, 22, 0, 0)} // 10:00 PM
                   eventPropGetter={(event) => {
                     const slot = event.resource
                     const color = slot.conflictFlag 
