@@ -108,12 +108,17 @@ export default function ClassRosteringPage() {
       const weekStart = format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd')
       const weekEnd = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd')
       
+      console.log('Fetching slots for templates:', selectedTemplates, 'Date range:', weekStart, 'to', weekEnd)
+      
       const response = await fetch(
         `/api/rosters/combined?templateIds=${selectedTemplates.join(',')}&startDate=${weekStart}&endDate=${weekEnd}`
       )
       if (response.ok) {
         const data = await response.json()
-        setRosterSlots(data.slots)
+        console.log('Received slots:', data.slots?.length || 0, data)
+        setRosterSlots(data.slots || [])
+      } else {
+        console.error('Failed to fetch slots:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error fetching roster slots:', error)
@@ -348,6 +353,7 @@ export default function ClassRosteringPage() {
                     view={calendarView}
                     onView={(view) => setCalendarView(view as 'week' | 'day')}
                     views={['week', 'day']}
+                    toolbar={false}
                     step={15}
                     timeslots={4}
                     date={currentDate}
