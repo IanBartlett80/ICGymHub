@@ -66,6 +66,7 @@ export default function ClassesPage() {
     startTimeLocal: '16:00',
     endTimeLocal: '17:00',
     notes: '',
+    color: '#3b82f6',
     allowedZoneIds: [] as string[],
     defaultCoachIds: [] as string[],
   })
@@ -146,6 +147,7 @@ export default function ClassesPage() {
           startTimeLocal: '16:00',
           endTimeLocal: '17:00',
           notes: '',
+          color: '#3b82f6',
           allowedZoneIds: [],
           defaultCoachIds: [],
         })
@@ -171,6 +173,7 @@ export default function ClassesPage() {
       startTimeLocal: classTemplate.startTimeLocal,
       endTimeLocal: classTemplate.endTimeLocal,
       notes: classTemplate.notes || '',
+      color: (classTemplate as any).color || '#3b82f6',
       allowedZoneIds: classTemplate.allowedZones.map((z) => z.zone.id),
       defaultCoachIds: classTemplate.defaultCoaches.map((c) => c.coach.id),
     })
@@ -279,6 +282,7 @@ export default function ClassesPage() {
                 startTimeLocal: '16:00',
                 endTimeLocal: '17:00',
                 notes: '',
+                color: '#3b82f6',
                 allowedZoneIds: [],
                 defaultCoachIds: [],
               })
@@ -392,6 +396,19 @@ export default function ClassesPage() {
                     className="w-full border rounded px-3 py-2"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Calendar Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                      className="h-10 w-20 border rounded cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-600">{formData.color}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">This color will be used in the roster calendar view</p>
                 </div>
               </div>
 

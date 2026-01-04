@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import DashboardLayout from '@/components/DashboardLayout'
 
 type ClassTemplate = {
   id: string
@@ -182,15 +183,25 @@ export default function RosterBuilderPage() {
     }
   }
 
-  if (loading) return <div className="p-8">Loading...</div>
+  if (loading) return (
+    <DashboardLayout 
+      title="Create Class Roster"
+      backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+    >
+      <div className="p-8">Loading...</div>
+    </DashboardLayout>
+  )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Create Class Roster</h1>
-          <p className="text-gray-600">Select classes and customize settings to generate a daily roster</p>
-        </div>
+    <DashboardLayout 
+      title="Create Class Roster"
+      backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+    >
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <p className="text-gray-600">Select classes and customize settings to generate a daily roster</p>
+          </div>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -372,6 +383,6 @@ export default function RosterBuilderPage() {
           </button>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

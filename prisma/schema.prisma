@@ -313,6 +313,7 @@ model ClassTemplate {
   startTimeLocal         String                  // HH:MM in club timezone
   endTimeLocal           String                  // HH:MM in club timezone
   notes                  String?
+  color                  String?                 // Hex color for calendar display (e.g. #3b82f6)
 
   // Relations
   allowedZones   TemplateAllowedZone[]

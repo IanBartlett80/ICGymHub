@@ -37,6 +37,7 @@ const classSchema = z.object({
   startTimeLocal: z.string().regex(/^\d{2}:\d{2}$/),
   endTimeLocal: z.string().regex(/^\d{2}:\d{2}$/),
   notes: z.string().max(1000).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   allowedZoneIds: z.array(z.string()).optional(),
   defaultCoachIds: z.array(z.string()).optional(),
 })
@@ -104,6 +105,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       startTimeLocal,
       endTimeLocal,
       notes,
+      color,
       allowedZoneIds,
       defaultCoachIds,
     } = parsed.data
@@ -132,6 +134,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         startTimeLocal,
         endTimeLocal,
         notes: notes || null,
+        color: color || null,
       },
     })
 

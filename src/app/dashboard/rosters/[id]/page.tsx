@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar'
+import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay } from 'date-fns'
+import DashboardLayout from '@/components/DashboardLayout'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
 const locales = {
@@ -13,10 +13,15 @@ const locales = {
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek,
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }), // Monday
   getDay,
   locales,
 })
+
+type Coach = {
+  id: string
+  name: string
+}
 
 type RosterSlot = {
   id: string
@@ -25,8 +30,16 @@ type RosterSlot = {
   conflictFlag: boolean
   zone: { id: string; name: string }
   session: {
-    template: { name: string } | null
-    coaches: Array<{ coach: { name: string } }>
+    id: string
+    template: { 
+      id: string
+      name: string
+      color: string | null
+    } | null
+    coaches: Array<{ 
+      id: string
+      coach: Coach 
+    }>
   }
 }
 
@@ -49,14 +62,22 @@ type CalendarEvent = {
 
 export default function RosterViewPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
-  const router = useRouter()
   const [roster, setRoster] = useState<Roster | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('calendar')
+  const [calendarView, setCalendarView] = useState<View>('week')
+  const [calendarDate, setCalendarDate] = useState<Date>(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  )
+  const [editingSlot, setEditingSlot] = useState<RosterSlot | null>(null)
+  const [availableCoaches, setAvailableCoaches] = useState<Coach[]>([])
+  const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([])
 
   useEffect(() => {
     fetchRoster()
+    fetchCoaches()
   }, [resolvedParams.id])
 
   const fetchRoster = async () => {
@@ -72,6 +93,18 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
       setError('Failed to load roster')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCoaches = async () => {
+    try {
+      const res = await fetch('/api/coaches')
+      if (res.ok) {
+        const data = await res.json()
+        setAvailableCoaches(data.coaches)
+      }
+    } catch (err) {
+      console.error('Failed to fetch coaches')
     }
   }
 
@@ -103,34 +136,93 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     window.print()
   }
 
-  if (loading) return <div className="p-8">Loading...</div>
+  const handleEventClick = (event: CalendarEvent) => {
+    const slot = event.resource
+    setEditingSlot(slot)
+    setSelectedCoachIds(slot.session.coaches.map((c) => c.coach.id))
+  }
+
+  const toggleCoachSelection = (coachId: string) => {
+    setSelectedCoachIds((prev) =>
+      prev.includes(coachId)
+        ? prev.filter((id) => id !== coachId)
+        : [...prev, coachId]
+    )
+  }
+
+  const handleSaveCoaches = async () => {
+    if (!editingSlot) return
+
+    try {
+      // TODO: Create API endpoint to update session coaches
+      // For now, just close the modal and show message
+      alert('Coach update functionality will be implemented with a new API endpoint')
+      setEditingSlot(null)
+      // await fetchRoster() // Refresh after update
+    } catch (err) {
+      setError('Failed to update coaches')
+    }
+  }
+
+  const handleNavigate = (date: Date) => {
+    setCalendarDate(date)
+  }
+
+  const handleViewChange = (view: View) => {
+    setCalendarView(view)
+  }
+
+  const handleToday = () => {
+    setCalendarDate(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout 
+        title="Roster View" 
+        backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+      >
+        <div className="p-8">Loading...</div>
+      </DashboardLayout>
+    )
+  }
 
   if (error || !roster) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
+      <DashboardLayout 
+        title="Roster View" 
+        backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+      >
+        <div className="p-8">
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {error || 'Roster not found'}
           </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
-  const events: CalendarEvent[] = roster.slots.map((slot) => ({
-    id: slot.id,
-    title: `${slot.session.template?.name || 'Unknown'} - ${slot.zone.name}${
-      slot.conflictFlag ? ' ⚠️' : ''
-    }`,
-    start: new Date(slot.startsAt),
-    end: new Date(slot.endsAt),
-    resource: slot,
-  }))
+  const events: CalendarEvent[] = roster.slots.map((slot) => {
+    const coaches = slot.session.coaches.map((c) => c.coach.name).join(', ')
+    const className = slot.session.template?.name || 'Unknown'
+    const zoneName = slot.zone.name
+    
+    return {
+      id: slot.id,
+      title: `${className}\n${zoneName}\n${coaches}`,
+      start: new Date(slot.startsAt),
+      end: new Date(slot.endsAt),
+      resource: slot,
+    }
+  })
 
   const conflictCount = roster.slots.filter((s) => s.conflictFlag).length
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <DashboardLayout 
+      title={`Roster - ${new Date(roster.startDate).toLocaleDateString()}`}
+      backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+    >
       <style jsx global>{`
         @media print {
           .no-print {
@@ -143,137 +235,293 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         .print-only {
           display: none;
         }
+        .rbc-event {
+          padding: 4px;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          line-height: 1.2;
+          white-space: pre-wrap;
+        }
+        .rbc-toolbar button {
+          color: #1f2937;
+          border: 1px solid #d1d5db;
+          padding: 0.5rem 1rem;
+          margin: 0 0.25rem;
+          background: white;
+        }
+        .rbc-toolbar button:hover {
+          background: #f3f4f6;
+        }
+        .rbc-toolbar button.rbc-active {
+          background: #3b82f6;
+          color: white;
+          border-color: #2563eb;
+        }
       `}</style>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6 no-print">
-          <div>
-            <h1 className="text-3xl font-bold">Roster for {new Date(roster.startDate).toLocaleDateString()}</h1>
-            <p className="text-gray-600 mt-1">
-              {roster.scope} • {roster.status}
-              {conflictCount > 0 && (
-                <span className="ml-2 text-red-600 font-medium">
-                  ⚠️ {conflictCount} conflict{conflictCount !== 1 ? 's' : ''} detected
-                </span>
-              )}
-            </p>
+      <div className="p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Actions */}
+          <div className="flex justify-between items-center mb-6 no-print">
+            <div>
+              <p className="text-gray-600 mt-1">
+                {roster.scope} • {roster.status}
+                {conflictCount > 0 && (
+                  <span className="ml-2 text-red-600 font-medium">
+                    ⚠️ {conflictCount} conflict{conflictCount !== 1 ? 's' : ''} detected
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrint}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+              >
+                Print
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+              >
+                {exporting ? 'Exporting...' : 'Export CSV'}
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handlePrint}
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Print
-            </button>
-            <button
-              onClick={handleExport}
-              disabled={exporting}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {exporting ? 'Exporting...' : 'Export CSV'}
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/rosters')}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Back to Rosters
-            </button>
+
+          {conflictCount > 0 && (
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-6 no-print">
+              <strong>⚠️ Warning:</strong> {conflictCount} slot{conflictCount !== 1 ? 's have' : ' has'} conflicts.
+              Conflicts are marked with red color in the calendar below.
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="mb-4 no-print">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('calendar')}
+                  className={`${
+                    activeTab === 'calendar'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                >
+                  📅 Calendar View
+                </button>
+                <button
+                  onClick={() => setActiveTab('table')}
+                  className={`${
+                    activeTab === 'table'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                >
+                  📋 Table View
+                </button>
+              </nav>
+            </div>
           </div>
-        </div>
 
-        <div className="print-only mb-4">
-          <h1 className="text-2xl font-bold">Roster for {new Date(roster.startDate).toLocaleDateString()}</h1>
-          <p className="text-gray-600">Generated: {new Date().toLocaleString()}</p>
-        </div>
+          {/* Calendar View */}
+          {activeTab === 'calendar' && (
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <div className="mb-4 flex justify-between items-center">
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleToday}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Today
+                  </button>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Click on any class to edit coach assignments</p>
+                </div>
+              </div>
+              <div style={{ height: '700px' }}>
+                <Calendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  view={calendarView}
+                  views={['week', 'day']}
+                  date={calendarDate}
+                  onNavigate={handleNavigate}
+                  onView={handleViewChange}
+                  eventPropGetter={(event) => {
+                    const slot = event.resource
+                    const color = slot.conflictFlag 
+                      ? '#ef4444' 
+                      : slot.session.template?.color || '#3b82f6'
+                    
+                    return {
+                      style: {
+                        backgroundColor: color,
+                        borderColor: slot.conflictFlag ? '#dc2626' : color,
+                        color: '#ffffff',
+                      },
+                    }
+                  }}
+                  onSelectEvent={handleEventClick}
+                  tooltipAccessor={(event) => {
+                    const slot = event.resource
+                    const coaches = slot.session.coaches.map((c) => c.coach.name).join(', ')
+                    let tooltip = `${slot.session.template?.name}\nZone: ${slot.zone.name}\nCoaches: ${coaches || 'None'}`
+                    
+                    if (slot.conflictFlag) {
+                      tooltip += '\n⚠️ CONFLICT: Coach double-booked or zone overlap'
+                    }
+                    
+                    return tooltip
+                  }}
+                  step={15}
+                  timeslots={4}
+                />
+              </div>
+            </div>
+          )}
 
-        {conflictCount > 0 && (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-6 no-print">
-            <strong>⚠️ Warning:</strong> {conflictCount} slot{conflictCount !== 1 ? 's have' : ' has'} conflicts.
-            Conflicts are marked with ⚠️ in the calendar below.
-          </div>
-        )}
-
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div style={{ height: '600px' }}>
-            <Calendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              defaultView="day"
-              views={['day', 'agenda']}
-              defaultDate={new Date(roster.startDate)}
-              eventPropGetter={(event) => ({
-                style: {
-                  backgroundColor: event.resource.conflictFlag ? '#ef4444' : '#3b82f6',
-                  borderColor: event.resource.conflictFlag ? '#dc2626' : '#2563eb',
-                },
-              })}
-              tooltipAccessor={(event) => {
-                const slot = event.resource
-                const coaches = slot.session.coaches.map((c) => c.coach.name).join(', ')
-                return `${slot.session.template?.name}\nZone: ${slot.zone.name}\nCoaches: ${coaches}${
-                  slot.conflictFlag ? '\n⚠️ CONFLICT' : ''
-                }`
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <h2 className="text-xl font-semibold">Roster Details</h2>
-          </div>
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zone</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coaches</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-print">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {roster.slots.map((slot) => {
-                const startTime = new Date(slot.startsAt).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-                const endTime = new Date(slot.endsAt).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-                const duration = Math.round((new Date(slot.endsAt).getTime() - new Date(slot.startsAt).getTime()) / 60000)
-
-                return (
-                  <tr key={slot.id} className={slot.conflictFlag ? 'bg-red-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {startTime} - {endTime}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">
-                      {slot.session.template?.name || 'Unknown'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{slot.zone.name}</td>
-                    <td className="px-6 py-4">
-                      {slot.session.coaches.map((c) => c.coach.name).join(', ') || 'No coaches assigned'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{duration} min</td>
-                    <td className="px-6 py-4 whitespace-nowrap no-print">
-                      {slot.conflictFlag ? (
-                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">⚠️ Conflict</span>
-                      ) : (
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">✓ OK</span>
-                      )}
-                    </td>
+          {/* Table View */}
+          {activeTab === 'table' && (
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b">
+                <h2 className="text-xl font-semibold">Roster Details</h2>
+              </div>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coaches</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-print">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-print">Actions</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {roster.slots.map((slot) => {
+                    const startTime = new Date(slot.startsAt).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                    const endTime = new Date(slot.endsAt).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                    const duration = Math.round((new Date(slot.endsAt).getTime() - new Date(slot.startsAt).getTime()) / 60000)
+
+                    return (
+                      <tr key={slot.id} className={slot.conflictFlag ? 'bg-red-50' : ''}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {startTime} - {endTime}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap font-medium">
+                          <div className="flex items-center gap-2">
+                            {slot.session.template?.color && (
+                              <div 
+                                className="w-3 h-3 rounded"
+                                style={{ backgroundColor: slot.session.template.color }}
+                              />
+                            )}
+                            {slot.session.template?.name || 'Unknown'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{slot.zone.name}</td>
+                        <td className="px-6 py-4">
+                          {slot.session.coaches.map((c) => c.coach.name).join(', ') || 'No coaches assigned'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{duration} min</td>
+                        <td className="px-6 py-4 whitespace-nowrap no-print">
+                          {slot.conflictFlag ? (
+                            <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">⚠️ Conflict</span>
+                          ) : (
+                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">✓ OK</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm no-print">
+                          <button
+                            onClick={() => {
+                              setEditingSlot(slot)
+                              setSelectedCoachIds(slot.session.coaches.map((c) => c.coach.id))
+                            }}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            Edit Coaches
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Coach Edit Modal */}
+          {editingSlot && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
+              <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">
+                  Edit Coaches - {editingSlot.session.template?.name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Zone: {editingSlot.zone.name}<br />
+                  Time: {new Date(editingSlot.startsAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })} - {new Date(editingSlot.endsAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Select Coaches:</label>
+                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded p-3">
+                    {availableCoaches.map((coach) => {
+                      const isSelected = selectedCoachIds.includes(coach.id)
+                      return (
+                        <label key={coach.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleCoachSelection(coach.id)}
+                            className="rounded"
+                          />
+                          <span>{coach.name}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => {
+                      setEditingSlot(null)
+                      setSelectedCoachIds([])
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveCoaches}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
