@@ -354,6 +354,8 @@ export default function ClassRosteringPage() {
                     onView={(view) => setCalendarView(view as 'week' | 'day')}
                     views={['week', 'day']}
                     toolbar={false}
+                    min={new Date(2026, 0, 1, 5, 0, 0)}
+                    max={new Date(2026, 0, 1, 22, 0, 0)}
                     step={15}
                     timeslots={4}
                     date={currentDate}
