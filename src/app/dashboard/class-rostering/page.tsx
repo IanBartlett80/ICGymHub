@@ -122,9 +122,12 @@ export default function ClassRosteringPage() {
       const response = await fetch('/api/roster-templates')
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched templates:', data.templates)
         setTemplates(data.templates)
         // Select all templates by default
-        setSelectedTemplates(data.templates.map((t: RosterTemplate) => t.id))
+        const allTemplateIds = data.templates.map((t: RosterTemplate) => t.id)
+        console.log('Setting selectedTemplates to:', allTemplateIds)
+        setSelectedTemplates(allTemplateIds)
       }
       setLoading(false)
     } catch (error) {
@@ -244,6 +247,13 @@ export default function ClassRosteringPage() {
     ? rosterSlots
     : rosterSlots.filter(slot => slot.session.template.name === selectedClass)
 
+  console.log('Filtering:', {
+    selectedTemplates,
+    selectedClass,
+    totalRosterSlots: rosterSlots.length,
+    filteredSlotsCount: filteredSlots.length
+  })
+
   const calendarEvents: CalendarEvent[] = filteredSlots.map(slot => ({
     id: slot.id,
     title: `${slot.session.template.name} - ${slot.zoneName}`,
@@ -339,9 +349,13 @@ export default function ClassRosteringPage() {
                     value={selectedTemplates.length === 1 ? selectedTemplates[0] : 'all'}
                     onChange={(e) => {
                       const value = e.target.value
+                      console.log('Template dropdown changed to:', value)
                       if (value === 'all') {
-                        setSelectedTemplates(templates.map(t => t.id))
+                        const allIds = templates.map(t => t.id)
+                        console.log('Setting all templates:', allIds)
+                        setSelectedTemplates(allIds)
                       } else {
+                        console.log('Setting single template:', value)
                         setSelectedTemplates([value])
                       }
                     }}
