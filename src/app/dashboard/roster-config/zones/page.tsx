@@ -16,7 +16,10 @@ export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '', allowOverlap: false, active: true })
 
   useEffect(() => {
@@ -53,6 +56,8 @@ export default function ZonesPage() {
         await fetchZones()
         setFormData({ name: '', description: '', allowOverlap: false, active: true })
         setEditingId(null)
+        setShowForm(false)
+        setSuccess('Zone saved successfully')
       } else {
         setError('Failed to save zone')
       }
@@ -69,14 +74,19 @@ export default function ZonesPage() {
       allowOverlap: zone.allowOverlap,
       active: zone.active,
     })
+    setShowForm(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure?')) return
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return
     try {
-      const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/zones/${deleteConfirmId}`, { method: 'DELETE' })
       if (res.ok) {
         await fetchZones()
+        setDeleteConfirmId(null)
+        setSuccess('Zone deleted successfully')
+      } else {
+        setError('Failed to delete zone')
       }
     } catch (err) {
       setError('Failed to delete zone')
@@ -86,146 +96,178 @@ export default function ZonesPage() {
   if (loading) {
     return (
       <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}>
-        <div className="p-6">
-          <div className="text-gray-600">Loading...</div>
-        </div>
+        <div className="p-8">Loading...</div>
       </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}>
-      <div className="p-6 max-w-6xl mx-auto">
-        {error && (
-          <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-8 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6">
-            {editingId ? 'Edit Zone' : 'Add New Zone'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Zone Name *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Floor, Vault, Bars, Beam"
-                className="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Description</label>
-              <input
-                type="text"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description..."
-                className="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.allowOverlap}
-                  onChange={(e) => setFormData({ ...formData, allowOverlap: e.target.checked })}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-white text-sm">Allow Overlap</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.active}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-white text-sm">Active</span>
-              </label>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
-              >
-                {editingId ? 'Update Zone' : 'Add Zone'}
-              </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null)
-                    setFormData({ name: '', description: '', allowOverlap: false, active: true })
-                  }}
-                  className="px-6 py-2 bg-neutral-700 hover:bg-neutral-600 text-white font-semibold rounded-lg transition"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Zones List */}
-        <div className="bg-neutral-800 border border-neutral-700 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 bg-neutral-900 border-b border-neutral-700">
-            <h2 className="text-xl font-bold text-white">Zones ({zones.length})</h2>
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Manage Gym Zones</h2>
+            <button
+              onClick={() => {
+                setShowForm(!showForm)
+                setEditingId(null)
+                setFormData({ name: '', description: '', allowOverlap: false, active: true })
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              {showForm ? 'Cancel' : 'Add Zone'}
+            </button>
           </div>
 
-          {zones.length === 0 ? (
-            <div className="px-6 py-8 text-center text-neutral-400">
-              No zones created yet. Add your first zone above.
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
             </div>
-          ) : (
-            <div className="divide-y divide-neutral-700">
-              {zones.map((zone) => (
-                <div key={zone.id} className="px-6 py-4 hover:bg-neutral-700/50 transition flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white text-lg">{zone.name}</h3>
-                    {zone.description && <p className="text-neutral-400 text-sm mt-1">{zone.description}</p>}
-                    <div className="flex gap-3 mt-2">
-                      {zone.allowOverlap && (
-                        <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">
-                          Overlap Allowed
-                        </span>
-                      )}
-                      {zone.active ? (
-                        <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-xs bg-neutral-500/20 text-neutral-300 px-2 py-1 rounded">
-                          Inactive
-                        </span>
-                      )}
-                    </div>
+          )}
+
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {success}
+            </div>
+          )}
+
+          {showForm && (
+            <div className="bg-white p-6 rounded-lg shadow mb-6">
+              <h2 className="text-xl font-semibold mb-4">{editingId ? 'Edit Zone' : 'Add New Zone'}</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Zone Name *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g., Floor, Vault, Bars, Beam"
+                      className="w-full border rounded px-3 py-2"
+                      required
+                    />
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => handleEdit(zone)}
-                      className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white rounded-lg transition text-sm font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(zone.id)}
-                      className="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white rounded-lg transition text-sm font-medium"
-                    >
-                      Delete
-                    </button>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Brief description..."
+                      className="w-full border rounded px-3 py-2"
+                    />
                   </div>
                 </div>
-              ))}
+
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowOverlap}
+                      onChange={(e) => setFormData({ ...formData, allowOverlap: e.target.checked })}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Allow Overlap</span>
+                  </label>
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.active}
+                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Active</span>
+                  </label>
+                </div>
+
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                  {editingId ? 'Update Zone' : 'Create Zone'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Settings</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {zones.map((zone) => (
+                  <tr key={zone.id}>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">{zone.name}</td>
+                    <td className="px-6 py-4">{zone.description || '-'}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        {zone.allowOverlap && (
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                            Overlap Allowed
+                          </span>
+                        )}
+                        {zone.active ? (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => handleEdit(zone)}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(zone.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {zones.length === 0 && (
+              <div className="text-center py-8 text-gray-500">No zones configured yet.</div>
+            )}
+          </div>
+
+          {/* Delete Confirmation Modal */}
+          {deleteConfirmId && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this zone? This action cannot be undone.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    className="px-4 py-2 border rounded hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
