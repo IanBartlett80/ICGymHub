@@ -81,25 +81,28 @@ export async function PATCH(
     let sessionIds = [sessionId]
     
     if (zoneScope === 'all') {
-      const roster = await prisma.roster.findFirst({
-        where: {
-          sessions: {
-            some: { id: sessionId }
-          }
-        },
-        include: {
-          sessions: {
-            where: {
-              startTime: session.startTime,
-              endTime: session.endTime,
-            },
-            select: { id: true }
-          }
-        }
+      // Find the roster that contains this session
+      const slot = await prisma.rosterSlot.findFirst({
+        where: { sessionId },
+        select: { rosterId: true }
       })
       
-      if (roster) {
-        sessionIds = roster.sessions.map(s => s.id)
+      if (slot) {
+        // Find all sessions at the same time on this roster
+        const allSessions = await prisma.classSession.findMany({
+          where: {
+            startTime: session.startTime,
+            endTime: session.endTime,
+            slots: {
+              some: {
+                rosterId: slot.rosterId
+              }
+            }
+          },
+          select: { id: true }
+        })
+        
+        sessionIds = allSessions.map(s => s.id)
       }
     }
 
@@ -119,6 +122,7 @@ export async function PATCH(
           },
         })
       }
+    }
     }
 
     // Update session times if provided
