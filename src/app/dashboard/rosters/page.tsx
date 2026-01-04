@@ -299,13 +299,3 @@ export default function RostersPage() {
     </DashboardLayout>
   )
 }
-
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
-  )
-}
