@@ -470,31 +470,37 @@ export default function ClassRosteringPage() {
                 </div>
 
                 <div className="h-[600px]">
-                  <Calendar
-                    localizer={localizer}
-                    events={calendarEvents}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: '100%' }}
-                    view={calendarView}
-                    onView={(view) => setCalendarView(view as 'week' | 'day')}
-                    views={['week', 'day']}
-                    toolbar={false}
-                    min={new Date(2026, 0, 1, 5, 0, 0)}
-                    max={new Date(2026, 0, 1, 22, 0, 0)}
-                    step={15}
-                    timeslots={4}
-                    date={currentDate}
-                    onNavigate={(date) => setCurrentDate(date)}
-                    eventPropGetter={(event) => ({
-                      style: {
-                        backgroundColor: event.resource.session.template.color || '#3b82f6',
-                        borderColor: event.resource.conflictFlag ? '#ef4444' : event.resource.session.template.color || '#3b82f6',
-                        borderWidth: event.resource.conflictFlag ? '2px' : '1px',
-                      },
-                    })}
-                    onSelectEvent={handleEventClick}
-                  />
+                  {rosterSlots.length > 0 ? (
+                    <Calendar
+                      localizer={localizer}
+                      events={calendarEvents}
+                      startAccessor="start"
+                      endAccessor="end"
+                      style={{ height: '100%' }}
+                      view={calendarView}
+                      onView={(view) => setCalendarView(view as 'week' | 'day')}
+                      views={['week', 'day']}
+                      toolbar={false}
+                      min={new Date(2026, 0, 1, 5, 0, 0)}
+                      max={new Date(2026, 0, 1, 22, 0, 0)}
+                      step={15}
+                      timeslots={4}
+                      date={currentDate}
+                      onNavigate={(date) => setCurrentDate(date)}
+                      eventPropGetter={(event) => ({
+                        style: {
+                          backgroundColor: event.resource.session.template.color || '#3b82f6',
+                          borderColor: event.resource.conflictFlag ? '#ef4444' : event.resource.session.template.color || '#3b82f6',
+                          borderWidth: event.resource.conflictFlag ? '2px' : '1px',
+                        },
+                      })}
+                      onSelectEvent={handleEventClick}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      {loading ? 'Loading calendar...' : 'No roster sessions found for this week'}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
