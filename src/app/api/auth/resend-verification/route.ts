@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendVerificationEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -57,19 +58,30 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Generate verification link
-    const verificationLink = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`
-
-    // TODO: Send email via SMTP/SendGrid
-    console.log(`📧 Verification email would be sent to ${email}`)
-    console.log(`🔗 Verification link: ${verificationLink}`)
+    // Send verification email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    
+    try {
+      await sendVerificationEmail({
+        to: user.email,
+        clubName: user.club.name,
+        verificationToken,
+        appUrl,
+      })
+      console.log(`✅ Verification email sent to ${email}`)
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError)
+      return NextResponse.json(
+        { error: 'Failed to send verification email. Please try again later.' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json(
       {
         message: 'Verification email sent successfully',
         email: user.email,
         note: 'Check your email for the verification link. It will expire in 24 hours.',
-        verificationLink, // In development only; remove in production
       },
       { status: 200 }
     )

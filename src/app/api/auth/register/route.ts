@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, normalizeDomain } from '@/lib/validation'
+import { sendVerificationEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
     // Create email verification token if needed
     if (!isConsumer) {
       verificationToken = crypto.randomBytes(32).toString('hex')
-      const tokenHash = require('crypto').createHash('sha256').update(verificationToken).digest('hex')
+      const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex')
 
       const user = club.users[0]
 
@@ -162,6 +163,21 @@ export async function POST(req: NextRequest) {
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
         },
       })
+
+      // Send verification email
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        await sendVerificationEmail({
+          to: adminEmail,
+          clubName,
+          verificationToken,
+          appUrl,
+        })
+        console.log(`✅ Verification email sent to ${adminEmail}`)
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError)
+        // Don't fail registration if email fails - user can resend
+      }
     }
 
     // Initialize club services
