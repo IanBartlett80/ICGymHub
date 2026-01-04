@@ -229,6 +229,7 @@ export default function ZonesPage() {
             </div>
           )}
         </div>
-      </DashboardLayout>
+      </div>
+    </DashboardLayout>
   )
 }
