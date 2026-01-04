@@ -46,8 +46,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (startDate && endDate) {
-      where.startDate = { gte: new Date(startDate) }
-      where.endDate = { lte: new Date(endDate) }
+      // Use overlapping date logic: roster overlaps if its startDate <= search endDate AND its endDate >= search startDate
+      where.AND = [
+        { startDate: { lte: new Date(endDate) } },
+        { endDate: { gte: new Date(startDate) } }
+      ]
     }
 
     // Fetch rosters with slots

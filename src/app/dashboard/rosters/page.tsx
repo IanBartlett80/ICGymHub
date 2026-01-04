@@ -158,22 +158,27 @@ export default function RostersPage() {
     }
   }
 
-  const handlePublishTemplate = async (templateId: string) => {
-    if (!confirm('This will publish all rosters in this template. They will become visible in reports and calendars. Continue?')) return
+  const handlePublishTemplate = async (templateId: string, unpublish = false) => {
+    const action = unpublish ? 'unpublish' : 'publish'
+    if (!confirm(`This will ${action} all rosters in this template. Continue?`)) return
 
     setPublishingTemplate(templateId)
     try {
-      const res = await fetch(`/api/roster-templates/${templateId}/publish`, { method: 'POST' })
+      const res = await fetch(`/api/roster-templates/${templateId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unpublish })
+      })
       if (res.ok) {
         const data = await res.json()
         await fetchRosters()
-        setSuccess(`Successfully published ${data.count} roster(s)`)
+        setSuccess(`Successfully ${action}ed ${data.count} roster(s)`)
         setTimeout(() => setSuccess(''), 3000)
       } else {
-        setError('Failed to publish template rosters')
+        setError(`Failed to ${action} template rosters`)
       }
     } catch (err) {
-      setError('Failed to publish template rosters')
+      setError(`Failed to ${action} template rosters`)
     } finally {
       setPublishingTemplate(null)
     }
@@ -302,11 +307,20 @@ export default function RostersPage() {
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           {!allPublished && (
                             <button
-                              onClick={() => handlePublishTemplate(group.templateId!)}
+                              onClick={() => handlePublishTemplate(group.templateId!, false)}
                               disabled={publishingTemplate === group.templateId}
                               className="px-3 py-1.5 text-sm font-medium text-green-600 hover:text-white hover:bg-green-600 border border-green-600 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {publishingTemplate === group.templateId ? 'Publishing...' : 'Publish All'}
+                            </button>
+                          )}
+                          {allPublished && (
+                            <button
+                              onClick={() => handlePublishTemplate(group.templateId!, true)}
+                              disabled={publishingTemplate === group.templateId}
+                              className="px-3 py-1.5 text-sm font-medium text-orange-600 hover:text-white hover:bg-orange-600 border border-orange-600 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {publishingTemplate === group.templateId ? 'Unpublishing...' : 'Unpublish All'}
                             </button>
                           )}
                           <button
