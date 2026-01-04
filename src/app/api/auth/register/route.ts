@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       clubDomains: {
         create: {
           domain: domainForUse,
-          verified: isConsumer, // Auto-verify consumer domains; require verification for club domains
+          verified: false, // All domains require verification (consumer or business)
         },
       },
     }
@@ -147,37 +147,35 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Create email verification token if needed
-    if (!isConsumer) {
-      verificationToken = crypto.randomBytes(32).toString('hex')
-      const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex')
+    // Create email verification token for ALL registrations (consumer and business)
+    verificationToken = crypto.randomBytes(32).toString('hex')
+    const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex')
 
-      const user = club.users[0]
+    const user = club.users[0]
 
-      await prisma.emailVerification.create({
-        data: {
-          userId: user.id,
-          clubId: club.id,
-          email: adminEmail,
-          tokenHash,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-        },
+    await prisma.emailVerification.create({
+      data: {
+        userId: user.id,
+        clubId: club.id,
+        email: adminEmail,
+        tokenHash,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+    })
+
+    // Send verification email to all users (consumer or business)
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      await sendVerificationEmail({
+        to: adminEmail,
+        clubName,
+        verificationToken,
+        appUrl,
       })
-
-      // Send verification email
-      try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        await sendVerificationEmail({
-          to: adminEmail,
-          clubName,
-          verificationToken,
-          appUrl,
-        })
-        console.log(`✅ Verification email sent to ${adminEmail}`)
-      } catch (emailError) {
-        console.error('Failed to send verification email:', emailError)
-        // Don't fail registration if email fails - user can resend
-      }
+      console.log(`✅ Verification email sent to ${adminEmail}`)
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError)
+      // Don't fail registration if email fails - user can resend
     }
 
     // Initialize club services
@@ -207,9 +205,11 @@ export async function POST(req: NextRequest) {
       {
         message: 'Club registered successfully',
         clubId: club.id,
-        requiresEmailVerification: !isConsumer,
-        note: isConsumer ? 'Email verified automatically. Your club is pending domain verification.' : 'Please check your email to verify your club domain.',
-        verificationLink: !isConsumer ? `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}` : undefined, // Development only
+        requiresEmailVerification: true,
+        note: isConsumer 
+          ? 'Please check your email to verify your account. Consumer email addresses (Gmail, Yahoo, etc.) must also be verified.'
+          : 'Please check your email to verify your account and club domain.',
+        verificationLink: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`, // Development only
       },
       { status: 201 }
     )
