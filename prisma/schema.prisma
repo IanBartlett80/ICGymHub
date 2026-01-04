@@ -430,7 +430,7 @@ model Roster {
   id            String        @id @default(cuid())
   club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId        String
-  template      RosterTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template      RosterTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId    String?
   scope         String        // DAY or WEEK
   dayOfWeek     String?       // MON, TUE, WED, etc. (for template-based rosters)
