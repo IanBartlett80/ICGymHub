@@ -49,6 +49,8 @@ type Roster = {
   startDate: string
   endDate: string
   status: string
+  templateId: string | null
+  dayOfWeek: string | null
   slots: RosterSlot[]
 }
 
@@ -74,6 +76,10 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   const [editingSlot, setEditingSlot] = useState<RosterSlot | null>(null)
   const [availableCoaches, setAvailableCoaches] = useState<Coach[]>([])
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([])
+  const [editScope, setEditScope] = useState<'single' | 'future'>('single')
+  const [editingTime, setEditingTime] = useState(false)
+  const [sessionStartTime, setSessionStartTime] = useState('')
+  const [sessionEndTime, setSessionEndTime] = useState('')
 
   useEffect(() => {
     fetchRoster()
@@ -140,6 +146,14 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     const slot = event.resource
     setEditingSlot(slot)
     setSelectedCoachIds(slot.session.coaches.map((c) => c.coach.id))
+    setEditScope('single')
+    setEditingTime(false)
+    
+    // Set time fields
+    const startDate = new Date(slot.startsAt)
+    const endDate = new Date(slot.endsAt)
+    setSessionStartTime(format(startDate, 'HH:mm'))
+    setSessionEndTime(format(endDate, 'HH:mm'))
   }
 
   const toggleCoachSelection = (coachId: string) => {
@@ -154,15 +168,40 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     if (!editingSlot) return
 
     try {
-      const res = await fetch(`/api/rosters/sessions/${editingSlot.session.id}/coaches`, {
+      const updateData: any = { coachIds: selectedCoachIds }
+      
+      // If editing time, include time updates
+      if (editingTime) {
+        updateData.startTime = sessionStartTime
+        updateData.endTime = sessionEndTime
+      }
+      
+      // Determine endpoint based on edit scope
+      const endpoint = editScope === 'future' && roster?.templateId
+        ? `/api/rosters/bulk-update-future`
+        : `/api/rosters/sessions/${editingSlot.session.id}/coaches`
+      
+      const body = editScope === 'future' && roster?.templateId
+        ? {
+            templateId: roster.templateId,
+            dayOfWeek: roster.dayOfWeek,
+            startDate: roster.startDate,
+            sessionId: editingSlot.session.id,
+            ...updateData
+          }
+        : updateData
+
+      const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coachIds: selectedCoachIds }),
+        body: JSON.stringify(body),
       })
 
       if (res.ok) {
         setEditingSlot(null)
         setSelectedCoachIds([])
+        setEditScope('single')
+        setEditingTime(false)
         await fetchRoster() // Refresh to show updated coaches
       } else {
         const data = await res.json()
@@ -483,9 +522,9 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
           {/* Coach Edit Modal */}
           {editingSlot && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
-              <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+              <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold mb-4">
-                  Edit Coaches - {editingSlot.session.template?.name}
+                  Edit Session - {editingSlot.session.template?.name}
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Zone: {editingSlot.zone.name}<br />
@@ -498,9 +537,87 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                   })}
                 </p>
                 
+                {/* Edit Scope - Only show if part of a template */}
+                {roster?.templateId && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <label className="block text-sm font-medium mb-2">Apply changes to:</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="single"
+                          checked={editScope === 'single'}
+                          onChange={(e) => setEditScope(e.target.value as 'single' | 'future')}
+                          className="rounded"
+                        />
+                        <div>
+                          <div className="font-medium">This Day Only</div>
+                          <div className="text-xs text-gray-600">
+                            Changes apply only to {format(new Date(roster.startDate), 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="future"
+                          checked={editScope === 'future'}
+                          onChange={(e) => setEditScope(e.target.value as 'single' | 'future')}
+                          className="rounded"
+                        />
+                        <div>
+                          <div className="font-medium">All Future {roster.dayOfWeek}s</div>
+                          <div className="text-xs text-gray-600">
+                            Changes apply to this and all future {roster.dayOfWeek} rosters in template
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Time Editing Toggle */}
+                <div className="mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingTime}
+                      onChange={(e) => setEditingTime(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-sm font-medium">Edit session times</span>
+                  </label>
+                </div>
+
+                {/* Time Fields */}
+                {editingTime && (
+                  <div className="mb-4 p-3 bg-gray-50 border rounded">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Start Time</label>
+                        <input
+                          type="time"
+                          value={sessionStartTime}
+                          onChange={(e) => setSessionStartTime(e.target.value)}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">End Time</label>
+                        <input
+                          type="time"
+                          value={sessionEndTime}
+                          onChange={(e) => setSessionEndTime(e.target.value)}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Select Coaches:</label>
-                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded p-3">
+                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3">
                     {availableCoaches.map((coach) => {
                       const isSelected = selectedCoachIds.includes(coach.id)
                       return (
@@ -523,6 +640,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                     onClick={() => {
                       setEditingSlot(null)
                       setSelectedCoachIds([])
+                      setEditScope('single')
+                      setEditingTime(false)
                     }}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                   >

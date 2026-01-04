@@ -35,8 +35,19 @@ export async function GET(req: NextRequest) {
 
     const rosters = await prisma.roster.findMany({
       where: { clubId: user.clubId },
+      include: {
+        template: {
+          select: {
+            id: true,
+            name: true,
+            startDate: true,
+            endDate: true,
+            activeDays: true,
+          },
+        },
+      },
       orderBy: { startDate: 'desc' },
-      take: 50,
+      take: 200,
     })
 
     return NextResponse.json({ rosters }, { status: 200 })

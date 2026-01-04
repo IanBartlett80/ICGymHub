@@ -40,6 +40,7 @@ model Club {
   coaches            Coach[]
   classTemplates     ClassTemplate[]
   classSessions      ClassSession[]
+  rosterTemplates    RosterTemplate[]
   rosters            Roster[]
   coachImportJobs    CoachImportJob[]
   rosterExports      RosterExport[]
@@ -83,12 +84,13 @@ model User {
   lockedUntil        DateTime?
   
   // Relations
-  sessions           Session[]
-  passwordResets     PasswordReset[]
-  auditLogs          AuditLog[]
-  emailVerifications EmailVerification[]
-  generatedSessions  ClassSession[] @relation("SessionGeneratedBy")
-  generatedRosters   Roster[]       @relation("RosterGeneratedBy")
+  sessions              Session[]
+  passwordResets        PasswordReset[]
+  auditLogs             AuditLog[]
+  emailVerifications    EmailVerification[]
+  generatedSessions     ClassSession[] @relation("SessionGeneratedBy")
+  createdRosterTemplates RosterTemplate[] @relation("RosterTemplateCreatedBy")
+  generatedRosters      Roster[]       @relation("RosterGeneratedBy")
   
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -399,13 +401,39 @@ model SessionCoach {
   @@unique([sessionId, coachId])
 }
 
-// Rosters
+// Roster Templates
+model RosterTemplate {
+  id            String        @id @default(cuid())
+  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  name          String        // e.g. "Monday Training Program"
+  startDate     DateTime      // Start of date range
+  endDate       DateTime      // End of date range
+  activeDays    String        // Comma-separated days: MON,WED,FRI
+  status        String        @default("ACTIVE") // ACTIVE or ARCHIVED
+  createdBy     User?         @relation("RosterTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById   String?
+
+  // Relations
+  rosters       Roster[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clubId])
+  @@index([status])
+}
+
+// Rosters (individual day instances)
 model Roster {
   id            String        @id @default(cuid())
   club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId        String
+  template      RosterTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId    String?
   scope         String        // DAY or WEEK
-  startDate     DateTime
+  dayOfWeek     String?       // MON, TUE, WED, etc. (for template-based rosters)
+  startDate     DateTime      // The specific date this roster is for
   endDate       DateTime
   status        String        @default("DRAFT") // DRAFT or PUBLISHED
   generatedAt   DateTime?

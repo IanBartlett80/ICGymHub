@@ -28,6 +28,8 @@ async function getAuthenticatedUser(req: NextRequest) {
 
 const updateCoachesSchema = z.object({
   coachIds: z.array(z.string()),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
 })
 
 // PATCH /api/rosters/sessions/[sessionId]/coaches - Update coaches for a session
@@ -60,7 +62,7 @@ export async function PATCH(
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { coachIds } = parsed.data
+    const { coachIds, startTime, endTime } = parsed.data
 
     // Verify all coaches belong to the club
     const coaches = await prisma.coach.findMany({
@@ -87,6 +89,65 @@ export async function PATCH(
           coachId,
         },
       })
+    }
+
+    // Update session times if provided
+    if (startTime || endTime) {
+      const roster = await prisma.roster.findFirst({
+        where: {
+          sessions: {
+            some: { id: sessionId }
+          }
+        }
+      });
+
+      if (roster) {
+        const updateData: any = {};
+        if (startTime) {
+          const sessionDate = new Date(roster.startDate);
+          const [hours, minutes] = startTime.split(':');
+          sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          updateData.startTime = sessionDate;
+        }
+        if (endTime) {
+          const sessionDate = new Date(roster.startDate);
+          const [hours, minutes] = endTime.split(':');
+          sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          updateData.endTime = sessionDate;
+        }
+
+        await prisma.classSession.update({
+          where: { id: sessionId },
+          data: updateData,
+        });
+
+        // Update associated slots
+        if (startTime || endTime) {
+          const slots = await prisma.rosterSlot.findMany({
+            where: { sessionId },
+            orderBy: { startsAt: 'asc' },
+          });
+
+          const sessionStartTime = updateData.startTime || session.startTime;
+          const sessionEndTime = updateData.endTime || session.endTime;
+
+          for (let i = 0; i < slots.length; i++) {
+            const slot = slots[i];
+            const rotationMs = (slot.endsAt.getTime() - slot.startsAt.getTime());
+            const newStart = new Date(sessionStartTime);
+            newStart.setTime(newStart.getTime() + i * rotationMs);
+            const newEnd = new Date(newStart.getTime() + rotationMs);
+
+            await prisma.rosterSlot.update({
+              where: { id: slot.id },
+              data: {
+                startsAt: newStart,
+                endsAt: newEnd,
+              },
+            });
+          }
+        }
+      }
     }
 
     // Fetch updated session with coaches
