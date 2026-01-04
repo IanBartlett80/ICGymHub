@@ -36,9 +36,11 @@ export default function RostersPage() {
   const [rosters, setRosters] = useState<Roster[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set())
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<{ id: string; name: string; rosterCount: number } | null>(null)
+  const [publishingTemplate, setPublishingTemplate] = useState<string | null>(null)
 
   useEffect(() => {
     fetchRosters()
@@ -156,6 +158,27 @@ export default function RostersPage() {
     }
   }
 
+  const handlePublishTemplate = async (templateId: string) => {
+    if (!confirm('This will publish all rosters in this template. They will become visible in reports and calendars. Continue?')) return
+
+    setPublishingTemplate(templateId)
+    try {
+      const res = await fetch(`/api/roster-templates/${templateId}/publish`, { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        await fetchRosters()
+        setSuccess(`Successfully published ${data.count} roster(s)`)
+        setTimeout(() => setSuccess(''), 3000)
+      } else {
+        setError('Failed to publish template rosters')
+      }
+    } catch (err) {
+      setError('Failed to publish template rosters')
+    } finally {
+      setPublishingTemplate(null)
+    }
+  }
+
   if (loading) {
     return (
       <DashboardLayout 
@@ -192,6 +215,12 @@ export default function RostersPage() {
             </div>
           )}
 
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {success}
+            </div>
+          )}
+
           {groupedRosters.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-8 text-center">
               <p className="text-gray-500 mb-4">No roster templates created yet.</p>
@@ -207,6 +236,9 @@ export default function RostersPage() {
               {groupedRosters.map((group) => {
                 const isExpanded = expandedTemplates.has(group.groupKey)
                 const isTemplate = group.templateId !== null
+                const allPublished = group.rosters.every(r => r.status === 'PUBLISHED')
+                const hasAnyPublished = group.rosters.some(r => r.status === 'PUBLISHED')
+                const allDraft = group.rosters.every(r => r.status === 'DRAFT')
 
                 return (
                   <div key={group.groupKey} className="bg-white rounded-lg shadow overflow-hidden">
@@ -238,6 +270,21 @@ export default function RostersPage() {
                             )}
                             <h3 className="font-semibold text-lg text-gray-900">{group.templateName}</h3>
                           </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {allPublished ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                ✓ All Published
+                              </span>
+                            ) : hasAnyPublished ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Partially Published
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                Draft
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-600 mt-1">
                             {format(new Date(group.startDate), 'MMM dd, yyyy')} - {format(new Date(group.endDate), 'MMM dd, yyyy')}
                             <span className="mx-2">•</span>
@@ -253,6 +300,15 @@ export default function RostersPage() {
                       </div>
                       {isTemplate && (
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                          {!allPublished && (
+                            <button
+                              onClick={() => handlePublishTemplate(group.templateId!)}
+                              disabled={publishingTemplate === group.templateId}
+                              className="px-3 py-1.5 text-sm font-medium text-green-600 hover:text-white hover:bg-green-600 border border-green-600 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {publishingTemplate === group.templateId ? 'Publishing...' : 'Publish All'}
+                            </button>
+                          )}
                           <button
                             onClick={() => handleRegenerateTemplate(group.templateId!)}
                             className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-600 rounded transition-colors"

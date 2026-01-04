@@ -67,7 +67,9 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   const [roster, setRoster] = useState<Roster | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('calendar')
   const [calendarView, setCalendarView] = useState<View>('week')
   const [calendarDate, setCalendarDate] = useState<Date>(
@@ -141,6 +143,36 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
 
   const handlePrint = () => {
     window.print()
+  }
+
+  const handlePublishToggle = async () => {
+    if (!roster) return
+
+    const newStatus = roster.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
+    const action = newStatus === 'PUBLISHED' ? 'publish' : 'unpublish'
+    
+    if (!confirm(`Are you sure you want to ${action} this roster?`)) return
+
+    setPublishing(true)
+    try {
+      const res = await fetch(`/api/rosters/${resolvedParams.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (res.ok) {
+        await fetchRoster()
+        setSuccess(`Roster ${action}ed successfully`)
+        setTimeout(() => setSuccess(''), 3000)
+      } else {
+        setError(`Failed to ${action} roster`)
+      }
+    } catch (err) {
+      setError(`Failed to ${action} roster`)
+    } finally {
+      setPublishing(false)
+    }
   }
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -324,16 +356,36 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
           {/* Header Actions */}
           <div className="flex justify-between items-center mb-6 no-print">
             <div>
-              <p className="text-gray-600 mt-1">
-                {roster.scope} • {roster.status}
+              <div className="flex items-center gap-2 mt-1">
+                <span
+                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    roster.status === 'PUBLISHED'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
+                  {roster.status}
+                </span>
+                <span className="text-gray-600">{roster.scope}</span>
                 {conflictCount > 0 && (
-                  <span className="ml-2 text-red-600 font-medium">
+                  <span className="text-red-600 font-medium">
                     ⚠️ {conflictCount} conflict{conflictCount !== 1 ? 's' : ''} detected
                   </span>
                 )}
-              </p>
+              </div>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={handlePublishToggle}
+                disabled={publishing}
+                className={`${
+                  roster.status === 'PUBLISHED'
+                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                } text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {publishing ? 'Processing...' : roster.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
+              </button>
               <button
                 onClick={handlePrint}
                 className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
@@ -349,6 +401,12 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
               </button>
             </div>
           </div>
+
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 no-print">
+              {success}
+            </div>
+          )}
 
           {conflictCount > 0 && (
             <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-6 no-print">
