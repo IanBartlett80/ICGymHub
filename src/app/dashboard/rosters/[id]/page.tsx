@@ -77,6 +77,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   const [availableCoaches, setAvailableCoaches] = useState<Coach[]>([])
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([])
   const [editScope, setEditScope] = useState<'single' | 'future'>('single')
+  const [zoneScope, setZoneScope] = useState<'single' | 'all'>('single')
   const [editingTime, setEditingTime] = useState(false)
   const [sessionStartTime, setSessionStartTime] = useState('')
   const [sessionEndTime, setSessionEndTime] = useState('')
@@ -168,7 +169,10 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     if (!editingSlot) return
 
     try {
-      const updateData: any = { coachIds: selectedCoachIds }
+      const updateData: any = { 
+        coachIds: selectedCoachIds,
+        zoneScope: zoneScope // 'single' or 'all'
+      }
       
       // If editing time, include time updates
       if (editingTime) {
@@ -201,6 +205,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         setEditingSlot(null)
         setSelectedCoachIds([])
         setEditScope('single')
+        setZoneScope('single')
         setEditingTime(false)
         await fetchRoster() // Refresh to show updated coaches
       } else {
@@ -538,9 +543,47 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                 </p>
                 
                 {/* Edit Scope - Only show if part of a template */}
-                {roster?.templateId && (
+                  {/* Zone Scope Selection */}
+                  <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded">
+                    <label className="block text-sm font-medium mb-2">Apply coach changes to:</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="single"
+                          checked={zoneScope === 'single'}
+                          onChange={(e) => setZoneScope(e.target.value as 'single' | 'all')}
+                          className="rounded"
+                        />
+                        <div>
+                          <div className="font-medium">This Zone Only</div>
+                          <div className="text-xs text-gray-600">
+                            Update coaches only for {editingSlot.zone.name}
+                          </div>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="all"
+                          checked={zoneScope === 'all'}
+                          onChange={(e) => setZoneScope(e.target.value as 'single' | 'all')}
+                          className="rounded"
+                        />
+                        <div>
+                          <div className="font-medium">All Zones in This Session</div>
+                          <div className="text-xs text-gray-600">
+                            Update coaches for all zones at this time slot
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Day Scope Selection - Only show if part of a template */}
+                  {roster?.templateId && (
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <label className="block text-sm font-medium mb-2">Apply changes to:</label>
+                    <label className="block text-sm font-medium mb-2">Apply changes across dates:</label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -641,6 +684,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                       setEditingSlot(null)
                       setSelectedCoachIds([])
                       setEditScope('single')
+                      setZoneScope('single')
                       setEditingTime(false)
                     }}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"

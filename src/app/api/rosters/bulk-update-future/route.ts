@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { templateId, dayOfWeek, startDate, sessionId, coachIds, startTime, endTime } = body;
+    const { templateId, dayOfWeek, startDate, sessionId, coachIds, startTime, endTime, zoneScope } = body;
 
     if (!templateId || !dayOfWeek || !startDate) {
       return NextResponse.json(
@@ -56,14 +56,30 @@ export async function PATCH(request: NextRequest) {
 
     // Update each matching session in future rosters
     for (const roster of futureRosters) {
-      // Find the matching session (same class template and zone)
-      const matchingSession = roster.sessions.find(
-        (s) => 
-          s.classTemplateId === originalSession.classTemplateId &&
-          s.zoneId === originalSession.zoneId
-      );
+      // If zoneScope is 'all', find all sessions at same time
+      // Otherwise, find only the matching zone session
+      let matchingSessions = [];
+      
+      if (zoneScope === 'all') {
+        // Find all sessions at the same time slot
+        matchingSessions = roster.sessions.filter(
+          (s) => 
+            s.startTime.getTime() === originalSession.startTime.getTime() &&
+            s.endTime.getTime() === originalSession.endTime.getTime()
+        );
+      } else {
+        // Find only the session with matching class template and zone
+        const matchingSession = roster.sessions.find(
+          (s) => 
+            s.classTemplateId === originalSession.classTemplateId &&
+            s.zoneId === originalSession.zoneId
+        );
+        if (matchingSession) {
+          matchingSessions = [matchingSession];
+        }
+      }
 
-      if (matchingSession) {
+      for (const matchingSession of matchingSessions) {
         // Update coach assignments if provided
         if (coachIds !== undefined) {
           // Delete existing coach assignments

@@ -34,11 +34,19 @@ interface RosterSlot {
   endsAt: string
   conflictFlag: boolean
   session: {
+    id: string
     template: {
       id: string
       name: string
       color: string
     }
+    coaches: Array<{
+      id: string
+      coach: {
+        id: string
+        name: string
+      }
+    }>
   }
   coaches: Array<{
     coach: {
@@ -46,6 +54,11 @@ interface RosterSlot {
       name: string
     }
   }>
+}
+
+interface Coach {
+  id: string
+  name: string
 }
 
 interface CalendarEvent {
@@ -69,6 +82,10 @@ export default function ClassRosteringPage() {
   const [calendarView, setCalendarView] = useState<'week' | 'day'>('week')
   const [showModal, setShowModal] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<RosterSlot | null>(null)
+  const [availableCoaches, setAvailableCoaches] = useState<Coach[]>([])
+  const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([])
+  const [zoneScope, setZoneScope] = useState<'single' | 'all'>('single')
+  const [isEditingCoaches, setIsEditingCoaches] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -76,6 +93,7 @@ export default function ClassRosteringPage() {
       const parsed = JSON.parse(userData)
       setUser(parsed)
       fetchTemplates()
+      fetchCoaches()
     } else {
       router.push('/sign-in')
     }
@@ -125,8 +143,58 @@ export default function ClassRosteringPage() {
     }
   }
 
+  const fetchCoaches = async () => {
+    try {
+      const response = await fetch('/api/coaches')
+      if (response.ok) {
+        const data = await response.json()
+        setAvailableCoaches(data.coaches)
+      }
+    } catch (error) {
+      console.error('Error fetching coaches:', error)
+    }
+  }
+
+  const toggleCoachSelection = (coachId: string) => {
+    setSelectedCoachIds((prev) =>
+      prev.includes(coachId)
+        ? prev.filter((id) => id !== coachId)
+        : [...prev, coachId]
+    )
+  }
+
+  const handleSaveCoaches = async () => {
+    if (!selectedSlot) return
+
+    try {
+      const endpoint = `/api/rosters/sessions/${selectedSlot.session.id}/coaches`
+      const body = {
+        coachIds: selectedCoachIds,
+        zoneScope: zoneScope
+      }
+
+      const res = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (res.ok) {
+        setIsEditingCoaches(false)
+        setSelectedCoachIds([])
+        setZoneScope('single')
+        await fetchRosterSlots() // Refresh data
+      } else {
+        console.error('Failed to update coaches')
+      }
+    } catch (err) {
+      console.error('Failed to update coaches:', err)
+    }
+  }
+
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedSlot(event.resource)
+    setSelectedCoachIds(event.resource.session.coaches.map(c => c.coach.id))
     setShowModal(true)
   }
 
@@ -437,6 +505,7 @@ export default function ClassRosteringPage() {
                             <button
                               onClick={() => {
                                 setSelectedSlot(slot)
+                                setSelectedCoachIds(slot.session.coaches.map(c => c.coach.id))
                                 setShowModal(true)
                               }}
                               className="text-blue-600 hover:text-blue-800 font-medium"
@@ -457,11 +526,17 @@ export default function ClassRosteringPage() {
         {/* Modal for Slot Details */}
         {showModal && selectedSlot && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+            <div className="bg-white rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Session Details</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {isEditingCoaches ? 'Edit Session Coaches' : 'Session Details'}
+                </h2>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false)
+                    setIsEditingCoaches(false)
+                    setZoneScope('single')
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,60 +545,150 @@ export default function ClassRosteringPage() {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-                  <div className="text-lg font-semibold">{selectedSlot.session.template.name}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
-                    <div className="text-gray-900">{selectedSlot.zoneName}</div>
+              {!isEditingCoaches ? (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                      <div className="text-lg font-semibold">{selectedSlot.session.template.name}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                        <div className="text-gray-900">{selectedSlot.zoneName}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <div className="text-gray-900">{format(new Date(selectedSlot.rosterDate), 'MMM dd, yyyy')}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                        <div className="text-gray-900">{format(new Date(selectedSlot.startsAt), 'h:mm a')}</div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                        <div className="text-gray-900">{format(new Date(selectedSlot.endsAt), 'h:mm a')}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Coaches</label>
+                      <div className="text-gray-900">
+                        {selectedSlot.coaches.map(c => c.coach.name).join(', ') || 'No coaches assigned'}
+                      </div>
+                    </div>
+                    {selectedSlot.conflictFlag && (
+                      <div className="bg-red-50 border border-red-200 rounded p-3">
+                        <div className="text-sm text-red-800 font-medium">⚠️ Conflict Detected</div>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <div className="text-gray-900">{format(new Date(selectedSlot.rosterDate), 'MMM dd, yyyy')}</div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                    <div className="text-gray-900">{format(new Date(selectedSlot.startsAt), 'h:mm a')}</div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                    <div className="text-gray-900">{format(new Date(selectedSlot.endsAt), 'h:mm a')}</div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Coaches</label>
-                  <div className="text-gray-900">
-                    {selectedSlot.coaches.map(c => c.coach.name).join(', ') || 'No coaches assigned'}
-                  </div>
-                </div>
-                {selectedSlot.conflictFlag && (
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <div className="text-sm text-red-800 font-medium">⚠️ Conflict Detected</div>
-                  </div>
-                )}
-              </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => {
-                    navigateToRoster(selectedSlot.rosterId)
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  View Full Roster
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
-                >
-                  Close
-                </button>
-              </div>
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setIsEditingCoaches(true)}
+                      className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                    >
+                      Edit Coaches
+                    </button>
+                    <button
+                      onClick={() => navigateToRoster(selectedSlot.rosterId)}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      View Full Roster
+                    </button>
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Zone: {selectedSlot.zoneName}<br />
+                    Time: {format(new Date(selectedSlot.startsAt), 'h:mm a')} - {format(new Date(selectedSlot.endsAt), 'h:mm a')}
+                  </p>
+
+                  {/* Zone Scope Selection */}
+                  <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded">
+                    <label className="block text-sm font-medium mb-2">Apply coach changes to:</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="single"
+                          checked={zoneScope === 'single'}
+                          onChange={(e) => setZoneScope(e.target.value as 'single' | 'all')}
+                          className="rounded"
+                        />
+                        <div>
+                          <div className="font-medium">This Zone Only</div>
+                          <div className="text-xs text-gray-600">
+                            Update coaches only for {selectedSlot.zoneName}
+                          </div>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="all"
+                          checked={zoneScope === 'all'}
+                          onChange={(e) => setZoneScope(e.target.value as 'single' | 'all')}
+                          className="rounded"
+                        />
+                        <div>
+                          <div className="font-medium">All Zones in This Session</div>
+                          <div className="text-xs text-gray-600">
+                            Update coaches for all zones at this time slot on {format(new Date(selectedSlot.rosterDate), 'MMM dd, yyyy')}
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2">Select Coaches:</label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3">
+                      {availableCoaches.map((coach) => {
+                        const isSelected = selectedCoachIds.includes(coach.id)
+                        return (
+                          <label key={coach.id} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleCoachSelection(coach.id)}
+                              className="rounded"
+                            />
+                            <span>{coach.name}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        setIsEditingCoaches(false)
+                        setZoneScope('single')
+                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveCoaches}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

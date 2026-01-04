@@ -30,6 +30,7 @@ const updateCoachesSchema = z.object({
   coachIds: z.array(z.string()),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
+  zoneScope: z.enum(['single', 'all']).optional().default('single'),
 })
 
 // PATCH /api/rosters/sessions/[sessionId]/coaches - Update coaches for a session
@@ -62,7 +63,7 @@ export async function PATCH(
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { coachIds, startTime, endTime } = parsed.data
+    const { coachIds, startTime, endTime, zoneScope } = parsed.data
 
     // Verify all coaches belong to the club
     const coaches = await prisma.coach.findMany({
@@ -76,19 +77,48 @@ export async function PATCH(
       return NextResponse.json({ error: 'One or more coaches not found' }, { status: 400 })
     }
 
-    // Delete existing coach assignments
-    await prisma.sessionCoach.deleteMany({
-      where: { sessionId },
-    })
-
-    // Create new coach assignments
-    for (const coachId of coachIds) {
-      await prisma.sessionCoach.create({
-        data: {
-          sessionId,
-          coachId,
+    // If zoneScope is 'all', find all sessions at the same time on the same roster
+    let sessionIds = [sessionId]
+    
+    if (zoneScope === 'all') {
+      const roster = await prisma.roster.findFirst({
+        where: {
+          sessions: {
+            some: { id: sessionId }
+          }
         },
+        include: {
+          sessions: {
+            where: {
+              startTime: session.startTime,
+              endTime: session.endTime,
+            },
+            select: { id: true }
+          }
+        }
       })
+      
+      if (roster) {
+        sessionIds = roster.sessions.map(s => s.id)
+      }
+    }
+
+    // Update coaches for all target sessions
+    for (const targetSessionId of sessionIds) {
+      // Delete existing coach assignments
+      await prisma.sessionCoach.deleteMany({
+        where: { sessionId: targetSessionId },
+      })
+
+      // Create new coach assignments
+      for (const coachId of coachIds) {
+        await prisma.sessionCoach.create({
+          data: {
+            sessionId: targetSessionId,
+            coachId,
+          },
+        })
+      }
     }
 
     // Update session times if provided
