@@ -463,6 +463,7 @@ export default function ClassRosteringPage() {
 
                 <div className="h-[600px]">
                   <Calendar
+                    key={`${calendarView}-${currentDate.toISOString()}`}
                     localizer={localizer}
                     events={calendarEvents}
                     startAccessor="start"
