@@ -531,6 +531,7 @@ export default function ClassesPage() {
           )}
         </div>
       </div>
+    </div>
     </DashboardLayout>
   )
 }
