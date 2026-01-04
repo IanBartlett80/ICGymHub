@@ -130,6 +130,18 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
                   </li>
                   <li>
                     <Link
+                      href="/dashboard/roster-reports"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/roster-reports')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Roster Reports
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
                       href="/dashboard/class-rostering/guide"
                       className={`block px-3 py-2 text-sm rounded-lg ${
                         pathname === '/dashboard/class-rostering/guide'
