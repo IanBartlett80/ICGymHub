@@ -101,7 +101,7 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
                 )}
               </button>
 
-              {/* Configuration Submenu */}
+              {/* Class Rostering Submenu */}
               {showConfigMenu && !sidebarCollapsed && (
                 <ul className="ml-9 mt-2 space-y-1">
                   <li>
@@ -128,57 +128,16 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
                       Rosters
                     </Link>
                   </li>
-                  <li className="pt-1 border-t border-gray-200 mt-2">
-                    <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase">
-                      Configuration
-                    </p>
-                  </li>
                   <li>
                     <Link
-                      href="/dashboard/roster-config/zones"
+                      href="/dashboard/class-rostering/guide"
                       className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/roster-config/zones')
+                        pathname === '/dashboard/class-rostering/guide'
                           ? 'bg-blue-50 text-blue-600'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
-                      Gym Zones
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/roster-config/coaches"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/roster-config/coaches')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Coaches
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/roster-config/classes"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/roster-config/classes')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Class Templates
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/roster-config/gymsports"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/roster-config/gymsports')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Gymsports
+                      Get Started Guide
                     </Link>
                   </li>
                 </ul>

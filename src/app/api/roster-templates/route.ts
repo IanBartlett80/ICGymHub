@@ -19,8 +19,7 @@ export async function GET(request: NextRequest) {
         createdBy: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            fullName: true,
           },
         },
         rosters: {
@@ -40,7 +39,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(templates);
+    return NextResponse.json({ templates });
   } catch (error) {
     console.error('Error fetching roster templates:', error);
     return NextResponse.json(
