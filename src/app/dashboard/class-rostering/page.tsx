@@ -33,6 +33,12 @@ interface RosterSlot {
   startsAt: string
   endsAt: string
   conflictFlag: boolean
+  conflictType: string | null
+  zone: {
+    id: string
+    name: string
+    allowOverlap: boolean
+  }
   session: {
     id: string
     template: {
@@ -504,13 +510,21 @@ export default function ClassRosteringPage() {
                       timeslots={4}
                       date={currentDate}
                       onNavigate={(date) => setCurrentDate(date)}
-                      eventPropGetter={(event) => ({
-                        style: {
-                          backgroundColor: event.resource.session.template.color || '#3b82f6',
-                          borderColor: event.resource.conflictFlag ? '#ef4444' : event.resource.session.template.color || '#3b82f6',
-                          borderWidth: event.resource.conflictFlag ? '2px' : '1px',
-                        },
-                      })}
+                      eventPropGetter={(event) => {
+                        const slot = event.resource
+                        const color = slot.conflictFlag 
+                          ? '#ef4444' 
+                          : slot.session.template.color || '#3b82f6'
+                        
+                        return {
+                          style: {
+                            backgroundColor: color,
+                            borderColor: slot.conflictFlag ? '#dc2626' : color,
+                            borderWidth: slot.conflictFlag ? '2px' : '1px',
+                            color: '#ffffff',
+                          },
+                        }
+                      }}
                       onSelectEvent={handleEventClick}
                     />
                   ) : (
@@ -547,12 +561,13 @@ export default function ClassRosteringPage() {
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zone</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Coaches</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredSlots.map((slot) => (
-                        <tr key={slot.id} className="hover:bg-gray-50">
+                        <tr key={slot.id} className={slot.conflictFlag ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {format(new Date(slot.rosterDate), 'MMM dd, yyyy')}
                           </td>
@@ -567,6 +582,22 @@ export default function ClassRosteringPage() {
                             {slot.coaches.map(c => c.coach.name).join(', ') || 'None'}
                           </td>
                           <td className="px-4 py-3 text-sm">
+                            {slot.conflictFlag ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">⚠️ Conflict</span>
+                                {slot.conflictType && (
+                                  <span className="text-xs text-gray-600">
+                                    {slot.conflictType === 'coach' && 'Coach overlap'}
+                                    {slot.conflictType === 'zone' && 'Zone overlap'}
+                                    {slot.conflictType === 'both' && 'Coach & Zone'}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">✓ OK</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
                             <button
                               onClick={() => {
                                 setSelectedSlot(slot)
@@ -575,7 +606,7 @@ export default function ClassRosteringPage() {
                               }}
                               className="text-blue-600 hover:text-blue-800 font-medium"
                             >
-                              Edit
+                              Edit Class
                             </button>
                           </td>
                         </tr>
@@ -665,13 +696,13 @@ export default function ClassRosteringPage() {
                   <div className="flex gap-3 mt-6">
                     <button
                       onClick={() => setIsEditingCoaches(true)}
-                      className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
                       Edit Coaches
                     </button>
                     <button
                       onClick={() => navigateToRoster(selectedSlot.rosterId)}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                     >
                       View Full Roster
                     </button>
@@ -686,9 +717,28 @@ export default function ClassRosteringPage() {
               ) : (
                 <>
                   <p className="text-sm text-gray-600 mb-4">
-                    Zone: {selectedSlot.zoneName}<br />
-                    Time: {format(new Date(selectedSlot.startsAt), 'h:mm a')} - {format(new Date(selectedSlot.endsAt), 'h:mm a')}
+                    <strong>Class:</strong> {selectedSlot.session.template.name}<br />
+                    <strong>Zone:</strong> {selectedSlot.zoneName}<br />
+                    <strong>Time:</strong> {format(new Date(selectedSlot.startsAt), 'h:mm a')} - {format(new Date(selectedSlot.endsAt), 'h:mm a')}
                   </p>
+
+                  {selectedSlot.conflictFlag && (
+                    <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded p-3">
+                      <div className="flex items-start gap-2">
+                        <span className="text-yellow-600 text-lg">⚠️</span>
+                        <div>
+                          <div className="text-sm font-medium text-yellow-900">Conflict Detected</div>
+                          {selectedSlot.conflictType && (
+                            <div className="text-xs text-yellow-800 mt-1">
+                              {selectedSlot.conflictType === 'coach' && 'Coach is assigned to multiple zones at the same time'}
+                              {selectedSlot.conflictType === 'zone' && 'Zone is being used by multiple classes simultaneously'}
+                              {selectedSlot.conflictType === 'both' && 'Both coach and zone conflicts detected'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Zone Scope Selection */}
                   <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded">
