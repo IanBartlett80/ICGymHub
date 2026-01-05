@@ -293,13 +293,13 @@ export default function ClassesPage() {
   }
 
   if (loading) return (
-    <DashboardLayout title="Class Templates" backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}>
+    <DashboardLayout title="Class Templates" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
       <div className="p-8">Loading...</div>
     </DashboardLayout>
   )
 
   return (
-    <DashboardLayout title="Class Templates" backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}>
+    <DashboardLayout title="Class Templates" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">

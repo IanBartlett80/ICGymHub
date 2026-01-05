@@ -3,6 +3,8 @@
 import { useState, useEffect, ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import Image from 'next/image'
+import ClassRosteringSubNav from './ClassRosteringSubNav'
 
 interface UserData {
   id: string
@@ -18,9 +20,10 @@ interface DashboardLayoutProps {
   children: ReactNode
   title?: string
   backTo?: { label: string; href: string }
+  showClassRosteringNav?: boolean
 }
 
-export default function DashboardLayout({ children, title, backTo }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<UserData | null>(null)
@@ -51,12 +54,7 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
         } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30`}
       >
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <Link href="/dashboard" className="text-xl font-bold text-blue-600">
-              ICGymHub
-            </Link>
-          )}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-end">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="p-2 hover:bg-gray-100 rounded-lg"
@@ -197,20 +195,33 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
       <div className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="pl-4 pr-6 py-3 flex items-center justify-between">
+            {/* Logo and Back Navigation section */}
+            <div className="flex flex-col gap-2">
+              <Link href="/dashboard" className="flex items-center">
+                <div className="relative w-96 h-24">
+                  <Image 
+                    src="/imgs/GymHub_Logo.png" 
+                    alt="GymHub"
+                    fill
+                    className="object-contain object-left"
+                    priority
+                  />
+                </div>
+              </Link>
               {backTo && (
-                <>
-                  <Link
-                    href={backTo.href}
-                    className="text-gray-600 hover:text-blue-600 transition flex items-center gap-2"
-                  >
-                    <span>←</span>
-                    <span>{backTo.label}</span>
-                  </Link>
-                  <span className="text-gray-300">|</span>
-                </>
+                <Link
+                  href={backTo.href}
+                  className="text-gray-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap font-medium text-sm pl-1"
+                >
+                  <span>←</span>
+                  <span>{backTo.label}</span>
+                </Link>
               )}
+            </div>
+
+            {/* Page title centered */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
               <h1 className="text-2xl font-bold text-gray-900">{title || 'Dashboard'}</h1>
             </div>
 
@@ -270,6 +281,9 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
             )}
           </div>
         </header>
+
+        {/* Class Rostering Sub Navigation */}
+        {showClassRosteringNav && <ClassRosteringSubNav />}
 
         {/* Page Content */}
         <main>{children}</main>

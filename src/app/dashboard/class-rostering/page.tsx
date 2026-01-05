@@ -322,7 +322,7 @@ export default function ClassRosteringPage() {
   }
 
   return (
-    <DashboardLayout title="Class Rostering" backTo={{ label: 'Back to Home', href: '/dashboard' }}>
+    <DashboardLayout title="Class Rostering" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
       <div className="p-6">
         {/* Configuration Cards - Top of Page */}
         <div className="mb-8">

@@ -200,7 +200,8 @@ export default function RostersPage() {
   return (
     <DashboardLayout 
       title="Class Rosters"
-      backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}
+      backTo={{ label: 'Back to Home', href: '/dashboard' }}
+      showClassRosteringNav={true}
     >
       <div className="p-8">
         <div className="max-w-6xl mx-auto">

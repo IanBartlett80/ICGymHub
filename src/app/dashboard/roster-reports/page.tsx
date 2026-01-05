@@ -227,7 +227,7 @@ export default function RosterReportsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Roster Reports">
+      <DashboardLayout title="Roster Reports" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
         <div className="p-8">Loading...</div>
       </DashboardLayout>
     )
@@ -236,7 +236,7 @@ export default function RosterReportsPage() {
   const groupedSlots = groupSlotsByDay()
 
   return (
-    <DashboardLayout title="Roster Reports">
+    <DashboardLayout title="Roster Reports" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
