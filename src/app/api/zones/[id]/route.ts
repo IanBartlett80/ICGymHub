@@ -31,6 +31,7 @@ const zoneSchema = z.object({
   description: z.string().max(500).optional(),
   allowOverlap: z.boolean().optional(),
   active: z.boolean().optional(),
+  isFirst: z.boolean().optional(),
 })
 
 // GET /api/zones/[id] - Get a specific zone
@@ -80,7 +81,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, allowOverlap, active } = parsed.data
+    const { name, description, allowOverlap, active, isFirst } = parsed.data
 
     // Check for duplicate name (excluding current zone)
     if (name !== zone.name) {
@@ -100,6 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         description: description || null,
         allowOverlap: allowOverlap ?? zone.allowOverlap,
         active: active ?? zone.active,
+        isFirst: isFirst ?? zone.isFirst,
       },
     })
 

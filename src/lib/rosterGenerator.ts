@@ -104,7 +104,13 @@ export async function generateDailyRoster(
     throw new Error('At least one class template selection is required')
   }
 
-  const clubZones = await prisma.zone.findMany({ where: { clubId, active: true } })
+  const clubZones = await prisma.zone.findMany({ 
+    where: { clubId, active: true },
+    orderBy: [
+      { isFirst: 'desc' }, // Priority zones first
+      { name: 'asc' }      // Then alphabetically
+    ]
+  })
   if (!clubZones.length) {
     throw new Error('No zones configured for this club')
   }
@@ -175,6 +181,17 @@ export async function generateDailyRoster(
 
     const resolvedAllowedZones = allowedZoneIds.length ? allowedZoneIds : clubZones.map((z) => z.id)
 
+    // Sort zones to ensure isFirst zones appear first in rotation
+    const sortedResolvedZones = resolvedAllowedZones.sort((a, b) => {
+      const zoneA = clubZones.find(z => z.id === a)
+      const zoneB = clubZones.find(z => z.id === b)
+      if (!zoneA || !zoneB) return 0
+      // isFirst zones come first (true > false when cast to number)
+      if (zoneA.isFirst && !zoneB.isFirst) return -1
+      if (!zoneA.isFirst && zoneB.isFirst) return 1
+      return zoneA.name.localeCompare(zoneB.name)
+    })
+
     const coachIds = (selection.coachIds && selection.coachIds.length
       ? selection.coachIds
       : template.defaultCoaches.map((c) => c.coachId))
@@ -242,16 +259,16 @@ export async function generateDailyRoster(
       let checkedZones = 0
       
       // Try to find an available zone starting from current rotation position
-      while (checkedZones < resolvedAllowedZones.length) {
-        const zoneIndex = (zoneRotationIndex + checkedZones) % resolvedAllowedZones.length
-        const zoneId = resolvedAllowedZones[zoneIndex]
+      while (checkedZones < sortedResolvedZones.length) {
+        const zoneIndex = (zoneRotationIndex + checkedZones) % sortedResolvedZones.length
+        const zoneId = sortedResolvedZones[zoneIndex]
         const entries = zoneSchedule.get(zoneId) || []
         const conflict = entries.some((e) => !allowOverlap && overlaps(cursor, segmentEnd, e.start, e.end))
         
         if (!conflict) {
           assignedZone = zoneId
           // Move to next zone for next rotation
-          zoneRotationIndex = (zoneIndex + 1) % resolvedAllowedZones.length
+          zoneRotationIndex = (zoneIndex + 1) % sortedResolvedZones.length
           break
         }
         checkedZones++
@@ -259,8 +276,8 @@ export async function generateDailyRoster(
 
       // If no zone available without conflict, use the next zone in rotation anyway
       if (!assignedZone) {
-        assignedZone = resolvedAllowedZones[zoneRotationIndex % resolvedAllowedZones.length]
-        zoneRotationIndex = (zoneRotationIndex + 1) % resolvedAllowedZones.length
+        assignedZone = sortedResolvedZones[zoneRotationIndex % sortedResolvedZones.length]
+        zoneRotationIndex = (zoneRotationIndex + 1) % sortedResolvedZones.length
         zoneConflict = !allowOverlap
       }
 
@@ -270,7 +287,24 @@ export async function generateDailyRoster(
       })
 
       const segmentConflict = zoneConflict || coachConflicts
-      segments.push({ start: cursor, end: segmentEnd, zoneId: assignedZone, conflict: segmentConflict })
+      
+      // Determine conflict type
+      let conflictType: string | null = null
+      if (zoneConflict && coachConflicts) {
+        conflictType = 'both'
+      } else if (zoneConflict) {
+        conflictType = 'zone'
+      } else if (coachConflicts) {
+        conflictType = 'coach'
+      }
+      
+      segments.push({ 
+        start: cursor, 
+        end: segmentEnd, 
+        zoneId: assignedZone, 
+        conflict: segmentConflict,
+        conflictType
+      })
 
       // update schedules
       const zoneEntries = zoneSchedule.get(assignedZone) || []
@@ -307,7 +341,7 @@ export async function generateDailyRoster(
     sessionIds.push(session.id)
 
     // Link allowed zones and coaches (for the session snapshot)
-    for (const zoneId of resolvedAllowedZones) {
+    for (const zoneId of sortedResolvedZones) {
       await prisma.sessionAllowedZone.create({
         data: {
           sessionId: session.id,
@@ -336,6 +370,7 @@ export async function generateDailyRoster(
           startsAt: segment.start,
           endsAt: segment.end,
           conflictFlag: segment.conflict,
+          conflictType: segment.conflictType,
           allowOverlap,
         },
       })

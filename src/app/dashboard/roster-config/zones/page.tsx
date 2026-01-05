@@ -10,6 +10,7 @@ interface Zone {
   description: string | null
   allowOverlap: boolean
   active: boolean
+  isFirst: boolean
 }
 
 export default function ZonesPage() {
@@ -20,7 +21,7 @@ export default function ZonesPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ name: '', description: '', allowOverlap: false, active: true })
+  const [formData, setFormData] = useState({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
 
   useEffect(() => {
     fetchZones()
@@ -73,6 +74,7 @@ export default function ZonesPage() {
       description: zone.description || '',
       allowOverlap: zone.allowOverlap,
       active: zone.active,
+      isFirst: zone.isFirst,
     })
     setShowForm(true)
   }
@@ -111,7 +113,7 @@ export default function ZonesPage() {
               onClick={() => {
                 setShowForm(!showForm)
                 setEditingId(null)
-                setFormData({ name: '', description: '', allowOverlap: false, active: true })
+                setFormData({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
               }}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
@@ -180,6 +182,16 @@ export default function ZonesPage() {
                     />
                     <span className="text-sm">Active</span>
                   </label>
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.isFirst}
+                      onChange={(e) => setFormData({ ...formData, isFirst: e.target.checked })}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Priority First Zone</span>
+                  </label>
                 </div>
 
                 <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
@@ -205,7 +217,12 @@ export default function ZonesPage() {
                     <td className="px-6 py-4 whitespace-nowrap font-medium">{zone.name}</td>
                     <td className="px-6 py-4">{zone.description || '-'}</td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        {zone.isFirst && (
+                          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium">
+                            ⭐ Priority First
+                          </span>
+                        )}
                         {zone.allowOverlap && (
                           <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                             Overlap Allowed

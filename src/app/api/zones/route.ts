@@ -51,6 +51,7 @@ const zoneSchema = z.object({
   description: z.string().max(500).optional(),
   allowOverlap: z.boolean().optional(),
   active: z.boolean().optional(),
+  isFirst: z.boolean().optional(),
 })
 
 // POST /api/zones - Create a new zone
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, allowOverlap, active } = parsed.data
+    const { name, description, allowOverlap, active, isFirst } = parsed.data
 
     // Check for duplicate name
     const existing = await prisma.zone.findUnique({
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
         description: description || null,
         allowOverlap: allowOverlap ?? false,
         active: active ?? true,
+        isFirst: isFirst ?? false,
       },
     })
 

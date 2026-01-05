@@ -210,6 +210,7 @@ model Zone {
   description  String?
   allowOverlap Boolean  @default(false)
   active       Boolean  @default(true)
+  isFirst      Boolean  @default(false) // Priority zone - always scheduled first in rotation
 
   // Relations
   templatesAllowed TemplateAllowedZone[]
@@ -465,7 +466,9 @@ model RosterSlot {
   startsAt     DateTime
   endsAt       DateTime
   conflictFlag Boolean       @default(false)
+  conflictType String?       // 'coach', 'zone', or 'both' - describes the type of conflict
   allowOverlap Boolean       @default(false)
+  zoneOrder    Int?          // Manual zone ordering within session (null = auto-generated)
   createdAt    DateTime      @default(now())
 
   @@index([clubId])

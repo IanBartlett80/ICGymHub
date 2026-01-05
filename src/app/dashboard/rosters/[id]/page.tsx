@@ -28,7 +28,8 @@ type RosterSlot = {
   startsAt: string
   endsAt: string
   conflictFlag: boolean
-  zone: { id: string; name: string }
+  conflictType: string | null
+  zone: { id: string; name: string; allowOverlap: boolean; isFirst: boolean }
   session: {
     id: string
     template: { 
@@ -83,6 +84,11 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   const [editingTime, setEditingTime] = useState(false)
   const [sessionStartTime, setSessionStartTime] = useState('')
   const [sessionEndTime, setSessionEndTime] = useState('')
+  const [showZoneReorderModal, setShowZoneReorderModal] = useState(false)
+  const [reorderingSessionId, setReorderingSessionId] = useState<string | null>(null)
+  const [zoneReorderScope, setZoneReorderScope] = useState<'single' | 'future'>('single')
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
+  const [reorderedSlots, setReorderedSlots] = useState<RosterSlot[]>([])
 
   useEffect(() => {
     fetchRoster()
@@ -249,6 +255,49 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  const handleOpenZoneReorder = (sessionId: string) => {
+    if (!roster) return
+    
+    // Get all slots for this session, sorted by time
+    const sessionSlots = roster.slots
+      .filter(slot => slot.session.id === sessionId)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+    
+    setReorderedSlots(sessionSlots)
+    setReorderingSessionId(sessionId)
+    setShowZoneReorderModal(true)
+    setZoneReorderScope('single')
+  }
+
+  const handleSaveZoneOrder = async (newOrder: Array<{ slotId: string; zoneId: string; order: number }>) => {
+    if (!reorderingSessionId) return
+
+    try {
+      const res = await fetch('/api/rosters/sessions/zone-order', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: reorderingSessionId,
+          zoneOrder: newOrder,
+          scope: zoneReorderScope,
+        }),
+      })
+
+      if (res.ok) {
+        setShowZoneReorderModal(false)
+        setReorderingSessionId(null)
+        setSuccess('Zone order updated successfully')
+        await fetchRoster()
+        setTimeout(() => setSuccess(''), 3000)
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to update zone order')
+      }
+    } catch (err) {
+      setError('Failed to update zone order')
+    }
+  }
+
   const handleNavigate = (date: Date) => {
     setCalendarDate(date)
   }
@@ -408,12 +457,38 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
             </div>
           )}
 
-          {conflictCount > 0 && (
-            <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-6 no-print">
-              <strong>⚠️ Warning:</strong> {conflictCount} slot{conflictCount !== 1 ? 's have' : ' has'} conflicts.
-              Conflicts are marked with red color in the calendar below.
-            </div>
-          )}
+          {conflictCount > 0 && (() => {
+            const coachConflicts = roster.slots.filter(s => s.conflictType === 'coach' || s.conflictType === 'both').length
+            const zoneConflicts = roster.slots.filter(s => s.conflictType === 'zone' || s.conflictType === 'both').length
+            
+            return (
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-4 no-print">
+                <div className="flex items-start gap-3">
+                  <span className="text-yellow-600 text-2xl">⚠️</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-yellow-900 mb-2">
+                      {conflictCount} Scheduling Conflict{conflictCount !== 1 ? 's' : ''} Detected
+                    </h4>
+                    <div className="text-sm text-yellow-800 space-y-1">
+                      {coachConflicts > 0 && (
+                        <p>
+                          • <strong>Coach Overlaps:</strong> {coachConflicts} time slot{coachConflicts !== 1 ? 's' : ''} where a coach is assigned to multiple zones simultaneously
+                        </p>
+                      )}
+                      {zoneConflicts > 0 && (
+                        <p>
+                          • <strong>Zone Overlaps:</strong> {zoneConflicts} time slot{zoneConflicts !== 1 ? 's' : ''} where a zone is used by multiple classes simultaneously
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-yellow-700 mt-2">
+                      Review the table view to see which specific slots have conflicts. Use "Edit Zone Order" to resolve zone conflicts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Tabs */}
           <div className="mb-4 no-print">
@@ -558,7 +633,16 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                         <td className="px-6 py-4 whitespace-nowrap">{duration} min</td>
                         <td className="px-6 py-4 whitespace-nowrap no-print">
                           {slot.conflictFlag ? (
-                            <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">⚠️ Conflict</span>
+                            <div className="flex flex-col gap-1">
+                              <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">⚠️ Conflict</span>
+                              {slot.conflictType && (
+                                <span className="text-xs text-gray-600">
+                                  {slot.conflictType === 'coach' && 'Coach overlap'}
+                                  {slot.conflictType === 'zone' && 'Zone overlap'}
+                                  {slot.conflictType === 'both' && 'Coach & Zone'}
+                                </span>
+                              )}
+                            </div>
                           ) : (
                             <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">✓ OK</span>
                           )}
@@ -736,29 +820,277 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                   </div>
                 </div>
 
-                <div className="flex gap-2 justify-end">
+                <div className="flex flex-col gap-3">
                   <button
                     onClick={() => {
+                      handleOpenZoneReorder(editingSlot.session.id)
                       setEditingSlot(null)
-                      setSelectedCoachIds([])
-                      setEditScope('single')
-                      setZoneScope('single')
-                      setEditingTime(false)
                     }}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center justify-center gap-2"
                   >
-                    Cancel
+                    <span>🔄</span>
+                    <span>Edit Zone Order</span>
                   </button>
-                  <button
-                    onClick={handleSaveCoaches}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Save Changes
-                  </button>
+
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        setEditingSlot(null)
+                        setSelectedCoachIds([])
+                        setEditScope('single')
+                        setZoneScope('single')
+                        setEditingTime(false)
+                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveCoaches}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Zone Reordering Modal */}
+          {showZoneReorderModal && reorderingSessionId && roster && reorderedSlots.length > 0 && (() => {
+            const handleDragStart = (index: number) => {
+              setDraggingIndex(index)
+            }
+
+            const handleDragOver = (e: React.DragEvent, index: number) => {
+              e.preventDefault()
+              if (draggingIndex === null || draggingIndex === index) return
+
+              const newSlots = [...reorderedSlots]
+              const draggedSlot = newSlots[draggingIndex]
+              newSlots.splice(draggingIndex, 1)
+              newSlots.splice(index, 0, draggedSlot)
+
+              setReorderedSlots(newSlots)
+              setDraggingIndex(index)
+            }
+
+            const handleDragEnd = () => {
+              setDraggingIndex(null)
+            }
+
+            const handleConfirmReorder = () => {
+              const zoneOrder = reorderedSlots.map((slot, index) => ({
+                slotId: slot.id,
+                zoneId: slot.zone.id,
+                order: index,
+              }))
+              handleSaveZoneOrder(zoneOrder)
+            }
+
+            // Check for conflicts after reordering
+            const checkConflicts = () => {
+              const conflicts: Array<{ index: number; message: string }> = []
+              
+              // Get all other sessions that might conflict
+              const otherSlots = roster.slots.filter(slot => slot.session.id !== reorderingSessionId)
+              
+              reorderedSlots.forEach((slot, index) => {
+                // Check for zone overlaps
+                const zoneConflict = otherSlots.some(other => 
+                  other.zone.id === slot.zone.id && 
+                  !slot.zone.allowOverlap &&
+                  new Date(slot.startsAt) < new Date(other.endsAt) &&
+                  new Date(other.startsAt) < new Date(slot.endsAt)
+                )
+                
+                if (zoneConflict) {
+                  conflicts.push({
+                    index,
+                    message: `Zone ${slot.zone.name} overlaps with another session`
+                  })
+                }
+              })
+              
+              return conflicts
+            }
+
+            const conflicts = checkConflicts()
+
+            return (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print p-4">
+                <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                  <div className="p-6 border-b">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold">Edit Zone Order</h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {reorderedSlots[0]?.session.template?.name || 'Unknown Class'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowZoneReorderModal(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {conflicts.length > 0 && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
+                        <div className="flex items-start gap-2">
+                          <span className="text-yellow-600 text-lg">⚠️</span>
+                          <div className="flex-1">
+                            <p className="font-medium text-yellow-900">Zone Conflicts Detected</p>
+                            <ul className="text-sm text-yellow-800 mt-1 space-y-1">
+                              {conflicts.map((conflict, idx) => (
+                                <li key={idx}>• Time slot {conflict.index + 1}: {conflict.message}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-sm text-gray-600">
+                      Drag and drop rows to reorder zones within this session
+                    </p>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zone</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {reorderedSlots.map((slot, index) => {
+                          const startTime = new Date(slot.startsAt).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                          const endTime = new Date(slot.endsAt).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                          const hasConflict = conflicts.some(c => c.index === index)
+
+                          return (
+                            <tr
+                              key={slot.id}
+                              draggable
+                              onDragStart={() => handleDragStart(index)}
+                              onDragOver={(e) => handleDragOver(e, index)}
+                              onDragEnd={handleDragEnd}
+                              className={`cursor-move hover:bg-gray-50 ${
+                                draggingIndex === index ? 'opacity-50' : ''
+                              } ${hasConflict ? 'bg-yellow-50' : ''}`}
+                            >
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400">⋮⋮</span>
+                                  <span>{index + 1}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                {startTime} - {endTime}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{slot.zone.name}</span>
+                                  {slot.zone.isFirst && (
+                                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                                      ⭐ Priority
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                {hasConflict ? (
+                                  <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                                    ⚠️ Conflict
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                    ✓ OK
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="p-6 border-t bg-gray-50">
+                    {roster?.templateId && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <label className="block text-sm font-medium mb-2">Apply changes to:</label>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              value="single"
+                              checked={zoneReorderScope === 'single'}
+                              onChange={(e) => setZoneReorderScope(e.target.value as 'single' | 'future')}
+                              className="rounded"
+                            />
+                            <div>
+                              <div className="font-medium">This Roster Only</div>
+                              <div className="text-xs text-gray-600">
+                                Changes apply only to this specific roster date
+                              </div>
+                            </div>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              value="future"
+                              checked={zoneReorderScope === 'future'}
+                              onChange={(e) => setZoneReorderScope(e.target.value as 'single' | 'future')}
+                              className="rounded"
+                            />
+                            <div>
+                              <div className="font-medium">This and Future {roster.dayOfWeek} Rosters</div>
+                              <div className="text-xs text-gray-600">
+                                Changes apply to this and all future {roster.dayOfWeek} rosters in template
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => {
+                          setShowZoneReorderModal(false)
+                          setReorderingSessionId(null)
+                        }}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleConfirmReorder}
+                        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      >
+                        Save Zone Order
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </DashboardLayout>
