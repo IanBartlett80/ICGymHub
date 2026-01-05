@@ -472,7 +472,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                     <div className="text-sm text-yellow-800 space-y-1">
                       {coachConflicts > 0 && (
                         <p>
-                          • <strong>Coach Overlaps:</strong> {coachConflicts} time slot{coachConflicts !== 1 ? 's' : ''} where a coach is assigned to multiple zones simultaneously
+                          • <strong>Coach Overlaps:</strong> {coachConflicts} time slot{coachConflicts !== 1 ? 's' : ''} where a coach is assigned to multiple classes or zones simultaneously
                         </p>
                       )}
                       {zoneConflicts > 0 && (
@@ -481,9 +481,15 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                         </p>
                       )}
                     </div>
-                    <p className="text-xs text-yellow-700 mt-2">
-                      Review the table view to see which specific slots have conflicts. Use "Edit Zone Order" to resolve zone conflicts.
-                    </p>
+                    <div className="text-xs text-yellow-700 mt-2 space-y-1">
+                      <p><strong>How to resolve:</strong></p>
+                      {coachConflicts > 0 && (
+                        <p>• Coach conflicts: Use "Edit Coaches" in the table view to assign different coaches to overlapping time slots</p>
+                      )}
+                      {zoneConflicts > 0 && (
+                        <p>• Zone conflicts: Use "Edit Zone Order" to change which zones are used during overlapping time slots</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -655,7 +661,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                             }}
                             className="text-blue-600 hover:text-blue-800"
                           >
-                            Edit Coaches
+                            Edit Class
                           </button>
                         </td>
                       </tr>

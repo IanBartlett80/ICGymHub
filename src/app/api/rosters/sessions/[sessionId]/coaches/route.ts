@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { verifyAccessToken } from '@/lib/auth'
+import { recalculateRosterConflicts } from '@/lib/rosterGenerator'
 
 function getAccessToken(req: NextRequest): string | null {
   const headerToken = req.headers.get('authorization')
@@ -194,6 +195,18 @@ export async function PATCH(
         },
       },
     })
+
+    // Recalculate conflicts for all affected rosters
+    const affectedSlots = await prisma.rosterSlot.findMany({
+      where: { sessionId: { in: sessionIds } },
+      select: { rosterId: true },
+      distinct: ['rosterId'],
+    })
+
+    // Recalculate conflicts for each affected roster
+    for (const slot of affectedSlots) {
+      await recalculateRosterConflicts(prisma, slot.rosterId)
+    }
 
     return NextResponse.json({ session: updatedSession }, { status: 200 })
   } catch (error) {

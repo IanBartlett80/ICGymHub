@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { verifyAccessToken } from '@/lib/auth'
+import { recalculateRosterConflicts } from '@/lib/rosterGenerator'
 
 function getAccessToken(req: NextRequest): string | null {
   const headerToken = req.headers.get('authorization')
@@ -75,6 +76,8 @@ export async function PATCH(req: NextRequest) {
 
     if (scope === 'single') {
       // Update only this roster's slots
+      const affectedRosterIds = new Set<string>()
+      
       for (const slot of session.rosterSlots) {
         const orderData = zoneOrderMap.get(slot.id)
         if (orderData) {
@@ -85,7 +88,13 @@ export async function PATCH(req: NextRequest) {
               zoneOrder: orderData.order,
             },
           })
+          affectedRosterIds.add(slot.rosterId)
         }
+      }
+      
+      // Recalculate conflicts for affected rosters
+      for (const rosterId of affectedRosterIds) {
+        await recalculateRosterConflicts(prisma, rosterId)
       }
     } else if (scope === 'future') {
       // Find the template and roster info
@@ -111,6 +120,8 @@ export async function PATCH(req: NextRequest) {
           },
         },
       })
+
+      const affectedRosterIds = new Set<string>()
 
       // Update slots for all future rosters
       for (const futureRoster of futureRosters) {
@@ -150,9 +161,15 @@ export async function PATCH(req: NextRequest) {
                   zoneOrder: orderData.order,
                 },
               })
+              affectedRosterIds.add(targetSlots[i].rosterId)
             }
           }
         }
+      }
+      
+      // Recalculate conflicts for all affected rosters
+      for (const rosterId of affectedRosterIds) {
+        await recalculateRosterConflicts(prisma, rosterId)
       }
     }
 

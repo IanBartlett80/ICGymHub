@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth';
+import { recalculateRosterConflicts } from '@/lib/rosterGenerator';
 
 // PATCH /api/rosters/bulk-update-future - Update this and all future rosters in template
 export async function PATCH(request: NextRequest) {
@@ -52,8 +53,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    let updatedCount = 0;
-
+    let updatedCount = 0;    const affectedRosterIds = new Set<string>();
     // Update each matching session in future rosters
     for (const roster of futureRosters) {
       // If zoneScope is 'all', find all sessions at same time
@@ -147,7 +147,13 @@ export async function PATCH(request: NextRequest) {
         }
 
         updatedCount++;
+        affectedRosterIds.add(roster.id);
       }
+    }
+
+    // Recalculate conflicts for all affected rosters
+    for (const rosterId of affectedRosterIds) {
+      await recalculateRosterConflicts(prisma, rosterId);
     }
 
     return NextResponse.json({

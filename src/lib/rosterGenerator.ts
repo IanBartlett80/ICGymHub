@@ -244,7 +244,7 @@ export async function generateDailyRoster(
       continue
     }
 
-    const segments: Array<{ start: Date; end: Date; zoneId: string; conflict: boolean }> = []
+    const segments: Array<{ start: Date; end: Date; zoneId: string; conflict: boolean; conflictType: string | null }> = []
     let cursor = sessionStart
     let zoneRotationIndex = 0 // Track which zone we're on in the rotation
     
@@ -383,4 +383,135 @@ export async function generateDailyRoster(
   }
 
   return { rosterId: roster.id, sessionIds, slotCount, conflicts }
+}
+
+/**
+ * Recalculate conflicts for all slots in a roster
+ */
+export async function recalculateRosterConflicts(
+  prisma: PrismaClient,
+  rosterId: string
+): Promise<void> {
+  // Get all slots for this roster with their sessions and coaches
+  const slots = await prisma.rosterSlot.findMany({
+    where: { rosterId },
+    include: {
+      session: {
+        include: {
+          coaches: true,
+        },
+      },
+      zone: true,
+    },
+    orderBy: { startsAt: 'asc' },
+  })
+
+  // Build schedules for zones and coaches
+  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean }>>()
+  const coachSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date }>>()
+
+  for (const slot of slots) {
+    // Track zone usage
+    const zoneEntries = zoneSchedule.get(slot.zoneId) || []
+    zoneEntries.push({ 
+      slotId: slot.id, 
+      start: slot.startsAt, 
+      end: slot.endsAt,
+      allowOverlap: slot.allowOverlap
+    })
+    zoneSchedule.set(slot.zoneId, zoneEntries)
+
+    // Track coach usage
+    for (const sessionCoach of slot.session.coaches) {
+      const coachEntries = coachSchedule.get(sessionCoach.coachId) || []
+      coachEntries.push({ 
+        slotId: slot.id, 
+        start: slot.startsAt, 
+        end: slot.endsAt 
+      })
+      coachSchedule.set(sessionCoach.coachId, coachEntries)
+    }
+  }
+
+  // Now check each slot for conflicts
+  for (const slot of slots) {
+    let hasZoneConflict = false
+    let hasCoachConflict = false
+
+    // Check for zone conflicts
+    const zoneEntries = zoneSchedule.get(slot.zoneId) || []
+    for (const entry of zoneEntries) {
+      // Skip self
+      if (entry.slotId === slot.id) continue
+      
+      // Check if there's an overlap and overlap is not allowed
+      if (!slot.allowOverlap && overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
+        hasZoneConflict = true
+        break
+      }
+    }
+
+    // Check for coach conflicts
+    for (const sessionCoach of slot.session.coaches) {
+      const coachEntries = coachSchedule.get(sessionCoach.coachId) || []
+      for (const entry of coachEntries) {
+        // Skip self
+        if (entry.slotId === slot.id) continue
+        
+        // Check if there's an overlap
+        if (overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
+          hasCoachConflict = true
+          break
+        }
+      }
+      if (hasCoachConflict) break
+    }
+
+    // Determine conflict type
+    let conflictType: string | null = null
+    const hasConflict = hasZoneConflict || hasCoachConflict
+    
+    if (hasZoneConflict && hasCoachConflict) {
+      conflictType = 'both'
+    } else if (hasZoneConflict) {
+      conflictType = 'zone'
+    } else if (hasCoachConflict) {
+      conflictType = 'coach'
+    }
+
+    // Update the slot if conflict status changed
+    if (slot.conflictFlag !== hasConflict || slot.conflictType !== conflictType) {
+      await prisma.rosterSlot.update({
+        where: { id: slot.id },
+        data: {
+          conflictFlag: hasConflict,
+          conflictType,
+        },
+      })
+    }
+  }
+
+  // Update session conflict flags
+  const sessions = await prisma.classSession.findMany({
+    where: {
+      rosterSlots: {
+        some: { rosterId },
+      },
+    },
+    include: {
+      rosterSlots: {
+        where: { rosterId },
+      },
+    },
+  })
+
+  for (const session of sessions) {
+    const hasConflict = session.rosterSlots.some((s) => s.conflictFlag)
+    if (session.conflictFlag !== hasConflict) {
+      await prisma.classSession.update({
+        where: { id: session.id },
+        data: { conflictFlag: hasConflict },
+      })
+    }
+  }
 }
