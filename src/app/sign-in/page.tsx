@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import axios from 'axios'
 
 type FormData = {
@@ -50,40 +51,46 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-50 flex flex-col px-4 pt-8">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary hover:text-primary-dark transition">
-            GymHub
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block mb-4">
+            <Image 
+              src="/imgs/GymHub_Logo.png" 
+              alt="GymHub Logo" 
+              width={200} 
+              height={100}
+              className="object-contain"
+            />
           </Link>
-          <h1 className="text-4xl font-bold text-white mt-6">Sign In</h1>
-          <p className="text-neutral-400 mt-2">Welcome back to GymHub</p>
+          <h1 className="text-3xl font-bold text-gray-900 mt-4">Sign In</h1>
+          <p className="text-gray-600 mt-2">Welcome back</p>
         </div>
 
         {/* Success Message */}
         {registered && (
-          <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-lg text-success">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
             Registration successful! Please check your email to verify your club before signing in.
           </div>
         )}
 
         {verified && (
-          <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-lg text-success">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
             ✅ Email verified! Your club is now active. You can sign in below.
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-neutral-800 border border-neutral-700 rounded-2xl p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 space-y-6 shadow-sm">
           {error && (
-            <div className="p-4 bg-error/10 border border-error/30 rounded-lg text-error text-sm">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="username" className="block text-white font-medium mb-2">
+            <label htmlFor="username" className="block text-gray-900 font-medium mb-2">
               Username
             </label>
             <input
@@ -92,14 +99,14 @@ export default function SignInPage() {
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none transition"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none transition"
               placeholder="Enter your username"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-white font-medium mb-2">
+            <label htmlFor="password" className="block text-gray-900 font-medium mb-2">
               Password
             </label>
             <input
@@ -108,7 +115,7 @@ export default function SignInPage() {
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none transition"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none transition"
               placeholder="Enter your password"
               required
             />
@@ -117,7 +124,7 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-6 py-3 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white rounded-lg font-semibold transition"
+            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
           >
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
@@ -126,23 +133,23 @@ export default function SignInPage() {
         {/* Links */}
         <div className="mt-6 space-y-3">
           <div className="text-center">
-            <Link href="#" className="text-primary hover:text-primary-light text-sm">
+            <Link href="#" className="text-blue-600 hover:text-blue-700 text-sm">
               Forgot your password?
             </Link>
           </div>
-          <div className="text-center text-neutral-400">
+          <div className="text-center text-gray-600">
             Don't have an account?{' '}
-            <Link href="/register" className="text-primary hover:text-primary-light">
+            <Link href="/register" className="text-blue-600 hover:text-blue-700">
               Register your club
             </Link>
           </div>
         </div>
 
         {/* Support */}
-        <div className="mt-8 p-4 bg-neutral-800/50 border border-neutral-700 rounded-lg text-center">
-          <p className="text-neutral-400 text-sm">
+        <div className="mt-8 p-4 bg-gray-100 border border-gray-200 rounded-lg text-center">
+          <p className="text-gray-600 text-sm">
             Need help?{' '}
-            <Link href="mailto:support@icgymhub.com" className="text-primary hover:text-primary-light">
+            <Link href="mailto:support@icgymhub.com" className="text-blue-600 hover:text-blue-700">
               Contact support
             </Link>
           </p>

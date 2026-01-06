@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import axios from 'axios'
 
 type FormData = {
@@ -170,23 +171,23 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-neutral-800 border border-neutral-700 rounded-2xl p-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <div className="text-5xl mb-4 text-center">✅</div>
-          <h1 className="text-3xl font-bold text-white mb-4 text-center">Registration Successful!</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4 text-center">Registration Successful!</h1>
           
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 mb-6">
-            <p className="text-primary font-semibold mb-2">📧 Email Verification Required</p>
-            <p className="text-sm text-neutral-300">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-700 font-semibold mb-2">📧 Email Verification Required</p>
+            <p className="text-sm text-gray-700">
               We've sent a verification link to your email address. Please click the link to verify your club domain and activate your account.
             </p>
           </div>
 
           <div className="space-y-3 mb-6">
-            <p className="text-neutral-400 text-sm">
+            <p className="text-gray-600 text-sm">
               <strong>What's next?</strong>
             </p>
-            <ul className="text-neutral-400 text-sm space-y-2">
+            <ul className="text-gray-600 text-sm space-y-2">
               <li className="flex gap-2">
                 <span>1️⃣</span>
                 <span>Check your email (it may be in spam)</span>
@@ -205,19 +206,19 @@ export default function RegisterPage() {
           <div className="space-y-3">
             <button
               onClick={() => router.push('/sign-in')}
-              className="w-full px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold transition"
+              className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
             >
               Go to Sign In
             </button>
             <Link
               href="/resend-verification"
-              className="block w-full px-4 py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg font-semibold transition text-center"
+              className="block w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition text-center"
             >
               Resend Verification Email
             </Link>
           </div>
 
-          <p className="text-center text-neutral-500 text-xs mt-4">
+          <p className="text-center text-gray-500 text-xs mt-4">
             Verification link expires in 24 hours
           </p>
         </div>
@@ -226,15 +227,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-primary hover:text-primary-dark transition">
-            GymHub
+          <Link href="/" className="inline-block mb-6">
+            <Image 
+              src="/imgs/GymHub_Logo.png" 
+              alt="GymHub Logo" 
+              width={200} 
+              height={100}
+              className="object-contain mx-auto"
+            />
           </Link>
-          <h1 className="text-4xl font-bold text-white mt-4">Register Your Club</h1>
-          <p className="text-neutral-400 mt-2">Step {step} of 4</p>
+          <h1 className="text-4xl font-bold text-gray-900 mt-4">Register Your Club</h1>
+          <p className="text-gray-600 mt-2">Step {step} of 4</p>
         </div>
 
         {/* Progress Bar */}
@@ -242,15 +249,15 @@ export default function RegisterPage() {
           {[1, 2, 3, 4].map(i => (
             <div
               key={i}
-              className={`flex-1 h-2 rounded-full ${i <= step ? 'bg-primary' : 'bg-neutral-700'}`}
+              className={`flex-1 h-2 rounded-full ${i <= step ? 'bg-blue-600' : 'bg-gray-200'}`}
             />
           ))}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-neutral-800 border border-neutral-700 rounded-2xl p-8">
+        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           {error && (
-            <div className="mb-6 p-4 bg-error/10 border border-error/30 rounded-lg text-error">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               {error}
             </div>
           )}
@@ -258,38 +265,38 @@ export default function RegisterPage() {
           {/* Step 1: Club Information */}
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Club Information</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Club Information</h2>
               <div>
-                <label className="block text-white font-medium mb-2">Club Name</label>
+                <label className="block text-gray-900 font-medium mb-2">Club Name</label>
                 <input
                   type="text"
                   name="clubName"
                   value={formData.clubName}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., Elite Gymnastics Club"
                 />
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">Club Domain</label>
+                <label className="block text-gray-900 font-medium mb-2">Club Domain</label>
                 <input
                   type="text"
                   name="clubDomain"
                   value={formData.clubDomain}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., contoso.com"
                 />
-                <p className="text-sm text-neutral-400 mt-2">Enter your organization's domain name (e.g., contoso.com)</p>
+                <p className="text-sm text-gray-600 mt-2">Enter your organization's domain name (e.g., contoso.com)</p>
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">ABN (Australian Business Number) <span className="text-neutral-400 font-normal">- Optional</span></label>
+                <label className="block text-gray-900 font-medium mb-2">ABN (Australian Business Number) <span className="text-gray-600 font-normal">- Optional</span></label>
                 <input
                   type="text"
                   name="abn"
                   value={formData.abn}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., 12 345 678 901"
                 />
               </div>
@@ -299,37 +306,37 @@ export default function RegisterPage() {
           {/* Step 2: Address Information */}
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Club Location</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Club Location</h2>
               <div>
-                <label className="block text-white font-medium mb-2">Street Address</label>
+                <label className="block text-gray-900 font-medium mb-2">Street Address</label>
                 <input
                   type="text"
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., 123 Gymnastics Lane"
                 />
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">City</label>
+                <label className="block text-gray-900 font-medium mb-2">City</label>
                 <input
                   type="text"
                   name="city"
                   value={formData.city}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., Sydney"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-white font-medium mb-2">State</label>
+                  <label className="block text-gray-900 font-medium mb-2">State</label>
                   <select
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white focus:border-primary focus:outline-none"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:border-blue-500 focus:outline-none"
                   >
                     {australianStates.map(state => (
                       <option key={state} value={state}>{state}</option>
@@ -337,25 +344,25 @@ export default function RegisterPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-white font-medium mb-2">Postal Code</label>
+                  <label className="block text-gray-900 font-medium mb-2">Postal Code</label>
                   <input
                     type="text"
                     name="postalCode"
                     value={formData.postalCode}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                     placeholder="e.g., 2000"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">Phone Number</label>
+                <label className="block text-gray-900 font-medium mb-2">Phone Number</label>
                 <input
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., +61 2 9000 0000"
                 />
               </div>
@@ -365,61 +372,61 @@ export default function RegisterPage() {
           {/* Step 3: Admin Account */}
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Admin Account Setup</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Admin Account Setup</h2>
               <div>
-                <label className="block text-white font-medium mb-2">Full Name</label>
+                <label className="block text-gray-900 font-medium mb-2">Full Name</label>
                 <input
                   type="text"
                   name="adminFullName"
                   value={formData.adminFullName}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., John Smith"
                 />
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">Email Address</label>
+                <label className="block text-gray-900 font-medium mb-2">Email Address</label>
                 <input
                   type="email"
                   name="adminEmail"
                   value={formData.adminEmail}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="e.g., admin@example.com"
                 />
-                <p className="text-sm text-neutral-400 mt-2">Use your club domain email for quick verification.</p>
+                <p className="text-sm text-gray-600 mt-2">Use your club domain email for quick verification.</p>
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">Username</label>
+                <label className="block text-gray-900 font-medium mb-2">Username</label>
                 <div className="relative">
                   <input
                     type="text"
                     name="adminUsername"
                     value={formData.adminUsername}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none pr-32"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none pr-32"
                     placeholder="e.g., Admin"
                     style={{ paddingRight: formData.clubDomain ? `${(normalizeDomainForDisplay(formData.clubDomain).length + 1) * 9 + 16}px` : '16px' }}
                   />
                   {formData.clubDomain && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none select-none">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none select-none">
                       @{normalizeDomainForDisplay(formData.clubDomain)}
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-neutral-400 mt-2">You'll use this to sign in (with your domain).</p>
+                <p className="text-sm text-gray-600 mt-2">You'll use this to sign in (with your domain).</p>
               </div>
               <div>
-                <label className="block text-white font-medium mb-2">Password</label>
+                <label className="block text-gray-900 font-medium mb-2">Password</label>
                 <input
                   type="password"
                   name="adminPassword"
                   value={formData.adminPassword}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-neutral-700 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:border-primary focus:outline-none"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                   placeholder="••••••••"
                 />
-                <p className="text-sm text-neutral-400 mt-2">At least 8 characters, with uppercase, lowercase, and number.</p>
+                <p className="text-sm text-gray-600 mt-2">At least 8 characters, with uppercase, lowercase, and number.</p>
               </div>
             </div>
           )}
@@ -427,23 +434,23 @@ export default function RegisterPage() {
           {/* Step 4: Review & Confirm */}
           {step === 4 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Review & Confirm</h2>
-              <div className="bg-neutral-700/50 rounded-lg p-6 space-y-4">
+              <h2 className="text-2xl font-bold text-gray-900">Review & Confirm</h2>
+              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                 <div>
-                  <p className="text-neutral-400 text-sm">Club Name</p>
-                  <p className="text-white font-semibold">{formData.clubName}</p>
+                  <p className="text-gray-600 text-sm">Club Name</p>
+                  <p className="text-gray-900 font-semibold">{formData.clubName}</p>
                 </div>
                 <div>
-                  <p className="text-neutral-400 text-sm">Location</p>
-                  <p className="text-white font-semibold">{formData.city}, {formData.state} {formData.postalCode}</p>
+                  <p className="text-gray-600 text-sm">Location</p>
+                  <p className="text-gray-900 font-semibold">{formData.city}, {formData.state} {formData.postalCode}</p>
                 </div>
                 <div>
-                  <p className="text-neutral-400 text-sm">Admin Email</p>
-                  <p className="text-white font-semibold">{formData.adminEmail}</p>
+                  <p className="text-gray-600 text-sm">Admin Email</p>
+                  <p className="text-gray-900 font-semibold">{formData.adminEmail}</p>
                 </div>
                 <div>
-                  <p className="text-neutral-400 text-sm">Admin Username</p>
-                  <p className="text-white font-semibold">{formData.adminUsername}@{normalizeDomainForDisplay(formData.clubDomain)}</p>
+                  <p className="text-gray-600 text-sm">Admin Username</p>
+                  <p className="text-gray-900 font-semibold">{formData.adminUsername}@{normalizeDomainForDisplay(formData.clubDomain)}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -452,15 +459,15 @@ export default function RegisterPage() {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
-                  className="mt-1 w-4 h-4 bg-neutral-700 border border-neutral-600 rounded cursor-pointer"
+                  className="mt-1 w-4 h-4 bg-white border border-gray-300 rounded cursor-pointer"
                 />
-                <label className="text-neutral-300 text-sm">
+                <label className="text-gray-700 text-sm">
                   I agree to the{' '}
-                  <Link href="#" className="text-primary hover:text-primary-light">
+                  <Link href="#" className="text-blue-600 hover:text-blue-700">
                     Terms and Conditions
                   </Link>{' '}
                   and{' '}
-                  <Link href="#" className="text-primary hover:text-primary-light">
+                  <Link href="#" className="text-blue-600 hover:text-blue-700">
                     Privacy Policy
                   </Link>
                 </label>
@@ -474,7 +481,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={handlePreviousStep}
-                className="flex-1 px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg font-semibold transition"
+                className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition"
               >
                 Previous
               </button>
@@ -483,7 +490,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="flex-1 px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-semibold transition"
+                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
               >
                 Next
               </button>
@@ -491,7 +498,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white rounded-lg font-semibold transition"
+                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
               >
                 {loading ? 'Registering...' : 'Complete Registration'}
               </button>
@@ -500,9 +507,9 @@ export default function RegisterPage() {
         </form>
 
         {/* Sign In Link */}
-        <p className="text-center text-neutral-400 mt-6">
+        <p className="text-center text-gray-600 mt-6">
           Already have an account?{' '}
-          <Link href="/sign-in" className="text-primary hover:text-primary-light">
+          <Link href="/sign-in" className="text-blue-600 hover:text-blue-700">
             Sign In
           </Link>
         </p>
