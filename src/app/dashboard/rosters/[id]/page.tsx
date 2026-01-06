@@ -81,9 +81,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([])
   const [editScope, setEditScope] = useState<'single' | 'future'>('single')
   const [zoneScope, setZoneScope] = useState<'single' | 'all'>('single')
-  const [editingTime, setEditingTime] = useState(false)
-  const [sessionStartTime, setSessionStartTime] = useState('')
-  const [sessionEndTime, setSessionEndTime] = useState('')
   const [showZoneReorderModal, setShowZoneReorderModal] = useState(false)
   const [reorderingSessionId, setReorderingSessionId] = useState<string | null>(null)
   const [zoneReorderScope, setZoneReorderScope] = useState<'single' | 'future'>('single')
@@ -212,12 +209,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         zoneScope: zoneScope // 'single' or 'all'
       }
       
-      // If editing time, include time updates
-      if (editingTime) {
-        updateData.startTime = sessionStartTime
-        updateData.endTime = sessionEndTime
-      }
-      
       // Determine endpoint based on edit scope
       const endpoint = editScope === 'future' && roster?.templateId
         ? `/api/rosters/bulk-update-future`
@@ -244,14 +235,13 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         setSelectedCoachIds([])
         setEditScope('single')
         setZoneScope('single')
-        setEditingTime(false)
         await fetchRoster() // Refresh to show updated coaches
       } else {
         const data = await res.json()
-        setError(data.error || (editingTime ? 'Failed to update session' : 'Failed to update coaches'))
+        setError(data.error || 'Failed to update coaches')
       }
     } catch (err) {
-      setError(editingTime ? 'Failed to update session' : 'Failed to update coaches')
+      setError('Failed to update coaches')
     }
   }
 
@@ -767,48 +757,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                {/* Time Editing Toggle */}
-                <div className="mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editingTime}
-                      onChange={(e) => setEditingTime(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span className="text-sm font-medium">Edit session times</span>
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1 ml-6">
-                    Note: This changes the overall session time window. All zones will be recalculated with equal rotations.
-                  </p>
-                </div>
-
-                {/* Time Fields */}
-                {editingTime && (
-                  <div className="mb-4 p-3 bg-gray-50 border rounded">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Start Time</label>
-                        <input
-                          type="time"
-                          value={sessionStartTime}
-                          onChange={(e) => setSessionStartTime(e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">End Time</label>
-                        <input
-                          type="time"
-                          value={sessionEndTime}
-                          onChange={(e) => setSessionEndTime(e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Select Coaches:</label>
                   <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-3">
@@ -848,7 +796,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                         setSelectedCoachIds([])
                         setEditScope('single')
                         setZoneScope('single')
-                        setEditingTime(false)
                       }}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                     >
