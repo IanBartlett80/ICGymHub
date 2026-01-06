@@ -98,7 +98,7 @@ export default function DashboardPage() {
       description: 'Manage competitions, scores, and athlete competition tracking',
       logo: '/imgs/main_logo_small.png',
       color: 'bg-white',
-      href: 'https://icscore.club',
+      href: 'https://devbox.icscore.club/',
       cta: 'Competition Management',
       disabled: false,
       hasInfoBadge: true,
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                             {showIcscoreInfo && isIcscore && (
                               <div className="absolute right-0 top-8 z-10 w-64 bg-white border border-gray-300 rounded-lg shadow-xl p-3 text-sm text-gray-700">
                                 <p className="font-medium text-yellow-600 mb-1">⚠️ Additional License Required</p>
-                                <p className="text-xs">ICScore requires additional licensing. All information will be provided by accessing this feature.</p>
+                                <p className="text-xs">ICScore requires additional licensing. However as a GymHub member you will recieve free hosting for all of your competitions. Vists ICScore for more information</p>
                                 <button 
                                   onClick={(e) => {
                                     e.preventDefault()
