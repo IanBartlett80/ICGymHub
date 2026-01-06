@@ -129,8 +129,8 @@ export async function PATCH(
     if (startTime || endTime) {
       const roster = await prisma.roster.findFirst({
         where: {
-          sessions: {
-            some: { id: sessionId }
+          slots: {
+            some: { sessionId: sessionId }
           }
         }
       });
