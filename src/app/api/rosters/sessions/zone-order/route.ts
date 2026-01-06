@@ -33,6 +33,8 @@ const updateZoneOrderSchema = z.object({
     slotId: z.string(),
     zoneId: z.string(),
     order: z.number(),
+    startsAt: z.string(),
+    endsAt: z.string(),
   })),
   scope: z.enum(['single', 'future']).optional().default('single'),
 })
@@ -72,7 +74,12 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Group zone order changes by slot
-    const zoneOrderMap = new Map(zoneOrder.map(zo => [zo.slotId, { zoneId: zo.zoneId, order: zo.order }]))
+    const zoneOrderMap = new Map(zoneOrder.map(zo => [zo.slotId, { 
+      zoneId: zo.zoneId, 
+      order: zo.order,
+      startsAt: zo.startsAt,
+      endsAt: zo.endsAt,
+    }]))
 
     if (scope === 'single') {
       // Update only this roster's slots
@@ -86,6 +93,8 @@ export async function PATCH(req: NextRequest) {
             data: {
               zoneId: orderData.zoneId,
               zoneOrder: orderData.order,
+              startsAt: new Date(orderData.startsAt),
+              endsAt: new Date(orderData.endsAt),
             },
           })
           affectedRosterIds.add(slot.rosterId)
@@ -159,6 +168,8 @@ export async function PATCH(req: NextRequest) {
                 data: {
                   zoneId: orderData.zoneId,
                   zoneOrder: orderData.order,
+                  startsAt: new Date(orderData.startsAt),
+                  endsAt: new Date(orderData.endsAt),
                 },
               })
               affectedRosterIds.add(targetSlots[i].rosterId)

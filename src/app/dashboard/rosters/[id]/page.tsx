@@ -269,7 +269,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     setZoneReorderScope('single')
   }
 
-  const handleSaveZoneOrder = async (newOrder: Array<{ slotId: string; zoneId: string; order: number }>) => {
+  const handleSaveZoneOrder = async (newOrder: Array<{ slotId: string; zoneId: string; order: number; startsAt: string; endsAt: string }>) => {
     if (!reorderingSessionId) return
 
     try {
@@ -891,6 +891,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                 slotId: slot.id,
                 zoneId: slot.zone.id,
                 order: index,
+                startsAt: slot.startsAt,
+                endsAt: slot.endsAt,
               }))
               handleSaveZoneOrder(zoneOrder)
             }

@@ -38,8 +38,23 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    // Count conflicts in the week
+    const activeConflicts = await prisma.rosterSlot.count({
+      where: {
+        clubId: decoded.clubId,
+        conflictFlag: true,
+        session: {
+          date: {
+            gte: monday,
+            lte: sunday
+          }
+        }
+      }
+    })
+
     return NextResponse.json({ 
       weeklyClassCount,
+      activeConflicts,
       weekStart: monday.toISOString(),
       weekEnd: sunday.toISOString()
     })

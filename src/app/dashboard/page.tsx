@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [weeklyClassCount, setWeeklyClassCount] = useState<number>(0)
+  const [activeConflicts, setActiveConflicts] = useState<number>(0)
   const [showIcscoreInfo, setShowIcscoreInfo] = useState(false)
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json()
         setWeeklyClassCount(data.weeklyClassCount || 0)
+        setActiveConflicts(data.activeConflicts || 0)
       }
     } catch (error) {
       console.error('Failed to fetch weekly stats:', error)
@@ -62,7 +64,7 @@ export default function DashboardPage() {
       title: 'Roster Management',
       description: 'Manage class schedules, instructors, and student enrollment',
       icon: '📅',
-      color: 'from-neutral-800 via-neutral-800 to-neutral-900',
+      color: 'from-blue-600 to-blue-700',
       href: '/dashboard/class-rostering',
       cta: 'Manage Classes',
       disabled: false,
@@ -73,7 +75,7 @@ export default function DashboardPage() {
       title: 'Injury / Incident Management',
       description: 'Track incidents, create reports, and maintain compliance records',
       icon: '🏥',
-      color: 'from-neutral-800 via-neutral-800 to-neutral-900',
+      color: 'from-red-600 to-red-700',
       href: '#',
       cta: 'Coming Soon',
       disabled: true,
@@ -84,7 +86,7 @@ export default function DashboardPage() {
       title: 'Equipment Management',
       description: 'Schedule equipment inspections and maintain safety logs',
       icon: '🔧',
-      color: 'from-neutral-800 via-neutral-800 to-neutral-900',
+      color: 'from-orange-600 to-orange-700',
       href: '#',
       cta: 'Coming Soon',
       disabled: true,
@@ -95,7 +97,7 @@ export default function DashboardPage() {
       title: '',
       description: 'Manage competitions, scores, and athlete competition tracking',
       logo: '/imgs/main_logo_small.png',
-      color: 'from-neutral-800 via-neutral-800 to-neutral-900',
+      color: 'bg-white',
       href: 'https://icscore.club',
       cta: 'Competition Management',
       disabled: false,
@@ -107,7 +109,7 @@ export default function DashboardPage() {
       title: 'Maintenance Management',
       description: 'Track facility and equipment maintenance tasks and schedules',
       icon: '🛠️',
-      color: 'from-neutral-800 via-neutral-800 to-neutral-900',
+      color: 'from-green-600 to-green-700',
       href: '#',
       cta: 'Coming Soon',
       disabled: true,
@@ -135,8 +137,18 @@ export default function DashboardPage() {
             <p className="text-3xl font-bold text-gray-900">0</p>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <p className="text-gray-600 text-sm mb-2">Total Classes This Week</p>
-            <p className="text-3xl font-bold text-gray-900">{weeklyClassCount}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <p className="text-gray-600 text-sm mb-2">Total Classes This Week</p>
+                <p className="text-3xl font-bold text-gray-900 mt-auto">{weeklyClassCount}</p>
+              </div>
+              <div className="flex flex-col">
+                <p className="text-gray-600 text-sm mb-2">Active Conflicts</p>
+                <p className={`text-3xl font-bold mt-auto ${activeConflicts > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {activeConflicts}
+                </p>
+              </div>
+            </div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <p className="text-gray-600 text-sm mb-2">Open Incidents</p>
@@ -169,11 +181,11 @@ export default function DashboardPage() {
                   }`}
                 >
                   {/* Service Header with Gradient */}
-                  <div className={`bg-gradient-to-br ${service.color} p-4 relative ${service.logo ? 'flex items-center justify-center min-h-[120px]' : ''}`}>
+                  <div className={`${service.logo ? service.color : `bg-gradient-to-br ${service.color}`} p-4 relative min-h-[72px] flex flex-col justify-center`}>
                     {service.logo ? (
                       <>
-                        <div className="w-full h-full flex items-center justify-center py-2">
-                          <div className="relative w-full h-24">
+                        <div className="flex items-center justify-center pb-3">
+                          <div className="relative h-12 w-full">
                             <Image 
                               src={service.logo} 
                               alt="ICScore"
@@ -190,7 +202,7 @@ export default function DashboardPage() {
                                 e.stopPropagation()
                                 setShowIcscoreInfo(!showIcscoreInfo)
                               }}
-                              className="w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center text-xs font-bold text-slate-700 transition-all hover:scale-110 shadow-lg"
+                              className="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-slate-700 transition-all hover:scale-110 shadow-lg"
                               title="Additional licensing required"
                             >
                               i
@@ -225,7 +237,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Service Body */}
-                  <div className="p-4">
+                  <div className={`p-4 ${service.logo ? 'pt-6' : ''}`}>
                     <p className="text-gray-600 text-xs mb-4 line-clamp-2">
                       {service.description}
                     </p>
