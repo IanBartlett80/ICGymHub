@@ -51,7 +51,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       <aside
         className={`${
           sidebarCollapsed ? 'w-16' : 'w-64'
-        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30`}
+        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
       >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-end">
@@ -135,7 +135,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
-                      Roster Reports
+                      Reports
                     </Link>
                   </li>
                   <li>
@@ -192,9 +192,9 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
+      <div className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300 print:ml-0`}>
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
           <div className="pl-4 pr-6 py-3 flex items-center justify-between">
             {/* Logo and Back Navigation section */}
             <div className="flex flex-col gap-2">
@@ -283,7 +283,11 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
         </header>
 
         {/* Class Rostering Sub Navigation */}
-        {showClassRosteringNav && <ClassRosteringSubNav />}
+        {showClassRosteringNav && (
+          <div className="print:hidden">
+            <ClassRosteringSubNav />
+          </div>
+        )}
 
         {/* Page Content */}
         <main>{children}</main>

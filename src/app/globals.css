@@ -34,3 +34,86 @@ select {
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
+
+/* Print Styles for Reports */
+@media print {
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: white !important;
+  }
+
+  /* Hide all navigation, sidebar, and UI elements */
+  aside,
+  nav,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Show only print content */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Remove padding and margins from main containers */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Make content full width */
+  .max-w-7xl {
+    max-width: 100% !important;
+  }
+
+  /* Remove shadows and rounded corners for cleaner print */
+  .shadow,
+  .rounded-lg {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Page break handling */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Ensure proper borders and spacing for printing */
+  table, th, td {
+    border-collapse: collapse;
+  }
+
+  /* Make text darker for better print quality */
+  .text-gray-700 {
+    color: #1f2937 !important;
+  }
+
+  .text-gray-900 {
+    color: #000000 !important;
+  }
+
+  /* Remove background colors that might interfere */
+  .bg-gray-50,
+  .bg-gray-100 {
+    background-color: white !important;
+  }
+}

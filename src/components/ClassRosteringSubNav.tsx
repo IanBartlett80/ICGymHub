@@ -45,7 +45,7 @@ export default function ClassRosteringSubNav() {
       icon: '📅',
     },
     {
-      label: 'Roster Reports',
+      label: 'Reports',
       href: '/dashboard/roster-reports',
       icon: '📄',
     },

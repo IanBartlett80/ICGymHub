@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const coachId = searchParams.get('coachId')
+    const classId = searchParams.get('classId')
     const status = searchParams.get('status') || 'PUBLISHED' // Default to published only
 
     // Build filter conditions
@@ -105,6 +106,12 @@ export async function GET(req: NextRequest) {
     if (coachId) {
       slots = slots.filter((slot) =>
         slot.session.coaches.some((c) => c.coach.id === coachId)
+      )
+    }
+
+    if (classId) {
+      slots = slots.filter((slot) =>
+        slot.session.template?.id === classId
       )
     }
 

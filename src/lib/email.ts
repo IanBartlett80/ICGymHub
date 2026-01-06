@@ -292,3 +292,102 @@ export async function testEmailConnection() {
     throw error
   }
 }
+
+// Generic email sending function
+interface SendEmailParams {
+  to: string
+  subject: string
+  htmlContent: string
+  textContent?: string
+}
+
+export async function sendEmail({
+  to,
+  subject,
+  htmlContent,
+  textContent,
+}: SendEmailParams) {
+  const provider = getEmailProvider()
+  
+  if (provider === 'graph') {
+    return await sendGenericEmailViaGraph({ to, subject, htmlContent })
+  } else {
+    return await sendGenericEmailViaSMTP({ to, subject, htmlContent, textContent })
+  }
+}
+
+async function sendGenericEmailViaGraph({
+  to,
+  subject,
+  htmlContent,
+}: SendEmailParams) {
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.AZURE_SENDER_EMAIL
+
+  if (!fromEmail) {
+    throw new Error('Sender email is not configured (SMTP_FROM_EMAIL or AZURE_SENDER_EMAIL)')
+  }
+
+  const message = {
+    subject,
+    body: {
+      contentType: 'HTML',
+      content: htmlContent,
+    },
+    from: {
+      emailAddress: {
+        address: fromEmail,
+      },
+    },
+    toRecipients: [
+      {
+        emailAddress: {
+          address: to,
+        },
+      },
+    ],
+  }
+
+  try {
+    const client = getGraphClient()
+    await client.api(`/users/${fromEmail}/sendMail`).post({
+      message,
+      saveToSentItems: false,
+    })
+    console.log(`✅ Email sent via Microsoft Graph to ${to}`)
+    return { success: true, provider: 'graph' }
+  } catch (error) {
+    console.error('❌ Failed to send email via Microsoft Graph:', error)
+    throw error
+  }
+}
+
+async function sendGenericEmailViaSMTP({
+  to,
+  subject,
+  htmlContent,
+  textContent,
+}: SendEmailParams) {
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
+
+  if (!fromEmail) {
+    throw new Error('SMTP_FROM_EMAIL is not configured')
+  }
+
+  const mailOptions = {
+    from: `"${process.env.SMTP_FROM_NAME || 'ICGymHub'}" <${fromEmail}>`,
+    to,
+    subject,
+    html: htmlContent,
+    text: textContent || htmlContent.replace(/<[^>]*>/g, ''), // Strip HTML if no text provided
+  }
+
+  try {
+    const transporter = getTransporter()
+    const info = await transporter.sendMail(mailOptions)
+    console.log('✅ Email sent via SMTP:', info.messageId)
+    return { success: true, messageId: info.messageId, provider: 'smtp' }
+  } catch (error) {
+    console.error('❌ Failed to send email via SMTP:', error)
+    throw error
+  }
+}
