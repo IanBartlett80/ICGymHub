@@ -887,12 +887,19 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
             }
 
             const handleConfirmReorder = () => {
+              // Get the original slots (sorted by time) to capture the time slots
+              const originalSlots = roster.slots
+                .filter(slot => slot.session.id === reorderingSessionId)
+                .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+              
+              // Map the reordered slots to their new positions with the original time slots
               const zoneOrder = reorderedSlots.map((slot, index) => ({
                 slotId: slot.id,
                 zoneId: slot.zone.id,
                 order: index,
-                startsAt: slot.startsAt,
-                endsAt: slot.endsAt,
+                // Assign the time from the original slot at this position
+                startsAt: originalSlots[index].startsAt,
+                endsAt: originalSlots[index].endsAt,
               }))
               handleSaveZoneOrder(zoneOrder)
             }
