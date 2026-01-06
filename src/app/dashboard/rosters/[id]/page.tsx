@@ -248,10 +248,10 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         await fetchRoster() // Refresh to show updated coaches
       } else {
         const data = await res.json()
-        setError(data.error || 'Failed to update coaches')
+        setError(data.error || (editingTime ? 'Failed to update session' : 'Failed to update coaches'))
       }
     } catch (err) {
-      setError('Failed to update coaches')
+      setError(editingTime ? 'Failed to update session' : 'Failed to update coaches')
     }
   }
 
@@ -778,6 +778,9 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                     />
                     <span className="text-sm font-medium">Edit session times</span>
                   </label>
+                  <p className="text-xs text-gray-500 mt-1 ml-6">
+                    Note: This changes the overall session time window. All zones will be recalculated with equal rotations.
+                  </p>
                 </div>
 
                 {/* Time Fields */}
