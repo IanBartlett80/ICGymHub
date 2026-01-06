@@ -407,7 +407,7 @@ export async function recalculateRosterConflicts(
   })
 
   // Build schedules for zones and coaches
-  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean }>>()
+  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean; zoneAllowsOverlap: boolean }>>()
   const coachSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date }>>()
 
   for (const slot of slots) {
@@ -417,7 +417,8 @@ export async function recalculateRosterConflicts(
       slotId: slot.id, 
       start: slot.startsAt, 
       end: slot.endsAt,
-      allowOverlap: slot.allowOverlap
+      allowOverlap: slot.allowOverlap,
+      zoneAllowsOverlap: slot.zone.allowOverlap
     })
     zoneSchedule.set(slot.zoneId, zoneEntries)
 
@@ -444,8 +445,15 @@ export async function recalculateRosterConflicts(
       // Skip self
       if (entry.slotId === slot.id) continue
       
-      // Check if there's an overlap and overlap is not allowed
-      if (!slot.allowOverlap && overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
+      // Check if there's an overlap and overlap is not allowed by ANY of:
+      // - The current slot's allowOverlap flag
+      // - The other entry's allowOverlap flag
+      // - The zone's allowOverlap flag (master zone setting)
+      // If any of these allow overlap, there's no conflict
+      const currentAllowsOverlap = slot.allowOverlap || slot.zone.allowOverlap
+      const entryAllowsOverlap = entry.allowOverlap || entry.zoneAllowsOverlap
+      
+      if (!currentAllowsOverlap && !entryAllowsOverlap && overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
         hasZoneConflict = true
         break
       }
