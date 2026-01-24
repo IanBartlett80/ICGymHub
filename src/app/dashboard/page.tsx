@@ -76,9 +76,9 @@ export default function DashboardPage() {
       description: 'Track incidents, create reports, and maintain compliance records',
       icon: '🏥',
       color: 'from-red-600 to-red-700',
-      href: '#',
-      cta: 'Coming Soon',
-      disabled: true,
+      href: '/dashboard/injury-reports',
+      cta: 'Manage Reports',
+      disabled: false,
       hasInfoBadge: false,
     },
     {

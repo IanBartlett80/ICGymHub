@@ -46,6 +46,9 @@ model Club {
   rosterExports      RosterExport[]
   rosterSlots        RosterSlot[]
   gymsports          Gymsport[]
+  injuryFormTemplates InjuryFormTemplate[]
+  injurySubmissions  InjurySubmission[]
+  injuryNotifications InjuryNotification[]
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -91,6 +94,10 @@ model User {
   generatedSessions     ClassSession[] @relation("SessionGeneratedBy")
   createdRosterTemplates RosterTemplate[] @relation("RosterTemplateCreatedBy")
   generatedRosters      Roster[]       @relation("RosterGeneratedBy")
+  assignedInjurySubmissions InjurySubmission[] @relation("AssignedInjurySubmissions")
+  injurySubmissionComments InjurySubmissionComment[]
+  injurySubmissionAudits InjurySubmissionAudit[]
+  injuryNotifications   InjuryNotification[]
   
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -505,4 +512,265 @@ model RosterExport {
 
   @@index([clubId])
   @@index([status])
+}
+
+// ============================================
+// INJURY / INCIDENT MANAGEMENT
+// ============================================
+
+// Injury Form Templates (like Microsoft Forms)
+model InjuryFormTemplate {
+  id                String                    @id @default(cuid())
+  club              Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  name              String
+  description       String?
+  isDefault         Boolean                   @default(false) // Default template provided to new clubs
+  active            Boolean                   @default(true)
+  qrCode            String?                   // Store QR code data URL or path
+  publicUrl         String                    @unique // Unique URL slug for public access
+  
+  // UI Configuration
+  headerColor       String?                   @default("#0078d4") // Theme color
+  logoUrl           String?
+  thankYouMessage   String?                   @default("Thank you for your submission. We will review this report shortly.")
+  
+  // Relations
+  sections          InjuryFormSection[]
+  fields            InjuryFormField[]
+  submissions       InjurySubmission[]
+  automations       InjuryFormAutomation[]
+  
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  
+  @@index([clubId])
+  @@index([active])
+  @@index([publicUrl])
+}
+
+// Form Sections (organize fields into pages/sections)
+model InjuryFormSection {
+  id                String                @id @default(cuid())
+  template          InjuryFormTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId        String
+  title             String
+  description       String?
+  order             Int                   @default(0)
+  
+  // Relations
+  fields            InjuryFormField[]
+  
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  
+  @@index([templateId])
+  @@index([order])
+}
+
+// Form Fields (questions in the form)
+model InjuryFormField {
+  id                String                    @id @default(cuid())
+  template          InjuryFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId        String
+  section           InjuryFormSection?        @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId         String?
+  
+  // Field Configuration
+  fieldType         String                    // TEXT_SHORT, TEXT_LONG, NUMBER, DATE, TIME, DATETIME, EMAIL, PHONE, DROPDOWN, MULTIPLE_CHOICE, CHECKBOXES
+  label             String
+  description       String?
+  placeholder       String?
+  required          Boolean                   @default(false)
+  order             Int                       @default(0)
+  
+  // Field Options (JSON for dropdowns, multiple choice, checkboxes)
+  // Format: ["Option 1", "Option 2", "Option 3"]
+  options           String?
+  
+  // Validation Rules (JSON)
+  // Format: { "min": 0, "max": 100, "pattern": "regex", "message": "Error message" }
+  validation        String?
+  
+  // Conditional Logic (JSON) - Complex conditions
+  // Format: { "conditions": [{ "field": "fieldId", "operator": "equals|contains|greaterThan|lessThan", "value": "x" }], "logic": "AND|OR", "action": "show|hide" }
+  conditionalLogic  String?
+  
+  // Relations
+  submissionData    InjurySubmissionData[]
+  
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  
+  @@index([templateId])
+  @@index([sectionId])
+  @@index([order])
+}
+
+// Injury Submissions (actual reports submitted)
+model InjurySubmission {
+  id                  String                      @id @default(cuid())
+  template            InjuryFormTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId          String
+  club                Club                        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId              String
+  
+  // Submission Info (JSON - for anonymous submissions)
+  // Format: { "name": "John Doe", "email": "john@example.com", "phone": "0400000000", "ipAddress": "192.168.1.1" }
+  submitterInfo       String?
+  
+  // Status Management
+  status              String                      @default("NEW") // NEW, UNDER_REVIEW, RESOLVED, CLOSED
+  priority            String?                     // CRITICAL, HIGH, MEDIUM, LOW (can be set by automation)
+  
+  // Assignment
+  assignedTo          User?                       @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  assignedToUserId    String?
+  assignedAt          DateTime?
+  
+  // Data Retention (5 years for Australian WHS compliance)
+  retentionDate       DateTime?                   // Auto-calculated as submittedAt + 5 years
+  archived            Boolean                     @default(false)
+  
+  // Relations
+  data                InjurySubmissionData[]
+  comments            InjurySubmissionComment[]
+  auditLog            InjurySubmissionAudit[]
+  notifications       InjuryNotification[]
+  
+  submittedAt         DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  
+  @@index([clubId])
+  @@index([templateId])
+  @@index([status])
+  @@index([assignedToUserId])
+  @@index([submittedAt])
+  @@index([retentionDate])
+}
+
+// Submission Data (actual field values)
+model InjurySubmissionData {
+  id                String              @id @default(cuid())
+  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String
+  field             InjuryFormField     @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  fieldId           String
+  
+  // Value stored as JSON to accommodate any data type
+  // Format: { "value": "actual value", "displayValue": "human readable" }
+  value             String
+  
+  createdAt         DateTime            @default(now())
+  
+  @@index([submissionId])
+  @@index([fieldId])
+}
+
+// Admin Comments on Submissions
+model InjurySubmissionComment {
+  id                String              @id @default(cuid())
+  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  comment           String
+  isInternal        Boolean             @default(true) // Internal notes vs. visible to submitter
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  @@index([submissionId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Audit Log for Submission Changes
+model InjurySubmissionAudit {
+  id                String              @id @default(cuid())
+  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String
+  user              User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?
+  
+  action            String              // STATUS_CHANGED, ASSIGNED, PRIORITY_CHANGED, COMMENT_ADDED, etc.
+  oldValue          String?
+  newValue          String?
+  metadata          String?             // Additional JSON data
+  
+  createdAt         DateTime            @default(now())
+  
+  @@index([submissionId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Form Automation Rules (like Power Automate)
+model InjuryFormAutomation {
+  id                String                @id @default(cuid())
+  template          InjuryFormTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId        String
+  
+  name              String
+  description       String?
+  active            Boolean               @default(true)
+  order             Int                   @default(0) // Execution order
+  
+  // Trigger Conditions (JSON) - Complex logic
+  // Format: { "trigger": "ON_SUBMIT|ON_STATUS_CHANGE", "conditions": [{ "field": "fieldId", "operator": "equals", "value": "x" }], "logic": "AND|OR" }
+  triggerConditions String
+  
+  // Actions (JSON) - What to do when triggered
+  // Format: { "actions": [{ "type": "SEND_EMAIL|SET_PRIORITY|ASSIGN_USER|CREATE_NOTIFICATION", "config": {...} }] }
+  actions           String
+  
+  // Email Configuration (if action includes SEND_EMAIL)
+  emailRecipients   String?              // JSON array of email addresses or field references
+  emailSubject      String?
+  emailTemplate     String?              // HTML email template with variable placeholders
+  
+  // Escalation Configuration
+  escalationEnabled Boolean              @default(false)
+  escalationHours   Int?                 // Hours before escalation
+  escalationActions String?              // JSON - actions to take on escalation
+  
+  // Execution tracking
+  lastExecuted      DateTime?
+  executionCount    Int                  @default(0)
+  
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  
+  @@index([templateId])
+  @@index([active])
+  @@index([order])
+}
+
+// In-App Notifications
+model InjuryNotification {
+  id                String              @id @default(cuid())
+  club              Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  submission        InjurySubmission?   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String?
+  
+  type              String              // NEW_SUBMISSION, ASSIGNMENT, STATUS_CHANGE, ESCALATION, COMMENT_ADDED
+  title             String
+  message           String
+  priority          String              @default("NORMAL") // CRITICAL, HIGH, NORMAL, LOW
+  
+  read              Boolean             @default(false)
+  readAt            DateTime?
+  
+  // Action link (URL to navigate to)
+  actionUrl         String?
+  
+  createdAt         DateTime            @default(now())
+  
+  @@index([clubId])
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
 }

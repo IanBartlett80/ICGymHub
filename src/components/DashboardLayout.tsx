@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import ClassRosteringSubNav from './ClassRosteringSubNav'
+import NotificationBell from './NotificationBell'
 
 interface UserData {
   id: string
@@ -156,10 +157,17 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
 
             {/* Other Services - Coming Soon */}
             <li>
-              <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
+              <Link
+                href="/dashboard/injury-reports"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/injury-reports')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
                 <span className="text-xl">🏥</span>
-                {!sidebarCollapsed && <span className="text-sm">Incident Mgmt</span>}
-              </div>
+                {!sidebarCollapsed && <span>Injury Reports</span>}
+              </Link>
             </li>
             <li>
               <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
@@ -226,20 +234,25 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
             </div>
 
             {/* User Menu */}
-            {user && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
-                >
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
-                    <p className="text-xs text-gray-500">{user.role}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {user.fullName.charAt(0).toUpperCase()}
-                  </div>
-                </button>
+            <div className="flex items-center gap-3">
+              {/* Notification Bell */}
+              <NotificationBell />
+              
+              {/* User Profile */}
+              {user && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+                  >
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
+                      <p className="text-xs text-gray-500">{user.role}</p>
+                    </div>
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      {user.fullName.charAt(0).toUpperCase()}
+                    </div>
+                  </button>
 
                 {showUserMenu && (
                   <>
@@ -279,6 +292,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                 )}
               </div>
             )}
+            </div>
           </div>
         </header>
 
