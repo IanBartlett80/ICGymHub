@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 
 interface AutomationCondition {
