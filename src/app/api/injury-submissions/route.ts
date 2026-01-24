@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { verifyAuth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/apiAuth';
 
 // GET /api/injury-submissions - List all submissions for a club
 export async function GET(req: NextRequest) {

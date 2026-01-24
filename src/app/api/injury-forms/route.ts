@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { verifyAuth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/apiAuth';
 import { nanoid } from 'nanoid';
 
 // GET /api/injury-forms - List all injury form templates for a club
@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     // Generate unique public URL slug
     const publicUrl = `injury-report-${nanoid(10)}`;
 
+    // Create template first
     const template = await prisma.injuryFormTemplate.create({
       data: {
         clubId: authResult.user.clubId,
@@ -70,14 +71,28 @@ export async function POST(req: NextRequest) {
         headerColor: headerColor || '#0078d4',
         logoUrl,
         thankYouMessage: thankYouMessage || 'Thank you for your submission. We will review this report shortly.',
-        sections: {
-          create: sections?.map((section: any, sectionIndex: number) => ({
-            title: section.title,
-            description: section.description,
-            order: sectionIndex,
-            fields: {
-              create: section.fields?.map((field: any, fieldIndex: number) => ({
-                templateId: undefined, // Will be set by Prisma
+      },
+    });
+
+    // Then create sections with fields
+    if (sections && sections.length > 0) {
+      await Promise.all(
+        sections.map(async (section: any, sectionIndex: number) => {
+          const createdSection = await prisma.injuryFormSection.create({
+            data: {
+              templateId: template.id,
+              title: section.title,
+              description: section.description,
+              order: sectionIndex,
+            },
+          });
+
+          // Create fields for this section
+          if (section.fields && section.fields.length > 0) {
+            await prisma.injuryFormField.createMany({
+              data: section.fields.map((field: any, fieldIndex: number) => ({
+                templateId: template.id,
+                sectionId: createdSection.id,
                 fieldType: field.fieldType,
                 label: field.label,
                 description: field.description,
@@ -88,20 +103,26 @@ export async function POST(req: NextRequest) {
                 validation: field.validation ? JSON.stringify(field.validation) : null,
                 conditionalLogic: field.conditionalLogic ? JSON.stringify(field.conditionalLogic) : null,
               })),
-            },
-          })),
-        },
-      },
+            });
+          }
+        })
+      );
+    }
+
+    // Fetch the complete template with sections and fields
+    const completeTemplate = await prisma.injuryFormTemplate.findUnique({
+      where: { id: template.id },
       include: {
         sections: {
           include: {
             fields: true,
           },
+          orderBy: { order: 'asc' },
         },
       },
     });
 
-    return NextResponse.json({ template }, { status: 201 });
+    return NextResponse.json({ template: completeTemplate }, { status: 201 });
   } catch (error) {
     console.error('Error creating injury form template:', error);
     return NextResponse.json(

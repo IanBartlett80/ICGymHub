@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { triggerAutomations } from '@/lib/automationEngine';
 
 // GET /api/injury-submissions/public/[publicUrl] - Get public form template (no auth)

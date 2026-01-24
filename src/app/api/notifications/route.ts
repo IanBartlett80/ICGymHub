@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { verifyAuth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/apiAuth';
 
 // GET /api/notifications - Get notifications for current user
 export async function GET(req: NextRequest) {

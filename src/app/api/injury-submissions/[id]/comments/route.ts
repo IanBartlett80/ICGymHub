@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { verifyAuth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/apiAuth';
 
 // POST /api/injury-submissions/[id]/comments - Add a comment
 export async function POST(
