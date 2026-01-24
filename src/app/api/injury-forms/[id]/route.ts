@@ -5,7 +5,7 @@ import { verifyAuth } from '@/lib/apiAuth';
 // GET /api/injury-forms/[id] - Get a specific template
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
@@ -13,9 +13,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const template = await prisma.injuryFormTemplate.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: authResult.user.clubId,
       },
       include: {
@@ -51,7 +53,7 @@ export async function GET(
 // PUT /api/injury-forms/[id] - Update a template
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
@@ -59,13 +61,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await req.json();
     const { name, description, headerColor, logoUrl, thankYouMessage, active, sections } = body;
 
     // Verify ownership
     const existing = await prisma.injuryFormTemplate.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: authResult.user.clubId,
       },
     });
@@ -76,11 +79,12 @@ export async function PUT(
 
     // Delete existing sections and fields, then recreate
     await prisma.injuryFormSection.deleteMany({
-      where: { templateId: params.id },
+      where: { templateId: id },
     });
 
+    // Update template basic info
     const template = await prisma.injuryFormTemplate.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         description,
@@ -88,14 +92,28 @@ export async function PUT(
         logoUrl,
         thankYouMessage,
         active,
-        sections: {
-          create: sections?.map((section: any, sectionIndex: number) => ({
-            title: section.title,
-            description: section.description,
-            order: sectionIndex,
-            fields: {
-              create: section.fields?.map((field: any, fieldIndex: number) => ({
-                templateId: params.id,
+      },
+    });
+
+    // Recreate sections with fields
+    if (sections && sections.length > 0) {
+      await Promise.all(
+        sections.map(async (section: any, sectionIndex: number) => {
+          const createdSection = await prisma.injuryFormSection.create({
+            data: {
+              templateId: id,
+              title: section.title,
+              description: section.description,
+              order: sectionIndex,
+            },
+          });
+
+          // Create fields for this section
+          if (section.fields && section.fields.length > 0) {
+            await prisma.injuryFormField.createMany({
+              data: section.fields.map((field: any, fieldIndex: number) => ({
+                templateId: id,
+                sectionId: createdSection.id,
                 fieldType: field.fieldType,
                 label: field.label,
                 description: field.description,
@@ -106,10 +124,15 @@ export async function PUT(
                 validation: field.validation ? JSON.stringify(field.validation) : null,
                 conditionalLogic: field.conditionalLogic ? JSON.stringify(field.conditionalLogic) : null,
               })),
-            },
-          })),
-        },
-      },
+            });
+          }
+        })
+      );
+    }
+
+    // Fetch the complete updated template
+    const completeTemplate = await prisma.injuryFormTemplate.findUnique({
+      where: { id },
       include: {
         sections: {
           include: {
@@ -122,7 +145,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ template });
+    return NextResponse.json({ template: completeTemplate });
   } catch (error) {
     console.error('Error updating injury form template:', error);
     return NextResponse.json(
@@ -135,7 +158,7 @@ export async function PUT(
 // DELETE /api/injury-forms/[id] - Delete a template
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
@@ -143,10 +166,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     // Verify ownership
     const existing = await prisma.injuryFormTemplate.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: authResult.user.clubId,
       },
     });
@@ -157,7 +182,7 @@ export async function DELETE(
 
     // Check if there are any submissions
     const submissionCount = await prisma.injurySubmission.count({
-      where: { templateId: params.id },
+      where: { templateId: id },
     });
 
     if (submissionCount > 0) {
@@ -168,7 +193,7 @@ export async function DELETE(
     }
 
     await prisma.injuryFormTemplate.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

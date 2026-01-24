@@ -5,17 +5,21 @@ import { verifyAuth } from '@/lib/apiAuth';
 // GET /api/injury-submissions/[id]/export-pdf - Export submission as PDF
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+
+    const { id } = await params;
     }
 
     const submission = await prisma.injurySubmission.findFirst({
       where: {
-        id: params.id,
+        id: id,
         clubId: authResult.user.clubId,
       },
       include: {

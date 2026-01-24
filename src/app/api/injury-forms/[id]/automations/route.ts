@@ -5,18 +5,22 @@ import { verifyAuth } from '@/lib/apiAuth';
 // GET /api/injury-forms/[id]/automations - List automations for a template
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+
+    const { id } = await params;
     }
 
     // Verify template ownership
     const template = await prisma.injuryFormTemplate.findFirst({
       where: {
-        id: params.id,
+        id: id,
         clubId: authResult.user.clubId,
       },
     });
@@ -26,7 +30,7 @@ export async function GET(
     }
 
     const automations = await prisma.injuryFormAutomation.findMany({
-      where: { templateId: params.id },
+      where: { templateId: id },
       orderBy: { order: 'asc' },
     });
 
@@ -43,18 +47,22 @@ export async function GET(
 // POST /api/injury-forms/[id]/automations - Create automation
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+
+    const { id } = await params;
     }
 
     // Verify template ownership
     const template = await prisma.injuryFormTemplate.findFirst({
       where: {
-        id: params.id,
+        id: id,
         clubId: authResult.user.clubId,
       },
     });
@@ -81,7 +89,7 @@ export async function POST(
 
     const automation = await prisma.injuryFormAutomation.create({
       data: {
-        templateId: params.id,
+        templateId: id,
         name,
         description,
         active: active !== false,

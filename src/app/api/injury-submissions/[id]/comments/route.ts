@@ -5,12 +5,16 @@ import { verifyAuth } from '@/lib/apiAuth';
 // POST /api/injury-submissions/[id]/comments - Add a comment
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+
+    const { id } = await params;
     }
 
     const body = await req.json();
@@ -23,7 +27,7 @@ export async function POST(
     // Verify submission exists and belongs to club
     const submission = await prisma.injurySubmission.findFirst({
       where: {
-        id: params.id,
+        id: id,
         clubId: authResult.user.clubId,
       },
     });
@@ -34,7 +38,7 @@ export async function POST(
 
     const newComment = await prisma.injurySubmissionComment.create({
       data: {
-        submissionId: params.id,
+        submissionId: id,
         userId: authResult.user.id,
         comment,
         isInternal: isInternal !== false, // Default to internal
@@ -53,7 +57,7 @@ export async function POST(
     // Create audit log
     await prisma.injurySubmissionAudit.create({
       data: {
-        submissionId: params.id,
+        submissionId: id,
         userId: authResult.user.id,
         action: 'COMMENT_ADDED',
         metadata: JSON.stringify({ commentId: newComment.id, isInternal }),
@@ -66,11 +70,11 @@ export async function POST(
         data: {
           clubId: authResult.user.clubId,
           userId: submission.assignedToUserId,
-          submissionId: params.id,
+          submissionId: id,
           type: 'COMMENT_ADDED',
           title: 'New Comment on Injury Report',
           message: `${authResult.user.fullName} added a comment to a report you're assigned to.`,
-          actionUrl: `/dashboard/injury-reports/${params.id}`,
+          actionUrl: `/dashboard/injury-reports/${id}`,
         },
       });
     }

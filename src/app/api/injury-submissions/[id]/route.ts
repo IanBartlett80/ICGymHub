@@ -6,17 +6,21 @@ import { triggerAutomations } from '@/lib/automationEngine';
 // GET /api/injury-submissions/[id] - Get a specific submission
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+
+    const { id } = await params;
     }
 
     const submission = await prisma.injurySubmission.findFirst({
       where: {
-        id: params.id,
+        id: id,
         clubId: authResult.user.clubId,
       },
       include: {
@@ -87,12 +91,16 @@ export async function GET(
 // PATCH /api/injury-submissions/[id] - Update submission (status, assignment, priority)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await params;
+
+    const { id } = await params;
     }
 
     const body = await req.json();
@@ -101,7 +109,7 @@ export async function PATCH(
     // Verify ownership
     const existing = await prisma.injurySubmission.findFirst({
       where: {
-        id: params.id,
+        id: id,
         clubId: authResult.user.clubId,
       },
     });
@@ -117,7 +125,7 @@ export async function PATCH(
     if (status && status !== existing.status) {
       updateData.status = status;
       auditLogs.push({
-        submissionId: params.id,
+        submissionId: id,
         userId: authResult.user.id,
         action: 'STATUS_CHANGED',
         oldValue: existing.status,
@@ -129,7 +137,7 @@ export async function PATCH(
       updateData.assignedToUserId = assignedToUserId;
       updateData.assignedAt = assignedToUserId ? new Date() : null;
       auditLogs.push({
-        submissionId: params.id,
+        submissionId: id,
         userId: authResult.user.id,
         action: 'ASSIGNED',
         oldValue: existing.assignedToUserId,
@@ -142,11 +150,11 @@ export async function PATCH(
           data: {
             clubId: authResult.user.clubId,
             userId: assignedToUserId,
-            submissionId: params.id,
+            submissionId: id,
             type: 'ASSIGNMENT',
             title: 'New Injury Report Assigned',
             message: `You have been assigned to review an injury report.`,
-            actionUrl: `/dashboard/injury-reports/${params.id}`,
+            actionUrl: `/dashboard/injury-reports/${id}`,
           },
         });
       }
@@ -155,7 +163,7 @@ export async function PATCH(
     if (priority && priority !== existing.priority) {
       updateData.priority = priority;
       auditLogs.push({
-        submissionId: params.id,
+        submissionId: id,
         userId: authResult.user.id,
         action: 'PRIORITY_CHANGED',
         oldValue: existing.priority,
@@ -164,7 +172,7 @@ export async function PATCH(
     }
 
     const submission = await prisma.injurySubmission.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         assignedTo: {
@@ -185,7 +193,7 @@ export async function PATCH(
       
       // Trigger automations if status changed
       if (status && status !== existing.status) {
-        await triggerAutomations(params.id, 'ON_STATUS_CHANGE');
+        await triggerAutomations(id, 'ON_STATUS_CHANGE');
       }
     }
 

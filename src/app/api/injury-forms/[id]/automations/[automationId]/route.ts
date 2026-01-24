@@ -5,7 +5,7 @@ import { verifyAuth } from '@/lib/apiAuth';
 // GET /api/injury-forms/[id]/automations/[automationId] - Get specific automation
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string; automationId: string } }
+  { params }: { params: Promise<{ id: string; automationId: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
@@ -13,9 +13,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id, automationId } = await params;
+
     const automation = await prisma.injuryFormAutomation.findFirst({
       where: {
-        id: params.automationId,
+        id: automationId,
         template: {
           clubId: authResult.user.clubId,
         },
@@ -39,7 +41,7 @@ export async function GET(
 // PUT /api/injury-forms/[id]/automations/[automationId] - Update automation
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string; automationId: string } }
+  { params }: { params: Promise<{ id: string; automationId: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
@@ -47,6 +49,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id, automationId } = await params;
     const body = await req.json();
     const {
       name,
@@ -65,7 +68,7 @@ export async function PUT(
 
     const automation = await prisma.injuryFormAutomation.updateMany({
       where: {
-        id: params.automationId,
+        id: automationId,
         template: {
           clubId: authResult.user.clubId,
         },
@@ -91,7 +94,7 @@ export async function PUT(
     }
 
     const updated = await prisma.injuryFormAutomation.findUnique({
-      where: { id: params.automationId },
+      where: { id: automationId },
     });
 
     return NextResponse.json({ automation: updated });
@@ -107,17 +110,18 @@ export async function PUT(
 // DELETE /api/injury-forms/[id]/automations/[automationId] - Delete automation
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string; automationId: string } }
+  { params }: { params: Promise<{ id: string; automationId: string }> }
 ) {
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });\n    }
+
+    const { id, automationId } = await params;
 
     const result = await prisma.injuryFormAutomation.deleteMany({
       where: {
-        id: params.automationId,
+        id: automationId,
         template: {
           clubId: authResult.user.clubId,
         },

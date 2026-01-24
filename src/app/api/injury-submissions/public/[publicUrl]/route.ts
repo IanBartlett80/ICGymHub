@@ -5,12 +5,14 @@ import { triggerAutomations } from '@/lib/automationEngine';
 // GET /api/injury-submissions/public/[publicUrl] - Get public form template (no auth)
 export async function GET(
   req: NextRequest,
-  { params }: { params: { publicUrl: string } }
+  { params }: { params: Promise<{ publicUrl: string }> }
 ) {
   try {
+    const { publicUrl } = await params;
+
     const template = await prisma.injuryFormTemplate.findFirst({
       where: {
-        publicUrl: params.publicUrl,
+        publicUrl,
         active: true,
       },
       include: {
@@ -52,16 +54,17 @@ export async function GET(
 // POST /api/injury-submissions/public/[publicUrl] - Submit form (no auth)
 export async function POST(
   req: NextRequest,
-  { params }: { params: { publicUrl: string } }
+  { params }: { params: Promise<{ publicUrl: string }> }
 ) {
   try {
+    const { publicUrl } = await params;
     const body = await req.json();
     const { submitterInfo, formData } = body;
 
     // Get template
     const template = await prisma.injuryFormTemplate.findFirst({
       where: {
-        publicUrl: params.publicUrl,
+        publicUrl,
         active: true,
       },
       include: {
