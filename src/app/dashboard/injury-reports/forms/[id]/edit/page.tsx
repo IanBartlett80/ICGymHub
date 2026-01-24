@@ -75,7 +75,22 @@ export default function EditFormPage() {
       const res = await fetch(`/api/injury-forms/${templateId}`);
       if (res.ok) {
         const data = await res.json();
-        setTemplate(data.template);
+        
+        // Parse JSON fields (options, validation, conditionalLogic)
+        const parsedTemplate = {
+          ...data.template,
+          sections: data.template.sections.map((section: any) => ({
+            ...section,
+            fields: section.fields.map((field: any) => ({
+              ...field,
+              options: field.options ? JSON.parse(field.options) : undefined,
+              validation: field.validation ? JSON.parse(field.validation) : undefined,
+              conditionalLogic: field.conditionalLogic ? JSON.parse(field.conditionalLogic) : undefined,
+            })),
+          })),
+        };
+        
+        setTemplate(parsedTemplate);
       } else {
         alert('Form not found');
         router.push('/dashboard/injury-reports/forms');

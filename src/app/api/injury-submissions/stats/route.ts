@@ -79,18 +79,37 @@ export async function GET(req: NextRequest) {
     const totalSubmissions = submissions.length;
 
     // Average response time (time from submission to first status change)
-    const avgResponseTime = await prisma.$queryRaw<any[]>`
-      SELECT AVG(
-        CAST((julianday(audit.createdAt) - julianday(sub.submittedAt)) * 24 AS REAL)
-      ) as avgHours
-      FROM InjurySubmission sub
-      INNER JOIN InjurySubmissionAudit audit ON audit.submissionId = sub.id
-      WHERE sub.clubId = ${authResult.user.clubId}
-        AND audit.action = 'STATUS_CHANGED'
-        AND audit.oldValue = 'NEW'
-        ${Object.keys(dateFilter).length > 0 ? `AND sub.submittedAt >= datetime(${from}) AND sub.submittedAt <= datetime(${to})` : ''}
-      GROUP BY sub.id
-    `;
+    // Note: Using simple calculation instead of complex SQL for SQLite compatibility
+    const submissionsWithAudit = await prisma.injurySubmission.findMany({
+      where: {
+        clubId: authResult.user.clubId,
+        ...dateFilter,
+      },
+      include: {
+        auditLog: {
+          where: {
+            action: 'STATUS_CHANGED',
+            oldValue: 'NEW',
+          },
+          take: 1,
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    const responseTimes = submissionsWithAudit
+      .filter(s => s.auditLog.length > 0)
+      .map(s => {
+        const submittedAt = new Date(s.submittedAt).getTime();
+        const firstResponse = new Date(s.auditLog[0].createdAt).getTime();
+        return (firstResponse - submittedAt) / (1000 * 60 * 60); // hours
+      });
+
+    const avgResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
+      : 0;
 
     return NextResponse.json({
       totalSubmissions,
@@ -111,7 +130,7 @@ export async function GET(req: NextRequest) {
         };
       }),
       submissionsByDate,
-      avgResponseTimeHours: avgResponseTime[0]?.avgHours || 0,
+      avgResponseTimeHours: avgResponseTime,
     });
   } catch (error) {
     console.error('Error fetching statistics:', error);
