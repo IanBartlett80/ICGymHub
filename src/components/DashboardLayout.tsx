@@ -31,6 +31,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showConfigMenu, setShowConfigMenu] = useState(false)
+  const [showInjuryMenu, setShowInjuryMenu] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -81,7 +82,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               </Link>
             </li>
 
-            {/* Class Rostering */}
+            {/* Roster Management */}
             <li>
               <button
                 onClick={() => setShowConfigMenu(!showConfigMenu)}
@@ -93,7 +94,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">📅</span>
-                  {!sidebarCollapsed && <span>Class Rostering</span>}
+                  {!sidebarCollapsed && <span>Roster Management</span>}
                 </div>
                 {!sidebarCollapsed && (
                   <span className="text-sm">{showConfigMenu ? '▼' : '▶'}</span>
@@ -155,20 +156,81 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               )}
             </li>
 
-            {/* Other Services - Coming Soon */}
+            {/* Injury Management */}
             <li>
-              <Link
-                href="/dashboard/injury-reports"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+              <button
+                onClick={() => setShowInjuryMenu(!showInjuryMenu)}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
                   isActive('/dashboard/injury-reports')
                     ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <span className="text-xl">🏥</span>
-                {!sidebarCollapsed && <span>Injury Reports</span>}
-              </Link>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🏥</span>
+                  {!sidebarCollapsed && <span>Injury Management</span>}
+                </div>
+                {!sidebarCollapsed && (
+                  <span className="text-sm">{showInjuryMenu ? '▼' : '▶'}</span>
+                )}
+              </button>
+
+              {/* Injury Management Submenu */}
+              {showInjuryMenu && !sidebarCollapsed && (
+                <ul className="ml-9 mt-2 space-y-1">
+                  <li>
+                    <Link
+                      href="/dashboard/injury-reports"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        pathname === '/dashboard/injury-reports'
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/injury-reports/forms"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/injury-reports/forms')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Manage Forms
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/injury-reports/analytics"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/injury-reports/analytics')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Analytics
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/injury-reports/configuration"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/injury-reports/configuration')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Configuration
+                    </Link>
+                  </li>
+                </ul>
+              )}
             </li>
+
+            {/* Other Services - Coming Soon */}
             <li>
               <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
                 <span className="text-xl">🔧</span>

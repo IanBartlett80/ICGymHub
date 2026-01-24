@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 
 interface Field {
   id: string;
@@ -228,6 +229,7 @@ export default function AutomationBuilderPage() {
   if (loading) {
     return (
       <DashboardLayout title="Automations">
+        <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
         </div>
@@ -238,6 +240,7 @@ export default function AutomationBuilderPage() {
   if (!template) {
     return (
       <DashboardLayout title="Automations">
+        <InjuryReportsSubNav />
         <div className="text-center py-12">
           <div className="text-gray-400 text-lg">Template not found</div>
         </div>
@@ -249,6 +252,7 @@ export default function AutomationBuilderPage() {
 
   return (
     <DashboardLayout title="Automations">
+      <InjuryReportsSubNav />
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">

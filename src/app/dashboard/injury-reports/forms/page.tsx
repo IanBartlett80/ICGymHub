@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 
 interface FormTemplate {
   id: string;
@@ -98,6 +99,7 @@ export default function FormTemplatesPage() {
   if (loading) {
     return (
       <DashboardLayout title="Form Templates">
+        <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
         </div>
@@ -107,6 +109,7 @@ export default function FormTemplatesPage() {
 
   return (
     <DashboardLayout title="Form Templates">
+      <InjuryReportsSubNav />
       <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 
 interface FormField {
   id: string;
@@ -197,6 +198,7 @@ export default function FormBuilderPage() {
 
   return (
     <DashboardLayout title="Form Builder">
+      <InjuryReportsSubNav />
       <div className="bg-gray-50 -m-6">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-10">

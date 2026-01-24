@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 
 interface FormField {
   id?: string;
@@ -187,6 +188,7 @@ export default function EditFormPage() {
   if (loading) {
     return (
       <DashboardLayout title="Edit Form">
+        <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
         </div>
@@ -196,6 +198,7 @@ export default function EditFormPage() {
 
   return (
     <DashboardLayout title="Edit Form">
+      <InjuryReportsSubNav />
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 
 interface Stats {
   totalSubmissions: number;
@@ -94,14 +95,18 @@ export default function InjuryReportsDashboard() {
 
   if (loading && !stats) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading...</div>
-      </div>
+      <DashboardLayout title="Injury & Incident Reports">
+        <InjuryReportsSubNav />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout title="Injury & Incident Reports">
+      <InjuryReportsSubNav />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">

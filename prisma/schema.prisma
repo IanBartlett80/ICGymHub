@@ -774,3 +774,18 @@ model InjuryNotification {
   @@index([read])
   @@index([createdAt])
 }
+
+// Equipment/Apparatus for injury reporting
+model Equipment {
+  id          String   @id @default(cuid())
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId      String
+  name        String   // e.g., "Vault", "Beam", "Floor", "Bars", "Trampoline"
+  category    String?  // e.g., "Gymnastics Apparatus", "Training Aid", "Safety Equipment"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([clubId])
+  @@index([active])
+}

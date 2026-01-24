@@ -61,6 +61,22 @@ export async function POST(req: NextRequest) {
     // Generate unique public URL slug
     const publicUrl = `injury-report-${nanoid(10)}`;
 
+    // Fetch active gymsports, classes, and equipment for standard fields
+    const [gymsports, classes, equipment] = await Promise.all([
+      prisma.gymSport.findMany({
+        where: { clubId: authResult.user.clubId },
+        select: { id: true, name: true },
+      }),
+      prisma.class.findMany({
+        where: { clubId: authResult.user.clubId },
+        select: { id: true, name: true },
+      }),
+      prisma.equipment.findMany({
+        where: { clubId: authResult.user.clubId, active: true },
+        select: { id: true, name: true },
+      }),
+    ]);
+
     // Create template first
     const template = await prisma.injuryFormTemplate.create({
       data: {
@@ -74,6 +90,64 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create standard fields section
+    const standardSection = await prisma.injuryFormSection.create({
+      data: {
+        templateId: template.id,
+        title: 'Standard Information',
+        description: 'Required standard fields for all injury reports',
+        order: 0,
+      },
+    });
+
+    // Add standard fields
+    const standardFields = [];
+    
+    if (gymsports.length > 0) {
+      standardFields.push({
+        templateId: template.id,
+        sectionId: standardSection.id,
+        fieldType: 'DROPDOWN',
+        label: 'Gymsport',
+        description: 'Select the gymsport related to this incident',
+        required: true,
+        order: 0,
+        options: JSON.stringify(gymsports.map(g => g.name)),
+      });
+    }
+
+    if (classes.length > 0) {
+      standardFields.push({
+        templateId: template.id,
+        sectionId: standardSection.id,
+        fieldType: 'DROPDOWN',
+        label: 'Class',
+        description: 'Select the class where the incident occurred',
+        required: true,
+        order: 1,
+        options: JSON.stringify(classes.map(c => c.name)),
+      });
+    }
+
+    if (equipment.length > 0) {
+      standardFields.push({
+        templateId: template.id,
+        sectionId: standardSection.id,
+        fieldType: 'DROPDOWN',
+        label: 'Equipment',
+        description: 'Select the equipment involved (if any)',
+        required: false,
+        order: 2,
+        options: JSON.stringify(['None', ...equipment.map(e => e.name)]),
+      });
+    }
+
+    if (standardFields.length > 0) {
+      await prisma.injuryFormField.createMany({
+        data: standardFields,
+      });
+    }
+
     // Then create sections with fields
     if (sections && sections.length > 0) {
       await Promise.all(
@@ -83,7 +157,7 @@ export async function POST(req: NextRequest) {
               templateId: template.id,
               title: section.title,
               description: section.description,
-              order: sectionIndex,
+              order: sectionIndex + 1, // Start after standard section
             },
           });
 
