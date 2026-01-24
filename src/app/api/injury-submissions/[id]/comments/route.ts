@@ -11,11 +11,9 @@ export async function POST(
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { id } = await params;
-
-    const { id } = await params;
     }
+
+    const { id } = await params;
 
     const body = await req.json();
     const { comment, isInternal } = body;
