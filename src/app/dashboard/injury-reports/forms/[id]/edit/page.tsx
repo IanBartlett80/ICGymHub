@@ -391,15 +391,20 @@ export default function EditFormPage() {
 
                     {(field.fieldType === 'DROPDOWN' || field.fieldType === 'RADIO' || field.fieldType === 'CHECKBOX') && (
                       <div className="mt-3">
-                        <label className="block text-xs text-gray-600 mb-1">Options (comma-separated)</label>
-                        <input
-                          type="text"
-                          value={field.options?.join(', ') || ''}
+                        <label className="block text-xs text-gray-600 mb-1">Options (one per line)</label>
+                        <textarea
+                          value={field.options?.join('\n') || ''}
                           onChange={(e) => updateField(sectionIndex, fieldIndex, { 
-                            options: e.target.value.split(',').map(o => o.trim()).filter(Boolean) 
+                            options: e.target.value.split('\n').map(o => o.trim()).filter(Boolean) 
                           })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.stopPropagation();
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                          placeholder="Option 1, Option 2, Option 3"
+                          placeholder="Enter options (one per line)"
+                          rows={4}
                         />
                       </div>
                     )}
