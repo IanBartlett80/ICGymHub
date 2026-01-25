@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
@@ -20,7 +19,6 @@ interface FormTemplate {
 }
 
 export default function FormTemplatesPage() {
-  const router = useRouter();
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQRCode, setShowQRCode] = useState<string | null>(null);
@@ -94,6 +92,29 @@ export default function FormTemplatesPage() {
     link.href = template.qrCode;
     link.download = `injury-form-qr-${template.name.replace(/\s+/g, '-').toLowerCase()}.png`;
     link.click();
+  };
+
+  const deleteTemplate = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete the form "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/injury-forms/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        alert('Form deleted successfully');
+        loadTemplates();
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Failed to delete form');
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      alert('Failed to delete form');
+    }
   };
 
   if (loading) {
@@ -184,6 +205,13 @@ export default function FormTemplatesPage() {
                     >
                       Automations
                     </Link>
+                    <button
+                      onClick={() => deleteTemplate(template.id, template.name)}
+                      className="px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      title="Delete this form template"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
 

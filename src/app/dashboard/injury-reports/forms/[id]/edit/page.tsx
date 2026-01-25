@@ -395,13 +395,8 @@ export default function EditFormPage() {
                         <textarea
                           value={field.options?.join('\n') || ''}
                           onChange={(e) => updateField(sectionIndex, fieldIndex, { 
-                            options: e.target.value.split('\n').map(o => o.trim()).filter(Boolean) 
+                            options: e.target.value.split('\n')
                           })}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.stopPropagation();
-                            }
-                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                           placeholder="Enter options (one per line)"
                           rows={4}

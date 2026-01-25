@@ -29,6 +29,14 @@ interface Template {
   headerColor: string;
   logoUrl: string | null;
   sections: Section[];
+  clubId: string;
+}
+
+interface Coach {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
 }
 
 export default function PublicSubmissionForm() {
@@ -37,11 +45,7 @@ export default function PublicSubmissionForm() {
   
   const [template, setTemplate] = useState<Template | null>(null);
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
-  const [submitterInfo, setSubmitterInfo] = useState({
-    name: '',
-    email: '',
-    phone: '',
-  });
+  const [coaches, setCoaches] = useState<Coach[]>([]);
   const [currentSection, setCurrentSection] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +63,10 @@ export default function PublicSubmissionForm() {
       if (res.ok) {
         const data = await res.json();
         setTemplate(data.template);
+        // Load coaches for this club
+        if (data.template.clubId) {
+          await loadCoaches(data.template.clubId);
+        }
       } else {
         alert('Form not found or inactive');
       }
@@ -66,6 +74,18 @@ export default function PublicSubmissionForm() {
       console.error('Error loading form:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCoaches = async (clubId: string) => {
+    try {
+      const res = await fetch(`/api/coaches/public/${clubId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCoaches(data.coaches || []);
+      }
+    } catch (error) {
+      console.error('Error loading coaches:', error);
     }
   };
 
@@ -108,7 +128,6 @@ export default function PublicSubmissionForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          submitterInfo,
           formData,
         }),
       });
@@ -129,7 +148,35 @@ export default function PublicSubmissionForm() {
     }
   };
 
-  const renderField = (field: Field) => {
+  const handleCoachSelection = (fieldId: string, coachName: string, section: Section) => {
+    // Find the selected coach
+    const selectedCoach = coaches.find(c => c.name === coachName);
+    
+    if (selectedCoach) {
+      // Find Coach Email and Coach Phone fields in the same section
+      const coachEmailField = section.fields.find(f => f.label === 'Coach Email');
+      const coachPhoneField = section.fields.find(f => f.label === 'Coach Phone');
+      
+      const updates: { [key: string]: any } = { [fieldId]: coachName };
+      
+      if (coachEmailField) {
+        updates[coachEmailField.id] = selectedCoach.email || '';
+      }
+      if (coachPhoneField) {
+        updates[coachPhoneField.id] = selectedCoach.phone || '';
+      }
+      
+      setFormData({ ...formData, ...updates });
+    } else {
+      setFormData({ ...formData, [fieldId]: coachName });
+    }
+    
+    if (errors[fieldId]) {
+      setErrors({ ...errors, [fieldId]: '' });
+    }
+  };
+
+  const renderField = (field: Field, section: Section) => {
     const value = formData[field.id] || '';
     const error = errors[field.id];
 
@@ -232,10 +279,18 @@ export default function PublicSubmissionForm() {
 
       case 'DROPDOWN':
         const dropdownOptions = field.options ? JSON.parse(field.options) : [];
+        const isCoachField = field.label === 'Supervising Coach';
+        
         return (
           <select
             value={value}
-            onChange={(e) => updateValue(e.target.value)}
+            onChange={(e) => {
+              if (isCoachField) {
+                handleCoachSelection(field.id, e.target.value, section);
+              } else {
+                updateValue(e.target.value);
+              }
+            }}
             className={commonInputClass}
           >
             <option value="">Select an option...</option>
@@ -355,44 +410,6 @@ export default function PublicSubmissionForm() {
 
       {/* Form Content */}
       <div className="max-w-3xl mx-auto px-6 py-8">
-        {currentSection === 0 && (
-          <div className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Information (Optional)</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={submitterInfo.name}
-                  onChange={(e) => setSubmitterInfo({ ...submitterInfo, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Your name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={submitterInfo.email}
-                  onChange={(e) => setSubmitterInfo({ ...submitterInfo, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="your.email@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input
-                  type="tel"
-                  value={submitterInfo.phone}
-                  onChange={(e) => setSubmitterInfo({ ...submitterInfo, phone: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0400 000 000"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">{currentSectionData.title}</h2>
@@ -411,7 +428,7 @@ export default function PublicSubmissionForm() {
                 {field.description && (
                   <p className="text-sm text-gray-500 mb-2">{field.description}</p>
                 )}
-                {renderField(field)}
+                {renderField(field, currentSectionData)}
                 {errors[field.id] && (
                   <p className="text-sm text-red-600 mt-1">{errors[field.id]}</p>
                 )}

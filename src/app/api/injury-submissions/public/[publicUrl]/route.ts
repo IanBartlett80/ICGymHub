@@ -38,6 +38,7 @@ export async function GET(
       description: template.description,
       headerColor: template.headerColor,
       logoUrl: template.logoUrl,
+      clubId: template.clubId,
       sections: template.sections,
     };
 
@@ -59,7 +60,7 @@ export async function POST(
   try {
     const { publicUrl } = await params;
     const body = await req.json();
-    const { submitterInfo, formData } = body;
+    const { formData } = body;
 
     // Get template
     const template = await prisma.injuryFormTemplate.findFirst({
@@ -97,7 +98,6 @@ export async function POST(
         templateId: template.id,
         clubId: template.clubId,
         submitterInfo: JSON.stringify({
-          ...submitterInfo,
           ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
           userAgent: req.headers.get('user-agent'),
           submittedAt: new Date().toISOString(),

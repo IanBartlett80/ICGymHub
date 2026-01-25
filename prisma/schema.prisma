@@ -15,93 +15,94 @@ datasource db {
 
 // Clubs/Tenants
 model Club {
-  id                 String              @id @default(cuid())
-  name               String              @unique
-  slug               String              @unique
-  abn                String?             @unique
-  domain             String              @unique
-  status             String              @default("PENDING_VERIFICATION")
-  timezone           String              @default("Australia/Sydney")
-  address            String?
-  city               String?
-  state              String?
-  postalCode         String?
-  phone              String?
-  website            String?
+  id         String  @id @default(cuid())
+  name       String  @unique
+  slug       String  @unique
+  abn        String? @unique
+  domain     String  @unique
+  status     String  @default("PENDING_VERIFICATION")
+  timezone   String  @default("Australia/Sydney")
+  address    String?
+  city       String?
+  state      String?
+  postalCode String?
+  phone      String?
+  website    String?
 
   // Relations
-  users              User[]
-  clubDomains        ClubDomain[]
-  emailVerifications EmailVerification[]
-  services           ClubService[]
-  auditLogs          AuditLog[]
-  sessions           Session[]
-  zones              Zone[]
-  coaches            Coach[]
-  classTemplates     ClassTemplate[]
-  classSessions      ClassSession[]
-  rosterTemplates    RosterTemplate[]
-  rosters            Roster[]
-  coachImportJobs    CoachImportJob[]
-  rosterExports      RosterExport[]
-  rosterSlots        RosterSlot[]
-  gymsports          Gymsport[]
+  users               User[]
+  clubDomains         ClubDomain[]
+  emailVerifications  EmailVerification[]
+  services            ClubService[]
+  auditLogs           AuditLog[]
+  sessions            Session[]
+  zones               Zone[]
+  coaches             Coach[]
+  classTemplates      ClassTemplate[]
+  classSessions       ClassSession[]
+  rosterTemplates     RosterTemplate[]
+  rosters             Roster[]
+  coachImportJobs     CoachImportJob[]
+  rosterExports       RosterExport[]
+  rosterSlots         RosterSlot[]
+  gymsports           Gymsport[]
   injuryFormTemplates InjuryFormTemplate[]
-  injurySubmissions  InjurySubmission[]
+  injurySubmissions   InjurySubmission[]
   injuryNotifications InjuryNotification[]
+  equipment           Equipment[]
 
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([domain])
 }
 
 model ClubDomain {
-  id                String    @id @default(cuid())
-  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  club              Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId            String
   domain            String
-  verified          Boolean   @default(false)
-  verificationToken String?   @unique
-  
-  createdAt         DateTime  @default(now())
-  
+  verified          Boolean @default(false)
+  verificationToken String? @unique
+
+  createdAt DateTime @default(now())
+
   @@unique([clubId, domain])
   @@index([clubId])
 }
 
 // Users
 model User {
-  id                 String             @id @default(cuid())
-  club               Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId             String
-  email              String
-  username           String
-  passwordHash       String
-  fullName           String
-  role               String             @default("ADMIN")
-  isActive           Boolean            @default(true)
-  lastLogin          DateTime?
-  loginAttempts      Int                @default(0)
-  lockedUntil        DateTime?
-  
+  id            String    @id @default(cuid())
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  email         String
+  username      String
+  passwordHash  String
+  fullName      String
+  role          String    @default("ADMIN")
+  isActive      Boolean   @default(true)
+  lastLogin     DateTime?
+  loginAttempts Int       @default(0)
+  lockedUntil   DateTime?
+
   // Relations
-  sessions              Session[]
-  passwordResets        PasswordReset[]
-  auditLogs             AuditLog[]
-  emailVerifications    EmailVerification[]
-  generatedSessions     ClassSession[] @relation("SessionGeneratedBy")
-  createdRosterTemplates RosterTemplate[] @relation("RosterTemplateCreatedBy")
-  generatedRosters      Roster[]       @relation("RosterGeneratedBy")
-  assignedInjurySubmissions InjurySubmission[] @relation("AssignedInjurySubmissions")
-  injurySubmissionComments InjurySubmissionComment[]
-  injurySubmissionAudits InjurySubmissionAudit[]
-  injuryNotifications   InjuryNotification[]
-  
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  
+  sessions                  Session[]
+  passwordResets            PasswordReset[]
+  auditLogs                 AuditLog[]
+  emailVerifications        EmailVerification[]
+  generatedSessions         ClassSession[]            @relation("SessionGeneratedBy")
+  createdRosterTemplates    RosterTemplate[]          @relation("RosterTemplateCreatedBy")
+  generatedRosters          Roster[]                  @relation("RosterGeneratedBy")
+  assignedInjurySubmissions InjurySubmission[]        @relation("AssignedInjurySubmissions")
+  injurySubmissionComments  InjurySubmissionComment[]
+  injurySubmissionAudits    InjurySubmissionAudit[]
+  injuryNotifications       InjuryNotification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([clubId, username])
   @@unique([clubId, email])
   @@index([clubId])
@@ -110,78 +111,78 @@ model User {
 
 // Sessions & Auth
 model Session {
-  id                String    @id @default(cuid())
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId            String
-  refreshToken      String    @unique
-  expiresAt         DateTime
-  createdAt         DateTime  @default(now())
-  
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
   @@index([userId])
   @@index([clubId])
   @@index([expiresAt])
 }
 
 model EmailVerification {
-  id                String    @id @default(cuid())
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId            String
-  email             String
-  tokenHash         String    @unique
-  expiresAt         DateTime
-  consumedAt        DateTime?
-  
-  createdAt         DateTime  @default(now())
-  
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  club       Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId     String
+  email      String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([clubId])
   @@index([expiresAt])
 }
 
 model PasswordReset {
-  id                String    @id @default(cuid())
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  tokenHash         String    @unique
-  expiresAt         DateTime
-  consumedAt        DateTime?
-  
-  createdAt         DateTime  @default(now())
-  
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([expiresAt])
 }
 
 // Services
 model Service {
-  id                String    @id @default(cuid())
-  key               String    @unique
-  name              String
-  description       String?
-  icon              String?
-  
+  id          String  @id @default(cuid())
+  key         String  @unique
+  name        String
+  description String?
+  icon        String?
+
   // Relations
-  clubServices      ClubService[]
-  
-  createdAt         DateTime  @default(now())
+  clubServices ClubService[]
+
+  createdAt DateTime @default(now())
 }
 
 model ClubService {
-  id                String    @id @default(cuid())
-  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId            String
-  service           Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  serviceId         String
-  enabled           Boolean   @default(true)
-  plan              String    @default("basic")
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
+  id        String  @id @default(cuid())
+  club      Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId    String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId String
+  enabled   Boolean @default(true)
+  plan      String  @default("basic")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([clubId, serviceId])
   @@index([clubId])
   @@index([serviceId])
@@ -189,20 +190,20 @@ model ClubService {
 
 // Audit Logging
 model AuditLog {
-  id                String    @id @default(cuid())
-  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId            String
-  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId            String?
-  action            String
-  entityType        String
-  entityId          String?
-  changes           String?
-  ipAddress         String?
-  userAgent         String?
-  
-  createdAt         DateTime  @default(now())
-  
+  id         String  @id @default(cuid())
+  club       Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId     String
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  changes    String?
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt DateTime @default(now())
+
   @@index([clubId])
   @@index([userId])
   @@index([createdAt])
@@ -210,22 +211,22 @@ model AuditLog {
 
 // Gym Zones
 model Zone {
-  id           String   @id @default(cuid())
-  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id           String  @id @default(cuid())
+  club         Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId       String
   name         String
   description  String?
-  allowOverlap Boolean  @default(false)
-  active       Boolean  @default(true)
-  isFirst      Boolean  @default(false) // Priority zone - always scheduled first in rotation
+  allowOverlap Boolean @default(false)
+  active       Boolean @default(true)
+  isFirst      Boolean @default(false) // Priority zone - always scheduled first in rotation
 
   // Relations
   templatesAllowed TemplateAllowedZone[]
   sessionsAllowed  SessionAllowedZone[]
   rosterSlots      RosterSlot[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([clubId, name])
   @@index([clubId])
@@ -233,19 +234,19 @@ model Zone {
 
 // Gymsports
 model Gymsport {
-  id              String   @id @default(cuid())
-  club            Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId          String
-  name            String
-  isPredefined    Boolean  @default(false)
-  active          Boolean  @default(true)
+  id           String  @id @default(cuid())
+  club         Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  name         String
+  isPredefined Boolean @default(false)
+  active       Boolean @default(true)
 
   // Relations
-  coachGymsports  CoachGymsport[]
-  classTemplates  ClassTemplate[]
+  coachGymsports CoachGymsport[]
+  classTemplates ClassTemplate[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([clubId, name])
   @@index([clubId])
@@ -253,38 +254,38 @@ model Gymsport {
 
 // Coaches
 model Coach {
-  id                  String   @id @default(cuid())
-  club                Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId              String
-  name                String
-  accreditationLevel  String?
-  membershipNumber    String?
-  email               String?
-  phone               String?
-  importedFromCsv     Boolean  @default(false)
+  id                 String  @id @default(cuid())
+  club               Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId             String
+  name               String
+  accreditationLevel String?
+  membershipNumber   String?
+  email              String?
+  phone              String?
+  importedFromCsv    Boolean @default(false)
 
   // Relations
-  templateLinks    TemplateCoach[]
-  sessionLinks     SessionCoach[]
-  gymsports        CoachGymsport[]
-  availability     CoachAvailability[]
+  templateLinks TemplateCoach[]
+  sessionLinks  SessionCoach[]
+  gymsports     CoachGymsport[]
+  availability  CoachAvailability[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([clubId])
   @@unique([clubId, email])
+  @@index([clubId])
 }
 
 // Coach to Gymsport relationship (many-to-many)
 model CoachGymsport {
-  id          String    @id @default(cuid())
-  coach       Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId     String
-  gymsport    Gymsport  @relation(fields: [gymsportId], references: [id], onDelete: Cascade)
-  gymsportId  String
+  id         String   @id @default(cuid())
+  coach      Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId    String
+  gymsport   Gymsport @relation(fields: [gymsportId], references: [id], onDelete: Cascade)
+  gymsportId String
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([coachId, gymsportId])
   @@index([coachId])
@@ -293,15 +294,15 @@ model CoachGymsport {
 
 // Coach availability (day and time ranges)
 model CoachAvailability {
-  id              String   @id @default(cuid())
-  coach           Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId         String
-  dayOfWeek       String   // MON, TUE, WED, THU, FRI, SAT, SUN
-  startTimeLocal  String   // HH:MM format
-  endTimeLocal    String   // HH:MM format
+  id             String @id @default(cuid())
+  coach          Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId        String
+  dayOfWeek      String // MON, TUE, WED, THU, FRI, SAT, SUN
+  startTimeLocal String // HH:MM format
+  endTimeLocal   String // HH:MM format
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([coachId])
   @@index([dayOfWeek])
@@ -309,21 +310,21 @@ model CoachAvailability {
 
 // Class templates (recurring definitions)
 model ClassTemplate {
-  id                     String                  @id @default(cuid())
-  club                   Club                    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id                     String    @id @default(cuid())
+  club                   Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId                 String
   name                   String
-  gymsport               Gymsport?               @relation(fields: [gymsportId], references: [id], onDelete: SetNull)
+  gymsport               Gymsport? @relation(fields: [gymsportId], references: [id], onDelete: SetNull)
   gymsportId             String?
-  level                  String                  // Rec, LEVEL_1..LEVEL_10, SNR, ADULT, SCHOOL, OTHER
+  level                  String // Rec, LEVEL_1..LEVEL_10, SNR, ADULT, SCHOOL, OTHER
   lengthMinutes          Int
   defaultRotationMinutes Int
-  allowOverlap           Boolean                 @default(false)
-  activeDays             String                 // comma-separated days e.g. MON,TUE,WED
-  startTimeLocal         String                  // HH:MM in club timezone
-  endTimeLocal           String                  // HH:MM in club timezone
+  allowOverlap           Boolean   @default(false)
+  activeDays             String // comma-separated days e.g. MON,TUE,WED
+  startTimeLocal         String // HH:MM in club timezone
+  endTimeLocal           String // HH:MM in club timezone
   notes                  String?
-  color                  String?                 // Hex color for calendar display (e.g. #3b82f6)
+  color                  String? // Hex color for calendar display (e.g. #3b82f6)
 
   // Relations
   allowedZones   TemplateAllowedZone[]
@@ -333,47 +334,47 @@ model ClassTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([clubId, name])
   @@index([clubId])
   @@index([gymsportId])
-  @@unique([clubId, name])
 }
 
 model TemplateAllowedZone {
-  id           String @id @default(cuid())
-  template     ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId   String
-  zone         Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  zoneId       String
+  id         String        @id @default(cuid())
+  template   ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  zone       Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId     String
 
   @@unique([templateId, zoneId])
 }
 
 model TemplateCoach {
-  id           String @id @default(cuid())
-  template     ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId   String
-  coach        Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId      String
+  id         String        @id @default(cuid())
+  template   ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  coach      Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId    String
 
   @@unique([templateId, coachId])
 }
 
 // Specific class occurrences
 model ClassSession {
-  id                   String             @id @default(cuid())
-  club                 Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id                   String         @id @default(cuid())
+  club                 Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId               String
-  template             ClassTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template             ClassTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   templateId           String?
-  date                 DateTime           // Local date (00:00 in club timezone)
-  startTimeLocal       String             // HH:MM in club timezone
-  endTimeLocal         String             // HH:MM in club timezone
+  date                 DateTime // Local date (00:00 in club timezone)
+  startTimeLocal       String // HH:MM in club timezone
+  endTimeLocal         String // HH:MM in club timezone
   rotationMinutes      Int
-  allowOverlap         Boolean            @default(false)
-  assignedZoneSequence String                  // JSON string array of zoneIds in sequence
-  status               String             @default("DRAFT") // DRAFT or PUBLISHED
-  conflictFlag         Boolean            @default(false)
-  generatedBy          User?              @relation("SessionGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
+  allowOverlap         Boolean        @default(false)
+  assignedZoneSequence String // JSON string array of zoneIds in sequence
+  status               String         @default("DRAFT") // DRAFT or PUBLISHED
+  conflictFlag         Boolean        @default(false)
+  generatedBy          User?          @relation("SessionGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
   generatedById        String?
 
   // Relations
@@ -390,41 +391,41 @@ model ClassSession {
 }
 
 model SessionAllowedZone {
-  id         String @id @default(cuid())
-  session    ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId  String
-  zone       Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  zoneId     String
+  id        String       @id @default(cuid())
+  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  zone      Zone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId    String
 
   @@unique([sessionId, zoneId])
 }
 
 model SessionCoach {
-  id         String @id @default(cuid())
-  session    ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId  String
-  coach      Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId    String
+  id        String       @id @default(cuid())
+  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  coach     Coach        @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId   String
 
   @@unique([sessionId, coachId])
 }
 
 // Roster Templates
 model RosterTemplate {
-  id            String        @id @default(cuid())
-  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId        String
-  name          String        // e.g. "Monday Training Program"
-  startDate     DateTime      // Start of date range
-  endDate       DateTime      // End of date range
-  activeDays    String        // Comma-separated days: MON,WED,FRI
-  classConfig   String        // JSON string of class template selections and configurations
-  status        String        @default("ACTIVE") // ACTIVE or ARCHIVED
-  createdBy     User?         @relation("RosterTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById   String?
+  id          String   @id @default(cuid())
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId      String
+  name        String // e.g. "Monday Training Program"
+  startDate   DateTime // Start of date range
+  endDate     DateTime // End of date range
+  activeDays  String // Comma-separated days: MON,WED,FRI
+  classConfig String // JSON string of class template selections and configurations
+  status      String   @default("ACTIVE") // ACTIVE or ARCHIVED
+  createdBy   User?    @relation("RosterTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
 
   // Relations
-  rosters       Roster[]
+  rosters Roster[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -435,18 +436,18 @@ model RosterTemplate {
 
 // Rosters (individual day instances)
 model Roster {
-  id            String        @id @default(cuid())
-  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id            String          @id @default(cuid())
+  club          Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId        String
   template      RosterTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId    String?
-  scope         String        // DAY or WEEK
-  dayOfWeek     String?       // MON, TUE, WED, etc. (for template-based rosters)
-  startDate     DateTime      // The specific date this roster is for
+  scope         String // DAY or WEEK
+  dayOfWeek     String? // MON, TUE, WED, etc. (for template-based rosters)
+  startDate     DateTime // The specific date this roster is for
   endDate       DateTime
-  status        String        @default("DRAFT") // DRAFT or PUBLISHED
+  status        String          @default("DRAFT") // DRAFT or PUBLISHED
   generatedAt   DateTime?
-  generatedBy   User?         @relation("RosterGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
+  generatedBy   User?           @relation("RosterGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
   generatedById String?
 
   // Relations
@@ -461,22 +462,22 @@ model Roster {
 }
 
 model RosterSlot {
-  id           String        @id @default(cuid())
-  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id           String       @id @default(cuid())
+  club         Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId       String
-  roster       Roster        @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+  roster       Roster       @relation(fields: [rosterId], references: [id], onDelete: Cascade)
   rosterId     String
-  session      ClassSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   sessionId    String
-  zone         Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zone         Zone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   zoneId       String
   startsAt     DateTime
   endsAt       DateTime
-  conflictFlag Boolean       @default(false)
-  conflictType String?       // 'coach', 'zone', or 'both' - describes the type of conflict
-  allowOverlap Boolean       @default(false)
-  zoneOrder    Int?          // Manual zone ordering within session (null = auto-generated)
-  createdAt    DateTime      @default(now())
+  conflictFlag Boolean      @default(false)
+  conflictType String? // 'coach', 'zone', or 'both' - describes the type of conflict
+  allowOverlap Boolean      @default(false)
+  zoneOrder    Int? // Manual zone ordering within session (null = auto-generated)
+  createdAt    DateTime     @default(now())
 
   @@index([clubId])
   @@index([rosterId])
@@ -487,14 +488,14 @@ model RosterSlot {
 
 // Coach import jobs
 model CoachImportJob {
-  id            String    @id @default(cuid())
-  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId        String
-  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
-  totalRows     Int?
-  importedRows  Int?
-  errorText     String?
-  createdAt     DateTime  @default(now())
+  id           String   @id @default(cuid())
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  status       String   @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  totalRows    Int?
+  importedRows Int?
+  errorText    String?
+  createdAt    DateTime @default(now())
 
   @@index([clubId])
   @@index([status])
@@ -502,13 +503,13 @@ model CoachImportJob {
 
 // Roster export logs
 model RosterExport {
-  id            String    @id @default(cuid())
-  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId        String
-  exportType    String
-  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
-  targetEmails  String?
-  createdAt     DateTime  @default(now())
+  id           String   @id @default(cuid())
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  exportType   String
+  status       String   @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  targetEmails String?
+  createdAt    DateTime @default(now())
 
   @@index([clubId])
   @@index([status])
@@ -520,30 +521,30 @@ model RosterExport {
 
 // Injury Form Templates (like Microsoft Forms)
 model InjuryFormTemplate {
-  id                String                    @id @default(cuid())
-  club              Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId            String
-  name              String
-  description       String?
-  isDefault         Boolean                   @default(false) // Default template provided to new clubs
-  active            Boolean                   @default(true)
-  qrCode            String?                   // Store QR code data URL or path
-  publicUrl         String                    @unique // Unique URL slug for public access
-  
+  id          String  @id @default(cuid())
+  club        Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId      String
+  name        String
+  description String?
+  isDefault   Boolean @default(false) // Default template provided to new clubs
+  active      Boolean @default(true)
+  qrCode      String? // Store QR code data URL or path
+  publicUrl   String  @unique // Unique URL slug for public access
+
   // UI Configuration
-  headerColor       String?                   @default("#0078d4") // Theme color
-  logoUrl           String?
-  thankYouMessage   String?                   @default("Thank you for your submission. We will review this report shortly.")
-  
+  headerColor     String? @default("#0078d4") // Theme color
+  logoUrl         String?
+  thankYouMessage String? @default("Thank you for your submission. We will review this report shortly.")
+
   // Relations
-  sections          InjuryFormSection[]
-  fields            InjuryFormField[]
-  submissions       InjurySubmission[]
-  automations       InjuryFormAutomation[]
-  
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime                  @updatedAt
-  
+  sections    InjuryFormSection[]
+  fields      InjuryFormField[]
+  submissions InjurySubmission[]
+  automations InjuryFormAutomation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([clubId])
   @@index([active])
   @@index([publicUrl])
@@ -551,57 +552,57 @@ model InjuryFormTemplate {
 
 // Form Sections (organize fields into pages/sections)
 model InjuryFormSection {
-  id                String                @id @default(cuid())
-  template          InjuryFormTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId        String
-  title             String
-  description       String?
-  order             Int                   @default(0)
-  
+  id          String             @id @default(cuid())
+  template    InjuryFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId  String
+  title       String
+  description String?
+  order       Int                @default(0)
+
   // Relations
-  fields            InjuryFormField[]
-  
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  
+  fields InjuryFormField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([templateId])
   @@index([order])
 }
 
 // Form Fields (questions in the form)
 model InjuryFormField {
-  id                String                    @id @default(cuid())
-  template          InjuryFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId        String
-  section           InjuryFormSection?        @relation(fields: [sectionId], references: [id], onDelete: SetNull)
-  sectionId         String?
-  
+  id         String             @id @default(cuid())
+  template   InjuryFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  section    InjuryFormSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId  String?
+
   // Field Configuration
-  fieldType         String                    // TEXT_SHORT, TEXT_LONG, NUMBER, DATE, TIME, DATETIME, EMAIL, PHONE, DROPDOWN, MULTIPLE_CHOICE, CHECKBOXES
-  label             String
-  description       String?
-  placeholder       String?
-  required          Boolean                   @default(false)
-  order             Int                       @default(0)
-  
+  fieldType   String // TEXT_SHORT, TEXT_LONG, NUMBER, DATE, TIME, DATETIME, EMAIL, PHONE, DROPDOWN, MULTIPLE_CHOICE, CHECKBOXES
+  label       String
+  description String?
+  placeholder String?
+  required    Boolean @default(false)
+  order       Int     @default(0)
+
   // Field Options (JSON for dropdowns, multiple choice, checkboxes)
   // Format: ["Option 1", "Option 2", "Option 3"]
-  options           String?
-  
+  options String?
+
   // Validation Rules (JSON)
   // Format: { "min": 0, "max": 100, "pattern": "regex", "message": "Error message" }
-  validation        String?
-  
+  validation String?
+
   // Conditional Logic (JSON) - Complex conditions
   // Format: { "conditions": [{ "field": "fieldId", "operator": "equals|contains|greaterThan|lessThan", "value": "x" }], "logic": "AND|OR", "action": "show|hide" }
-  conditionalLogic  String?
-  
+  conditionalLogic String?
+
   // Relations
-  submissionData    InjurySubmissionData[]
-  
-  createdAt         DateTime                  @default(now())
-  updatedAt         DateTime                  @updatedAt
-  
+  submissionData InjurySubmissionData[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([templateId])
   @@index([sectionId])
   @@index([order])
@@ -609,38 +610,38 @@ model InjuryFormField {
 
 // Injury Submissions (actual reports submitted)
 model InjurySubmission {
-  id                  String                      @id @default(cuid())
-  template            InjuryFormTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId          String
-  club                Club                        @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId              String
-  
+  id         String             @id @default(cuid())
+  template   InjuryFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  club       Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId     String
+
   // Submission Info (JSON - for anonymous submissions)
   // Format: { "name": "John Doe", "email": "john@example.com", "phone": "0400000000", "ipAddress": "192.168.1.1" }
-  submitterInfo       String?
-  
+  submitterInfo String?
+
   // Status Management
-  status              String                      @default("NEW") // NEW, UNDER_REVIEW, RESOLVED, CLOSED
-  priority            String?                     // CRITICAL, HIGH, MEDIUM, LOW (can be set by automation)
-  
+  status   String  @default("NEW") // NEW, UNDER_REVIEW, RESOLVED, CLOSED
+  priority String? // CRITICAL, HIGH, MEDIUM, LOW (can be set by automation)
+
   // Assignment
-  assignedTo          User?                       @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id], onDelete: SetNull)
-  assignedToUserId    String?
-  assignedAt          DateTime?
-  
+  assignedTo       User?     @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  assignedToUserId String?
+  assignedAt       DateTime?
+
   // Data Retention (5 years for Australian WHS compliance)
-  retentionDate       DateTime?                   // Auto-calculated as submittedAt + 5 years
-  archived            Boolean                     @default(false)
-  
+  retentionDate DateTime? // Auto-calculated as submittedAt + 5 years
+  archived      Boolean   @default(false)
+
   // Relations
-  data                InjurySubmissionData[]
-  comments            InjurySubmissionComment[]
-  auditLog            InjurySubmissionAudit[]
-  notifications       InjuryNotification[]
-  
-  submittedAt         DateTime                    @default(now())
-  updatedAt           DateTime                    @updatedAt
-  
+  data          InjurySubmissionData[]
+  comments      InjurySubmissionComment[]
+  auditLog      InjurySubmissionAudit[]
+  notifications InjuryNotification[]
+
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   @@index([clubId])
   @@index([templateId])
   @@index([status])
@@ -651,35 +652,35 @@ model InjurySubmission {
 
 // Submission Data (actual field values)
 model InjurySubmissionData {
-  id                String              @id @default(cuid())
-  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  submissionId      String
-  field             InjuryFormField     @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-  fieldId           String
-  
+  id           String           @id @default(cuid())
+  submission   InjurySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+  field        InjuryFormField  @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  fieldId      String
+
   // Value stored as JSON to accommodate any data type
   // Format: { "value": "actual value", "displayValue": "human readable" }
-  value             String
-  
-  createdAt         DateTime            @default(now())
-  
+  value String
+
+  createdAt DateTime @default(now())
+
   @@index([submissionId])
   @@index([fieldId])
 }
 
 // Admin Comments on Submissions
 model InjurySubmissionComment {
-  id                String              @id @default(cuid())
-  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  submissionId      String
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  comment           String
-  isInternal        Boolean             @default(true) // Internal notes vs. visible to submitter
-  
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  
+  id           String           @id @default(cuid())
+  submission   InjurySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  comment      String
+  isInternal   Boolean          @default(true) // Internal notes vs. visible to submitter
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([submissionId])
   @@index([userId])
   @@index([createdAt])
@@ -687,19 +688,19 @@ model InjurySubmissionComment {
 
 // Audit Log for Submission Changes
 model InjurySubmissionAudit {
-  id                String              @id @default(cuid())
-  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  submissionId      String
-  user              User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId            String?
-  
-  action            String              // STATUS_CHANGED, ASSIGNED, PRIORITY_CHANGED, COMMENT_ADDED, etc.
-  oldValue          String?
-  newValue          String?
-  metadata          String?             // Additional JSON data
-  
-  createdAt         DateTime            @default(now())
-  
+  id           String           @id @default(cuid())
+  submission   InjurySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String
+  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId       String?
+
+  action   String // STATUS_CHANGED, ASSIGNED, PRIORITY_CHANGED, COMMENT_ADDED, etc.
+  oldValue String?
+  newValue String?
+  metadata String? // Additional JSON data
+
+  createdAt DateTime @default(now())
+
   @@index([submissionId])
   @@index([userId])
   @@index([createdAt])
@@ -707,40 +708,40 @@ model InjurySubmissionAudit {
 
 // Form Automation Rules (like Power Automate)
 model InjuryFormAutomation {
-  id                String                @id @default(cuid())
-  template          InjuryFormTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  templateId        String
-  
-  name              String
-  description       String?
-  active            Boolean               @default(true)
-  order             Int                   @default(0) // Execution order
-  
+  id         String             @id @default(cuid())
+  template   InjuryFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+
+  name        String
+  description String?
+  active      Boolean @default(true)
+  order       Int     @default(0) // Execution order
+
   // Trigger Conditions (JSON) - Complex logic
   // Format: { "trigger": "ON_SUBMIT|ON_STATUS_CHANGE", "conditions": [{ "field": "fieldId", "operator": "equals", "value": "x" }], "logic": "AND|OR" }
   triggerConditions String
-  
+
   // Actions (JSON) - What to do when triggered
   // Format: { "actions": [{ "type": "SEND_EMAIL|SET_PRIORITY|ASSIGN_USER|CREATE_NOTIFICATION", "config": {...} }] }
-  actions           String
-  
+  actions String
+
   // Email Configuration (if action includes SEND_EMAIL)
-  emailRecipients   String?              // JSON array of email addresses or field references
-  emailSubject      String?
-  emailTemplate     String?              // HTML email template with variable placeholders
-  
+  emailRecipients String? // JSON array of email addresses or field references
+  emailSubject    String?
+  emailTemplate   String? // HTML email template with variable placeholders
+
   // Escalation Configuration
-  escalationEnabled Boolean              @default(false)
-  escalationHours   Int?                 // Hours before escalation
-  escalationActions String?              // JSON - actions to take on escalation
-  
+  escalationEnabled Boolean @default(false)
+  escalationHours   Int? // Hours before escalation
+  escalationActions String? // JSON - actions to take on escalation
+
   // Execution tracking
-  lastExecuted      DateTime?
-  executionCount    Int                  @default(0)
-  
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  
+  lastExecuted   DateTime?
+  executionCount Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([templateId])
   @@index([active])
   @@index([order])
@@ -748,27 +749,27 @@ model InjuryFormAutomation {
 
 // In-App Notifications
 model InjuryNotification {
-  id                String              @id @default(cuid())
-  club              Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId            String
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-  submission        InjurySubmission?   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  submissionId      String?
-  
-  type              String              // NEW_SUBMISSION, ASSIGNMENT, STATUS_CHANGE, ESCALATION, COMMENT_ADDED
-  title             String
-  message           String
-  priority          String              @default("NORMAL") // CRITICAL, HIGH, NORMAL, LOW
-  
-  read              Boolean             @default(false)
-  readAt            DateTime?
-  
+  id           String            @id @default(cuid())
+  club         Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  submission   InjurySubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId String?
+
+  type     String // NEW_SUBMISSION, ASSIGNMENT, STATUS_CHANGE, ESCALATION, COMMENT_ADDED
+  title    String
+  message  String
+  priority String @default("NORMAL") // CRITICAL, HIGH, NORMAL, LOW
+
+  read   Boolean   @default(false)
+  readAt DateTime?
+
   // Action link (URL to navigate to)
-  actionUrl         String?
-  
-  createdAt         DateTime            @default(now())
-  
+  actionUrl String?
+
+  createdAt DateTime @default(now())
+
   @@index([clubId])
   @@index([userId])
   @@index([read])
@@ -777,15 +778,15 @@ model InjuryNotification {
 
 // Equipment/Apparatus for injury reporting
 model Equipment {
-  id          String   @id @default(cuid())
-  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  clubId      String
-  name        String   // e.g., "Vault", "Beam", "Floor", "Bars", "Trampoline"
-  category    String?  // e.g., "Gymnastics Apparatus", "Training Aid", "Safety Equipment"
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id        String   @id @default(cuid())
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId    String
+  name      String // e.g., "Vault", "Beam", "Floor", "Bars", "Trampoline"
+  category  String? // e.g., "Gymnastics Apparatus", "Training Aid", "Safety Equipment"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([clubId])
   @@index([active])
 }

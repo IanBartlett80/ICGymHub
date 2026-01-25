@@ -34,11 +34,6 @@ export default function InjuryReportsSubNav() {
       href: '/dashboard/injury-reports/analytics',
       icon: '📈',
     },
-    {
-      label: 'Configuration',
-      href: '/dashboard/injury-reports/configuration',
-      icon: '⚙️',
-    },
   ]
 
   return (

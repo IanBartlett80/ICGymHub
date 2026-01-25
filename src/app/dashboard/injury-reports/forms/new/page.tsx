@@ -46,15 +46,7 @@ export default function FormBuilderPage() {
   const [formDescription, setFormDescription] = useState('');
   const [headerColor, setHeaderColor] = useState('#0078d4');
   const [thankYouMessage, setThankYouMessage] = useState('Thank you for your submission. We will review this report shortly.');
-  const [sections, setSections] = useState<FormSection[]>([
-    {
-      id: 'section-1',
-      title: 'Report Details',
-      description: '',
-      order: 0,
-      fields: [],
-    },
-  ]);
+  const [sections, setSections] = useState<FormSection[]>([]);
   const [editingField, setEditingField] = useState<{ sectionId: string; field: FormField } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -83,14 +75,20 @@ export default function FormBuilderPage() {
 
   const addField = (sectionId: string, fieldType: string) => {
     const section = sections.find(s => s.id === sectionId);
-    if (!section) return;
+    if (!section) {
+      console.error('Section not found:', sectionId);
+      return;
+    }
 
     const newField: FormField = {
       id: `field-${Date.now()}`,
       fieldType,
       label: 'New Field',
+      description: '',
+      placeholder: '',
       required: false,
       order: section.fields.length,
+      options: fieldType === 'DROPDOWN' || fieldType === 'MULTIPLE_CHOICE' || fieldType === 'CHECKBOXES' ? [] : undefined,
     };
 
     setSections(sections.map(s => 
@@ -166,31 +164,46 @@ export default function FormBuilderPage() {
 
     setSaving(true);
     try {
+      const payload = {
+        name: formName,
+        description: formDescription,
+        headerColor,
+        thankYouMessage,
+        sections: sections.map(s => ({
+          title: s.title,
+          description: s.description || '',
+          fields: s.fields.map(f => ({
+            fieldType: f.fieldType,
+            label: f.label,
+            description: f.description || '',
+            placeholder: f.placeholder || '',
+            required: f.required,
+            order: f.order,
+            options: f.options || [],
+          })),
+        })),
+      };
+
+      console.log('Saving form with payload:', payload);
+
       const res = await fetch('/api/injury-forms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formName,
-          description: formDescription,
-          headerColor,
-          thankYouMessage,
-          sections: sections.map(s => ({
-            title: s.title,
-            description: s.description,
-            fields: s.fields,
-          })),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         const data = await res.json();
+        console.log('Form saved successfully:', data);
         router.push('/dashboard/injury-reports/forms');
       } else {
-        alert('Failed to save form');
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to save form:', errorData);
+        alert(`Failed to save form: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error saving form:', error);
-      alert('Failed to save form');
+      alert(`Failed to save form: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -226,6 +239,28 @@ export default function FormBuilderPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Info Banner */}
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <span className="text-blue-600 text-xl mr-3">ℹ️</span>
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">Default Sections Included</h3>
+              <p className="text-sm text-blue-800 mb-2">
+                When you create this form, the following default sections will be automatically added and fully editable:
+              </p>
+              <ul className="text-sm text-blue-800 space-y-1 ml-4">
+                <li><strong>1. Reported By Details</strong> - Reporter name, submission date, incident date/time, supervising coach, coach email, coach phone, description</li>
+                <li><strong>2. Athlete Details</strong> - Athlete name, program, class</li>
+                <li><strong>3. Injury Details</strong> - Body part injured, nature of injury</li>
+                <li><strong>4. Action Taken</strong> - First aid, medication, emergency services, medical advice, parent contact, additional details</li>
+              </ul>
+              <p className="text-sm text-blue-800 mt-2">
+                You can add additional custom sections below if needed. Note: Coach email and phone will auto-populate when a coach is selected during form submission.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Settings Panel */}
           <div className="lg:col-span-1">
@@ -286,28 +321,46 @@ export default function FormBuilderPage() {
 
               {/* Add Field Types */}
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Add Field</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {FIELD_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() => sections.length > 0 && addField(sections[0].id, type.value)}
-                      className="px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded hover:bg-gray-100 text-left"
-                      title={type.label}
-                    >
-                      <span className="mr-1">{type.icon}</span>
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Add Custom Sections</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  The form will include 4 default sections. You can add additional custom sections here.
+                </p>
+                {sections.length > 0 && (
+                  <>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Add Field to First Custom Section</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FIELD_TYPES.map((type) => (
+                        <button
+                          key={type.value}
+                          onClick={() => addField(sections[0].id, type.value)}
+                          className="px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded hover:bg-gray-100 text-left"
+                          title={type.label}
+                        >
+                          <span className="mr-1">{type.icon}</span>
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           {/* Form Builder */}
           <div className="lg:col-span-2 space-y-6">
-            {sections.map((section) => (
-              <div key={section.id} className="bg-white rounded-lg shadow border border-gray-200">
+            {sections.length === 0 ? (
+              <div className="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
+                <p className="text-gray-600 mb-4">
+                  No custom sections yet. The form will include 4 default sections automatically.
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Click "Add Section" below to create additional custom sections.
+                </p>
+              </div>
+            ) : (
+              sections.map((section) => (
+                <div key={section.id} className="bg-white rounded-lg shadow border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex items-center justify-between mb-4">
                     <input
@@ -423,7 +476,8 @@ export default function FormBuilderPage() {
                   )}
                 </div>
               </div>
-            ))}
+              ))
+            )}
 
             <button
               onClick={addSection}
