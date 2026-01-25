@@ -115,7 +115,8 @@ export async function DELETE(
   try {
     const authResult = await verifyAuth(req);
     if (!authResult.authenticated || !authResult.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });\n    }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { id, automationId } = await params;
 
