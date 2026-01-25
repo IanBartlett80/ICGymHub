@@ -39,6 +39,7 @@ export default function AutomationBuilderPage() {
   const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showActionMenu, setShowActionMenu] = useState(false);
 
   // Builder state
   const [name, setName] = useState('');
@@ -142,6 +143,7 @@ export default function AutomationBuilderPage() {
     }
     
     setActions([...actions, newAction]);
+    setShowActionMenu(false); // Close menu after selection
   };
 
   const updateAction = (index: number, updates: any) => {
@@ -479,36 +481,48 @@ export default function AutomationBuilderPage() {
             <div className="border-t pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">⚙️ Actions</h3>
-                <div className="relative group">
-                  <button className="px-3 py-1 text-sm bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowActionMenu(!showActionMenu)}
+                    className="px-3 py-1 text-sm bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
+                  >
                     + Add Action
                   </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block z-10">
-                    <button
-                      onClick={() => addAction('SEND_EMAIL')}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    >
-                      📧 Send Email
-                    </button>
-                    <button
-                      onClick={() => addAction('SET_PRIORITY')}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    >
-                      🔴 Set Priority
-                    </button>
-                    <button
-                      onClick={() => addAction('SET_STATUS')}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    >
-                      📊 Set Status
-                    </button>
-                    <button
-                      onClick={() => addAction('CREATE_NOTIFICATION')}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    >
-                      🔔 Create Notification
-                    </button>
-                  </div>
+                  {showActionMenu && (
+                    <>
+                      {/* Backdrop to close menu when clicking outside */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowActionMenu(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                        <button
+                          onClick={() => addAction('SEND_EMAIL')}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-t-lg"
+                        >
+                          📧 Send Email
+                        </button>
+                        <button
+                          onClick={() => addAction('SET_PRIORITY')}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                          🔴 Set Priority
+                        </button>
+                        <button
+                          onClick={() => addAction('SET_STATUS')}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                          📊 Set Status
+                        </button>
+                        <button
+                          onClick={() => addAction('CREATE_NOTIFICATION')}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-b-lg"
+                        >
+                          🔔 Create Notification
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
