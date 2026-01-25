@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
@@ -39,7 +38,6 @@ interface Submission {
 }
 
 export default function InjuryReportsDashboard() {
-  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,14 +159,14 @@ export default function InjuryReportsDashboard() {
           <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
             <div className="text-sm font-medium text-gray-600">New Reports</div>
             <div className="text-3xl font-bold text-orange-600 mt-2">
-              {stats.statusCounts.find(s => s.status === 'NEW')?._count || 0}
+              {stats.statusCounts.find(s => s.status === 'NEW')?.count || 0}
             </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
             <div className="text-sm font-medium text-gray-600">Under Review</div>
             <div className="text-3xl font-bold text-blue-600 mt-2">
-              {stats.statusCounts.find(s => s.status === 'UNDER_REVIEW')?._count || 0}
+              {stats.statusCounts.find(s => s.status === 'UNDER_REVIEW')?.count || 0}
             </div>
           </div>
 

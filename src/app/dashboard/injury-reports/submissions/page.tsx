@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
@@ -30,7 +29,6 @@ interface Submission {
 }
 
 export default function SubmissionsReportsPage() {
-  const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
