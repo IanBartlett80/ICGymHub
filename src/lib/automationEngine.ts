@@ -119,8 +119,12 @@ async function executeActions(
   submissionData: any,
   automation: any
 ): Promise<void> {
+  console.log(`[Automation ${automation.id}] Executing ${actions.actions.length} action(s)`);
+  
   for (const action of actions.actions) {
     try {
+      console.log(`[Automation ${automation.id}] Executing action:`, action.type);
+      
       switch (action.type) {
         case 'SEND_EMAIL':
           await executeSendEmail(action, submission, submissionData, automation);
@@ -138,8 +142,11 @@ async function executeActions(
           await executeSetStatus(action, submission);
           break;
       }
+      
+      console.log(`[Automation ${automation.id}] ✅ Action ${action.type} completed successfully`);
     } catch (error) {
-      console.error(`Error executing action ${action.type}:`, error);
+      console.error(`[Automation ${automation.id}] ❌ Error executing action ${action.type}:`, error);
+      // Continue with other actions even if one fails
     }
   }
 }
@@ -153,9 +160,16 @@ async function executeSendEmail(
   submissionData: any,
   automation: any
 ): Promise<void> {
+  console.log(`[Automation ${automation.id}] Starting email send action`);
+  
   const recipients = JSON.parse(automation.emailRecipients || '[]');
+  console.log(`[Automation ${automation.id}] Email recipients config:`, recipients);
+  
   const subject = replaceVariables(automation.emailSubject || 'New Injury Report', submissionData, submission);
   const body = replaceVariables(automation.emailTemplate || 'A new injury report has been submitted.', submissionData, submission);
+
+  console.log(`[Automation ${automation.id}] Email subject:`, subject);
+  console.log(`[Automation ${automation.id}] Email body length:`, body.length);
 
   // Resolve dynamic recipients (field references)
   const resolvedRecipients: string[] = [];
@@ -167,20 +181,40 @@ async function executeSendEmail(
         const parsedValue = JSON.parse(fieldData.value);
         if (parsedValue.value && parsedValue.value.includes('@')) {
           resolvedRecipients.push(parsedValue.value);
+          console.log(`[Automation ${automation.id}] Resolved field:${fieldId} to ${parsedValue.value}`);
+        } else {
+          console.warn(`[Automation ${automation.id}] Field ${fieldId} value does not contain valid email:`, parsedValue.value);
         }
+      } else {
+        console.warn(`[Automation ${automation.id}] Field ${fieldId} not found in submission data`);
       }
     } else {
       resolvedRecipients.push(recipient);
+      console.log(`[Automation ${automation.id}] Added static recipient:`, recipient);
     }
+  }
+
+  console.log(`[Automation ${automation.id}] Final resolved recipients:`, resolvedRecipients);
+
+  if (resolvedRecipients.length === 0) {
+    console.warn(`[Automation ${automation.id}] No recipients to send email to!`);
+    return;
   }
 
   // Send emails
   for (const recipient of resolvedRecipients) {
-    await sendEmail({
-      to: recipient,
-      subject,
-      htmlContent: body,
-    });
+    try {
+      console.log(`[Automation ${automation.id}] Sending email to:`, recipient);
+      const result = await sendEmail({
+        to: recipient,
+        subject,
+        htmlContent: body,
+      });
+      console.log(`[Automation ${automation.id}] ✅ Email sent successfully to ${recipient}:`, result);
+    } catch (error) {
+      console.error(`[Automation ${automation.id}] ❌ Failed to send email to ${recipient}:`, error);
+      throw error; // Re-throw to be caught by outer error handler
+    }
   }
 }
 
@@ -307,6 +341,8 @@ export async function triggerAutomations(
   submissionId: string,
   trigger: 'ON_SUBMIT' | 'ON_STATUS_CHANGE'
 ): Promise<void> {
+  console.log(`🤖 Triggering automations for submission ${submissionId} with trigger: ${trigger}`);
+  
   try {
     // Get submission with all data
     const submission = await prisma.injurySubmission.findUnique({
@@ -329,19 +365,28 @@ export async function triggerAutomations(
     });
 
     if (!submission) {
-      console.error('Submission not found:', submissionId);
+      console.error('❌ Submission not found:', submissionId);
       return;
     }
 
     // Get relevant automations
     const automations = submission.template.automations;
+    console.log(`Found ${automations.length} active automation(s) for template ${submission.template.id}`);
 
     for (const automation of automations) {
       try {
+        console.log(`\n[Automation ${automation.id}] "${automation.name}" - Starting evaluation`);
+        
         const triggerConditions: TriggerConditions = JSON.parse(automation.triggerConditions);
 
         // Check if trigger matches
-        if (triggerConditions.trigger !== trigger) continue;
+        if (triggerConditions.trigger !== trigger) {
+          console.log(`[Automation ${automation.id}] Skipping - trigger mismatch (expected: ${triggerConditions.trigger}, got: ${trigger})`);
+          continue;
+        }
+
+        console.log(`[Automation ${automation.id}] Trigger matches: ${trigger}`);
+        console.log(`[Automation ${automation.id}] Evaluating conditions...`);
 
         // Evaluate conditions
         const conditionsMet = evaluateConditions(
@@ -350,6 +395,8 @@ export async function triggerAutomations(
           submission.data,
           submission
         );
+
+        console.log(`[Automation ${automation.id}] Conditions met: ${conditionsMet}`);
 
         if (conditionsMet) {
           // Execute actions
@@ -364,13 +411,19 @@ export async function triggerAutomations(
               executionCount: { increment: 1 },
             },
           });
+          
+          console.log(`[Automation ${automation.id}] ✅ Automation completed successfully`);
+        } else {
+          console.log(`[Automation ${automation.id}] ⏭️  Skipping - conditions not met`);
         }
       } catch (error) {
-        console.error(`Error processing automation ${automation.id}:`, error);
+        console.error(`[Automation ${automation.id}] ❌ Error processing automation:`, error);
       }
     }
+    
+    console.log(`🤖 Automation processing completed for submission ${submissionId}\n`);
   } catch (error) {
-    console.error('Error triggering automations:', error);
+    console.error('❌ Error triggering automations:', error);
   }
 }
 

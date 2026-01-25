@@ -40,6 +40,9 @@ export default function AutomationBuilderPage() {
   const [showBuilder, setShowBuilder] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
+  const [selectedAutomationLogs, setSelectedAutomationLogs] = useState<string>('');
+  const [selectedAutomationName, setSelectedAutomationName] = useState<string>('');
 
   // Builder state
   const [name, setName] = useState('');
@@ -251,6 +254,25 @@ export default function AutomationBuilderPage() {
     }
   };
 
+  const viewLogs = async (automationId: string, automationName: string) => {
+    setSelectedAutomationName(automationName);
+    setSelectedAutomationLogs('Loading logs...');
+    setShowLogs(true);
+    
+    try {
+      const res = await fetch(`/api/injury-forms/${templateId}/automations/${automationId}/logs`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedAutomationLogs(data.logs || 'No logs available yet. Logs will appear here after the automation runs.');
+      } else {
+        setSelectedAutomationLogs('Unable to load logs. Please check the browser console and server logs for automation execution details.');
+      }
+    } catch (error) {
+      console.error('Error loading logs:', error);
+      setSelectedAutomationLogs('Error loading logs. Check browser console for details:\n' + JSON.stringify(error, null, 2));
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout title="Automations">
@@ -354,6 +376,12 @@ export default function AutomationBuilderPage() {
                       className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                       Edit
+                    </button>
+                    <button
+                      onClick={() => viewLogs(automation.id, automation.name)}
+                      className="px-3 py-2 text-sm border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50"
+                    >
+                      Logs
                     </button>
                     <button
                       onClick={() => deleteAutomation(automation.id)}
@@ -587,7 +615,11 @@ export default function AutomationBuilderPage() {
                             Recipients (one email per line)
                           </label>
                           <textarea
-                            value={action.config.recipients?.join('\n') || ''}
+                            value={
+                              Array.isArray(action.config.recipients)
+                                ? action.config.recipients.join('\n')
+                                : action.config.recipients || ''
+                            }
                             onChange={(e) => {
                               const recipients = e.target.value.split('\n').filter(r => r.trim());
                               updateAction(index, { config: { ...action.config, recipients } });
@@ -709,6 +741,48 @@ export default function AutomationBuilderPage() {
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Automation Logs: {selectedAutomationName}
+              </h2>
+              <button
+                onClick={() => setShowLogs(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 overflow-auto flex-1">
+              <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm whitespace-pre-wrap overflow-x-auto">
+                {selectedAutomationLogs}
+              </div>
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">💡 How to view detailed logs:</h3>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Open your browser's Developer Console (F12 or right-click → Inspect)</li>
+                  <li>Go to the Console tab</li>
+                  <li>Submit a new injury report to trigger the automation</li>
+                  <li>Look for logs starting with 🤖 and [Automation {automation.id}]</li>
+                  <li>Server logs will show detailed email sending information</li>
+                </ol>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-6 border-t">
+              <button
+                onClick={() => setShowLogs(false)}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Close
               </button>
             </div>
           </div>
