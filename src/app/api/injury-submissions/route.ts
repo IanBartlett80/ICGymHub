@@ -48,6 +48,17 @@ export async function GET(req: NextRequest) {
             email: true,
           },
         },
+        data: {
+          include: {
+            field: {
+              select: {
+                id: true,
+                label: true,
+                fieldType: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             comments: true,
@@ -57,7 +68,44 @@ export async function GET(req: NextRequest) {
       orderBy: { submittedAt: 'desc' },
     });
 
-    return NextResponse.json({ submissions });
+    // Extract athlete, coach, and class information from submission data
+    const enrichedSubmissions = submissions.map((submission) => {
+      let athleteName = null;
+      let coachName = null;
+      let className = null;
+      let programName = null;
+
+      submission.data.forEach((dataItem) => {
+        const value = typeof dataItem.value === 'string' ? JSON.parse(dataItem.value) : dataItem.value;
+        const displayValue = value.displayValue || value.value || value;
+
+        if (dataItem.field.label === 'Athlete Name') {
+          athleteName = displayValue;
+        } else if (dataItem.field.label === 'Supervising Coach') {
+          coachName = displayValue;
+        } else if (dataItem.field.label === 'Class') {
+          className = displayValue;
+        } else if (dataItem.field.label === 'Program') {
+          programName = displayValue;
+        }
+      });
+
+      return {
+        id: submission.id,
+        status: submission.status,
+        priority: submission.priority,
+        submittedAt: submission.submittedAt,
+        template: submission.template,
+        assignedTo: submission.assignedTo,
+        athleteName,
+        coachName,
+        className,
+        programName,
+        _count: submission._count,
+      };
+    });
+
+    return NextResponse.json({ submissions: enrichedSubmissions });
   } catch (error) {
     console.error('Error fetching injury submissions:', error);
     return NextResponse.json(

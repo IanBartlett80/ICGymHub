@@ -204,6 +204,18 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                   </li>
                   <li>
                     <Link
+                      href="/dashboard/injury-reports/submissions"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/injury-reports/submissions')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Reports
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
                       href="/dashboard/injury-reports/analytics"
                       className={`block px-3 py-2 text-sm rounded-lg ${
                         isActive('/dashboard/injury-reports/analytics')
@@ -212,18 +224,6 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                       }`}
                     >
                       Analytics
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/injury-reports/configuration"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/injury-reports/configuration')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Configuration
                     </Link>
                   </li>
                 </ul>

@@ -29,6 +29,10 @@ interface Submission {
     fullName: string;
     email: string;
   } | null;
+  athleteName: string | null;
+  coachName: string | null;
+  className: string | null;
+  programName: string | null;
   _count: {
     comments: number;
   };
@@ -40,6 +44,9 @@ export default function InjuryReportsDashboard() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [programFilter, setProgramFilter] = useState<string>('all');
+  const [coachFilter, setCoachFilter] = useState<string>('all');
+  const [classFilter, setClassFilter] = useState<string>('all');
 
   useEffect(() => {
     loadData();
@@ -72,6 +79,19 @@ export default function InjuryReportsDashboard() {
       setLoading(false);
     }
   };
+
+  // Get unique values for filters
+  const uniquePrograms = Array.from(new Set(submissions.map(s => s.programName).filter(Boolean))) as string[];
+  const uniqueCoaches = Array.from(new Set(submissions.map(s => s.coachName).filter(Boolean))) as string[];
+  const uniqueClasses = Array.from(new Set(submissions.map(s => s.className).filter(Boolean))) as string[];
+
+  // Filter submissions based on selected filters
+  const filteredSubmissions = submissions.filter(submission => {
+    if (programFilter !== 'all' && submission.programName !== programFilter) return false;
+    if (coachFilter !== 'all' && submission.coachName !== coachFilter) return false;
+    if (classFilter !== 'all' && submission.className !== classFilter) return false;
+    return true;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -181,7 +201,7 @@ export default function InjuryReportsDashboard() {
       {/* Submissions List */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Recent Submissions</h2>
             <div className="flex gap-2">
               <button
@@ -204,10 +224,53 @@ export default function InjuryReportsDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Filters */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Program</label>
+              <select
+                value={programFilter}
+                onChange={(e) => setProgramFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="all">All Programs</option>
+                {uniquePrograms.map(program => (
+                  <option key={program} value={program}>{program}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Coach</label>
+              <select
+                value={coachFilter}
+                onChange={(e) => setCoachFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="all">All Coaches</option>
+                {uniqueCoaches.map(coach => (
+                  <option key={coach} value={coach}>{coach}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Class</label>
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="all">All Classes</option>
+                {uniqueClasses.map(className => (
+                  <option key={className} value={className}>{className}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          {submissions.length === 0 ? (
+          {filteredSubmissions.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-lg mb-2">No submissions found</div>
               <p className="text-gray-500 text-sm">Create a form and share it with your team to start receiving reports</p>
@@ -217,16 +280,19 @@ export default function InjuryReportsDashboard() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Form
+                    Athlete
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Coach
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Class
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Priority
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned To
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Submitted
@@ -240,10 +306,16 @@ export default function InjuryReportsDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {submissions.map((submission) => (
+                {filteredSubmissions.map((submission) => (
                   <tr key={submission.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{submission.template.name}</div>
+                      <div className="text-sm font-medium text-gray-900">{submission.athleteName || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{submission.coachName || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{submission.className || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded border ${getStatusColor(submission.status)}`}>
@@ -257,13 +329,6 @@ export default function InjuryReportsDashboard() {
                         </span>
                       ) : (
                         <span className="text-gray-400 text-sm">Not set</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {submission.assignedTo ? (
-                        <div className="text-sm text-gray-900">{submission.assignedTo.fullName}</div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">Unassigned</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
