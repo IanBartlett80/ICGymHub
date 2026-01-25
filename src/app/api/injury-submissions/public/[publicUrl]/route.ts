@@ -69,7 +69,14 @@ export async function POST(
         active: true,
       },
       include: {
-        fields: true,
+        sections: {
+          include: {
+            fields: {
+              orderBy: { order: 'asc' },
+            },
+          },
+          orderBy: { order: 'asc' },
+        },
       },
     });
 
@@ -77,8 +84,11 @@ export async function POST(
       return NextResponse.json({ error: 'Form not found or inactive' }, { status: 404 });
     }
 
+    // Flatten all fields from all sections
+    const allFields = template.sections.flatMap(section => section.fields);
+
     // Validate required fields
-    const requiredFields = template.fields.filter((f) => f.required);
+    const requiredFields = allFields.filter((f) => f.required);
     for (const field of requiredFields) {
       if (!formData[field.id]) {
         return NextResponse.json(
