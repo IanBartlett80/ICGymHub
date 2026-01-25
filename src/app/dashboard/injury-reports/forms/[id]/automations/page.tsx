@@ -106,7 +106,21 @@ export default function AutomationBuilderPage() {
     setLogic(triggerConditions.logic || 'AND');
     
     const parsedActions = JSON.parse(automation.actions);
-    setActions(parsedActions.actions || []);
+    let loadedActions = parsedActions.actions || [];
+    
+    // If automation has email configuration, merge it into SEND_EMAIL action
+    if (automation.emailRecipients || automation.emailSubject || automation.emailTemplate) {
+      const sendEmailIndex = loadedActions.findIndex((a: any) => a.type === 'SEND_EMAIL');
+      if (sendEmailIndex >= 0) {
+        loadedActions[sendEmailIndex].config = {
+          recipients: automation.emailRecipients ? JSON.parse(automation.emailRecipients) : [],
+          subject: automation.emailSubject || '',
+          body: automation.emailTemplate || '',
+        };
+      }
+    }
+    
+    setActions(loadedActions);
     
     setEscalationEnabled(automation.escalationEnabled);
     setEscalationHours(automation.escalationHours || 24);
@@ -162,6 +176,12 @@ export default function AutomationBuilderPage() {
       return;
     }
 
+    // Extract email configuration from SEND_EMAIL action if present
+    const sendEmailAction = actions.find(a => a.type === 'SEND_EMAIL');
+    const emailRecipients = sendEmailAction ? JSON.stringify(sendEmailAction.config.recipients || []) : null;
+    const emailSubject = sendEmailAction ? sendEmailAction.config.subject || null : null;
+    const emailTemplate = sendEmailAction ? sendEmailAction.config.body || null : null;
+
     const automationData = {
       name,
       description,
@@ -169,6 +189,9 @@ export default function AutomationBuilderPage() {
       order: automations.length,
       triggerConditions: { trigger, conditions, logic },
       actions: { actions },
+      emailRecipients,
+      emailSubject,
+      emailTemplate,
       escalationEnabled,
       escalationHours: escalationEnabled ? escalationHours : null,
     };
@@ -555,6 +578,58 @@ export default function AutomationBuilderPage() {
                         <option value="HIGH">High</option>
                         <option value="CRITICAL">Critical</option>
                       </select>
+                    )}
+
+                    {action.type === 'SEND_EMAIL' && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Recipients (one email per line)
+                          </label>
+                          <textarea
+                            value={action.config.recipients?.join('\n') || ''}
+                            onChange={(e) => {
+                              const recipients = e.target.value.split('\n').filter(r => r.trim());
+                              updateAction(index, { config: { ...action.config, recipients } });
+                            }}
+                            placeholder="admin@example.com&#10;coach@example.com&#10;or use: field:{fieldId} to send to an email from a form field"
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            💡 Tip: Use <code className="bg-gray-100 px-1 rounded">field:FIELD_ID</code> to send to an email captured in the form
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Subject
+                          </label>
+                          <input
+                            type="text"
+                            value={action.config.subject || ''}
+                            onChange={(e) => updateAction(index, { config: { ...action.config, subject: e.target.value } })}
+                            placeholder="e.g., New Injury Report Submitted"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Body (HTML supported)
+                          </label>
+                          <textarea
+                            value={action.config.body || ''}
+                            onChange={(e) => updateAction(index, { config: { ...action.config, body: e.target.value } })}
+                            placeholder="Email content..."
+                            rows={6}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            💡 Available variables: <code className="bg-gray-100 px-1 rounded">{'{submission.id}'}</code>, 
+                            <code className="bg-gray-100 px-1 rounded ml-1">{'{submission.status}'}</code>, 
+                            <code className="bg-gray-100 px-1 rounded ml-1">{'{field.FIELD_ID}'}</code>
+                          </p>
+                        </div>
+                      </div>
                     )}
 
                     {action.type === 'SET_STATUS' && (

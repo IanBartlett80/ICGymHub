@@ -179,7 +179,7 @@ async function executeSendEmail(
     await sendEmail({
       to: recipient,
       subject,
-      html: body,
+      htmlContent: body,
     });
   }
 }
