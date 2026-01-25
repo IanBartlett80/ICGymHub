@@ -772,7 +772,7 @@ export default function AutomationBuilderPage() {
                   <li>Open your browser's Developer Console (F12 or right-click → Inspect)</li>
                   <li>Go to the Console tab</li>
                   <li>Submit a new injury report to trigger the automation</li>
-                  <li>Look for logs starting with 🤖 and [Automation {automation.id}]</li>
+                  <li>Look for logs starting with 🤖 and [Automation ...]</li>
                   <li>Server logs will show detailed email sending information</li>
                 </ol>
               </div>
