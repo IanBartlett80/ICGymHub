@@ -52,3 +52,38 @@ export async function verifyAuth(req: NextRequest): Promise<AuthResult> {
     user,
   };
 }
+
+export async function authenticateRequest(req: NextRequest) {
+  const token = getAccessToken(req);
+  const payload = token ? verifyAccessToken(token) : null;
+  
+  if (!payload) {
+    throw new Error('Unauthorized');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      fullName: true,
+      clubId: true,
+      role: true,
+    },
+  });
+
+  if (!user || user.clubId !== payload.clubId) {
+    throw new Error('Unauthorized');
+  }
+
+  const club = await prisma.club.findUnique({
+    where: { id: user.clubId },
+  });
+
+  if (!club) {
+    throw new Error('Club not found');
+  }
+
+  return { user, club };
+}

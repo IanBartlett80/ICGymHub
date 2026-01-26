@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Zone } from '@prisma/client';
 import { QrCodeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ZoneStatus {
   zoneId: string;
@@ -25,10 +26,18 @@ interface ZoneWithStatus extends Zone {
   statusInfo?: ZoneStatus;
 }
 
+interface MonthlyData {
+  month: string;
+  total: number;
+  [key: string]: number | string;
+}
+
 export default function EquipmentPage() {
   const router = useRouter();
   const [zones, setZones] = useState<ZoneWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [zoneNames, setZoneNames] = useState<string[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     inUse: 0,
@@ -44,10 +53,11 @@ export default function EquipmentPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [zonesRes, statsRes, statusRes] = await Promise.all([
+      const [zonesRes, statsRes, statusRes, monthlyRes] = await Promise.all([
         fetch('/api/zones'),
         fetch('/api/equipment/analytics/overview'),
         fetch('/api/equipment/analytics/zone-status'),
+        fetch('/api/equipment/analytics/safety-issues-monthly?months=6'),
       ]);
 
       let zonesData: Zone[] = [];
@@ -71,6 +81,12 @@ export default function EquipmentPage() {
       if (statusRes.ok) {
         const data = await statusRes.json();
         statusData = data.zones || [];
+      }
+
+      if (monthlyRes.ok) {
+        const data = await monthlyRes.json();
+        setMonthlyData(data.data || []);
+        setZoneNames(data.zones || []);
       }
 
       // Merge zone data with status info
@@ -188,6 +204,61 @@ export default function EquipmentPage() {
             </select>
           </div>
         </div>
+
+        {/* Monthly Safety Issues Chart */}
+        {monthlyData.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Zone</h2>
+              <p className="text-sm text-gray-600">Month-over-month safety issues reported per zone (Last 6 months)</p>
+            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }}
+                  angle={-15}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  label={{ value: 'Number of Issues', angle: -90, position: 'insideLeft' }}
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+                  labelStyle={{ fontWeight: 'bold' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                {zoneNames.map((zoneName, index) => {
+                  const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+                  return (
+                    <Line
+                      key={zoneName}
+                      type="monotone"
+                      dataKey={zoneName}
+                      stroke={colors[index % colors.length]}
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  );
+                })}
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#1f2937"
+                  strokeWidth={3}
+                  strokeDasharray="5 5"
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Total (All Zones)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Zone Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
