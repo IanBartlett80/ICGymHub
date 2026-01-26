@@ -32,6 +32,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showConfigMenu, setShowConfigMenu] = useState(false)
   const [showInjuryMenu, setShowInjuryMenu] = useState(false)
+  const [showEquipmentMenu, setShowEquipmentMenu] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -230,13 +231,69 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               )}
             </li>
 
-            {/* Other Services - Coming Soon */}
+            {/* Equipment Management */}
             <li>
-              <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
-                <span className="text-xl">🔧</span>
-                {!sidebarCollapsed && <span className="text-sm">Equipment</span>}
-              </div>
+              <button
+                onClick={() => setShowEquipmentMenu(!showEquipmentMenu)}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/equipment')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔧</span>
+                  {!sidebarCollapsed && <span>Equipment</span>}
+                </div>
+                {!sidebarCollapsed && (
+                  <span className="text-sm">{showEquipmentMenu ? '▼' : '▶'}</span>
+                )}
+              </button>
+
+              {/* Equipment Submenu */}
+              {showEquipmentMenu && !sidebarCollapsed && (
+                <ul className="ml-9 mt-2 space-y-1">
+                  <li>
+                    <Link
+                      href="/dashboard/equipment"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        pathname === '/dashboard/equipment'
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      All Equipment
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/equipment/maintenance"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/equipment/maintenance')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Maintenance Due
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/equipment/analytics"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/equipment/analytics')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Analytics
+                    </Link>
+                  </li>
+                </ul>
+              )}
             </li>
+
+            {/* Other Services - Coming Soon */}
             <li>
               <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
                 <span className="text-xl">🏆</span>
