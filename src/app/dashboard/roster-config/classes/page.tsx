@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 
 type Zone = {
@@ -94,16 +93,17 @@ export default function ClassesPage() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
+    if (!showLevelDropdown) {
+      return
+    }
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target.closest('.level-dropdown-container')) {
         setShowLevelDropdown(false)
       }
     }
-    if (showLevelDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showLevelDropdown])
 
   const fetchData = async () => {

@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, startDate, endDate, activeDays } = body;
+    const { name, startDate, endDate, activeDays, classConfig } = body;
 
     // Validation
     if (!name || !startDate || !endDate || !activeDays || activeDays.length === 0) {
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         activeDays: activeDays.join(','), // Store as comma-separated string
+        classConfig: classConfig || '[]', // Required field
         clubId: payload.clubId,
         createdById: payload.userId,
       },
@@ -82,8 +83,7 @@ export async function POST(request: NextRequest) {
         createdBy: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            fullName: true,
           },
         },
       },

@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, automationId } = await params;
+    const { automationId } = await params;
 
     const automation = await prisma.injuryFormAutomation.findFirst({
       where: {
@@ -49,7 +49,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, automationId } = await params;
+    const { automationId } = await params;
     const body = await req.json();
     const {
       name,
@@ -118,7 +118,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, automationId } = await params;
+    const { automationId } = await params;
 
     const result = await prisma.injuryFormAutomation.deleteMany({
       where: {

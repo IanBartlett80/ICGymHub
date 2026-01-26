@@ -87,17 +87,6 @@ export default function NotificationBell() {
     }
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'NEW_SUBMISSION': return '📋';
-      case 'ASSIGNMENT': return '👤';
-      case 'STATUS_CHANGE': return '🔄';
-      case 'ESCALATION': return '⚠️';
-      case 'COMMENT_ADDED': return '💬';
-      default: return '🔔';
-    }
-  };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'CRITICAL': return 'bg-red-50 border-l-4 border-red-500';

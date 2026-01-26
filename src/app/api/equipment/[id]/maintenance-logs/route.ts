@@ -5,15 +5,16 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/equipment/[id]/maintenance-logs - Get maintenance logs for equipment
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
 
     // Verify equipment exists and belongs to club
     const equipment = await prisma.equipment.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
     });
@@ -24,7 +25,7 @@ export async function GET(
 
     const logs = await prisma.maintenanceLog.findMany({
       where: {
-        equipmentId: params.id,
+        equipmentId: id,
         clubId: club.id,
       },
       orderBy: {

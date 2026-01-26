@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, startDate, endDate, activeDays, scope, classTemplates } = body;
+    const { name, startDate, endDate, activeDays, classTemplates } = body;
 
     // Validation
     if (!name || !startDate || !endDate || !activeDays || activeDays.length === 0) {

@@ -5,14 +5,15 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/safety-issues/[id] - Get a single safety issue
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
 
     const issue = await prisma.safetyIssue.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
       include: {
@@ -32,11 +33,11 @@ export async function GET(
     }
 
     return NextResponse.json({ issue });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching safety issue:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch safety issue' },
-      { status: error.status || 500 }
+      { error: error instanceof Error ? error.message : 'Failed to fetch safety issue' },
+      { status: 500 }
     );
   }
 }
@@ -44,16 +45,17 @@ export async function GET(
 // PUT /api/safety-issues/[id] - Update a safety issue
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
     const body = await request.json();
 
     // Verify issue belongs to this club
     const existing = await prisma.safetyIssue.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
     });
@@ -65,7 +67,7 @@ export async function PUT(
       );
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (body.status !== undefined) updateData.status = body.status;
     if (body.priority !== undefined) updateData.priority = body.priority;
@@ -76,7 +78,7 @@ export async function PUT(
     }
 
     const issue = await prisma.safetyIssue.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         equipment: {
@@ -88,10 +90,10 @@ export async function PUT(
     });
 
     return NextResponse.json({ issue });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating safety issue:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update safety issue' },
+      { error: error instanceof Error ? error.message : 'Failed to update safety issue' },
       { status: 500 }
     );
   }
@@ -100,15 +102,16 @@ export async function PUT(
 // DELETE /api/safety-issues/[id] - Delete a safety issue
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
 
     // Verify issue belongs to this club
     const existing = await prisma.safetyIssue.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
     });
@@ -121,14 +124,14 @@ export async function DELETE(
     }
 
     await prisma.safetyIssue.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting safety issue:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete safety issue' },
+      { error: error instanceof Error ? error.message : 'Failed to delete safety issue' },
       { status: 500 }
     );
   }

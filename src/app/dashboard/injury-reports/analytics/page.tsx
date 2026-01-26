@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
-import Link from 'next/link';
 
 interface AnalyticsData {
   totalSubmissions: number;

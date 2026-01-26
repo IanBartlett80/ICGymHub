@@ -28,7 +28,7 @@ async function getAuthenticatedUser(req: NextRequest) {
 // PATCH /api/rosters/[id]/status - Update roster status
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(req)
@@ -36,7 +36,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await req.json()
     const { status } = body
 

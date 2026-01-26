@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
         include: {
           _count: {
             select: {
-              MaintenanceLog: true,
-              EquipmentUsage: true,
+              maintenanceLogs: true,
+              usageHistory: true,
             },
           },
         },

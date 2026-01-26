@@ -4,7 +4,7 @@ import { triggerAutomations } from '@/lib/automationEngine';
 
 // GET /api/injury-submissions/public/[publicUrl] - Get public form template (no auth)
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ publicUrl: string }> }
 ) {
   try {

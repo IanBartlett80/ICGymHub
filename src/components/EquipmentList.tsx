@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import EquipmentCard from './EquipmentCard';
 import {
   MagnifyingGlassIcon,
-  FunnelIcon,
   Squares2X2Icon,
   ListBulletIcon,
 } from '@heroicons/react/24/outline';

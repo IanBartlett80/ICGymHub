@@ -155,7 +155,7 @@ async function executeActions(
  * Send email action
  */
 async function executeSendEmail(
-  action: AutomationAction,
+  _action: AutomationAction,
   submission: any,
   submissionData: any,
   automation: any

@@ -5,14 +5,15 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/maintenance-tasks/[id] - Get single maintenance task
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
 
     const task = await prisma.maintenanceTask.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
       include: {
@@ -44,10 +45,11 @@ export async function GET(
 // PUT /api/maintenance-tasks/[id] - Update maintenance task
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
 
     const body = await request.json();
     const {
@@ -67,7 +69,7 @@ export async function PUT(
     // Verify task exists and belongs to club
     const existing = await prisma.maintenanceTask.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
       include: {
@@ -79,7 +81,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Maintenance task not found' }, { status: 404 });
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (title !== undefined) {
       if (!title.trim()) {
@@ -134,7 +136,7 @@ export async function PUT(
             description: `${existing.title}\n${existing.description}${notes ? '\n\nNotes: ' + notes : ''}`,
             performedBy: completedBy.trim(),
             cost: cost || null,
-            performedAt: updateData.completedDate,
+            performedAt: updateData.completedDate as Date,
           },
         });
 
@@ -142,7 +144,7 @@ export async function PUT(
         await prisma.equipment.update({
           where: { id: existing.equipmentId },
           data: { 
-            lastMaintenance: updateData.completedDate,
+            lastMaintenance: updateData.completedDate as Date,
           },
         });
       }
@@ -184,7 +186,7 @@ export async function PUT(
     }
 
     const task = await prisma.maintenanceTask.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         equipment: {
@@ -211,15 +213,16 @@ export async function PUT(
 // DELETE /api/maintenance-tasks/[id] - Delete maintenance task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
 
     // Verify task exists and belongs to club
     const existing = await prisma.maintenanceTask.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
     });
@@ -229,7 +232,7 @@ export async function DELETE(
     }
 
     await prisma.maintenanceTask.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

@@ -83,7 +83,7 @@ export async function PUT(
     });
 
     // Update template basic info
-    const template = await prisma.injuryFormTemplate.update({
+    await prisma.injuryFormTemplate.update({
       where: { id },
       data: {
         name,

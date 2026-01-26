@@ -244,7 +244,6 @@ export default function RostersPage() {
                 const isTemplate = group.templateId !== null
                 const allPublished = group.rosters.every(r => r.status === 'PUBLISHED')
                 const hasAnyPublished = group.rosters.some(r => r.status === 'PUBLISHED')
-                const allDraft = group.rosters.every(r => r.status === 'DRAFT')
 
                 return (
                   <div key={group.groupKey} className="bg-white rounded-lg shadow overflow-hidden">

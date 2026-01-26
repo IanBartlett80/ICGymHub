@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyClubAccess } from '@/lib/auth'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
+import { verifyAccessToken } from '@/lib/auth'
 import { z } from 'zod'
+
+function getAccessToken(req: NextRequest): string | null {
+  const headerToken = req.headers.get('authorization')
+  if (headerToken?.startsWith('Bearer ')) {
+    return headerToken.replace('Bearer ', '').trim()
+  }
+  const cookieToken = req.cookies.get('accessToken')?.value
+  return cookieToken || null
+}
+
+async function getAuthenticatedUser(req: NextRequest) {
+  const token = getAccessToken(req)
+  const payload = token ? verifyAccessToken(token) : null
+  if (!payload) return null
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    include: { club: true },
+  })
+
+  if (!user || !user.club || user.clubId !== payload.clubId) return null
+  return user
+}
 
 const updateGymsportSchema = z.object({
   name: z.string().min(1).optional(),
@@ -11,11 +34,11 @@ const updateGymsportSchema = z.object({
 // PATCH /api/gymsports/[id] - Update a gymsport
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clubId = await verifyClubAccess(req)
-    if (!clubId) {
+    const user = await getAuthenticatedUser(req)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -29,7 +52,7 @@ export async function PATCH(
       )
     }
 
-    const { id } = params
+    const { id } = await params
     const updateData = parsed.data
 
     // Check if gymsport exists and belongs to club
@@ -37,14 +60,14 @@ export async function PATCH(
       where: { id },
     })
 
-    if (!existing || existing.clubId !== clubId) {
+    if (!existing || existing.clubId !== user.clubId) {
       return NextResponse.json({ error: 'Gymsport not found' }, { status: 404 })
     }
 
     // If updating name, check for duplicates
     if (updateData.name && updateData.name !== existing.name) {
       const duplicate = await prisma.gymsport.findUnique({
-        where: { clubId_name: { clubId, name: updateData.name } },
+        where: { clubId_name: { clubId: user.clubId, name: updateData.name } },
       })
 
       if (duplicate) {
@@ -70,15 +93,15 @@ export async function PATCH(
 // DELETE /api/gymsports/[id] - Delete a custom gymsport
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clubId = await verifyClubAccess(req)
-    if (!clubId) {
+    const user = await getAuthenticatedUser(req)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Check if gymsport exists and belongs to club
     const existing = await prisma.gymsport.findUnique({
@@ -89,7 +112,7 @@ export async function DELETE(
       },
     })
 
-    if (!existing || existing.clubId !== clubId) {
+    if (!existing || existing.clubId !== user.clubId) {
       return NextResponse.json({ error: 'Gymsport not found' }, { status: 404 })
     }
 

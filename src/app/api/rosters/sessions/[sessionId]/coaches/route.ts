@@ -90,9 +90,9 @@ export async function PATCH(
         // Find all sessions at the same time on this roster
         const allSessions = await prisma.classSession.findMany({
           where: {
-            startTime: session.startTime,
-            endTime: session.endTime,
-            slots: {
+            startTimeLocal: session.startTimeLocal,
+            endTimeLocal: session.endTimeLocal,
+            rosterSlots: {
               some: {
                 rosterId: slot.rosterId
               }

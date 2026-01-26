@@ -8,7 +8,6 @@ import {
   WrenchScrewdriverIcon,
   ExclamationTriangleIcon,
   ClockIcon,
-  CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 
 interface Equipment {

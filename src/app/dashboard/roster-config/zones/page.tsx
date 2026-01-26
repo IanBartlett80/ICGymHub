@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 
 interface Zone {
@@ -55,7 +54,7 @@ export default function ZonesPage() {
 
       if (res.ok) {
         await fetchZones()
-        setFormData({ name: '', description: '', allowOverlap: false, active: true })
+        setFormData({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
         setEditingId(null)
         setShowForm(false)
         setSuccess('Zone saved successfully')

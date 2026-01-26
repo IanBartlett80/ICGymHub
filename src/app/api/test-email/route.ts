@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { testEmailConnection } from '@/lib/email'
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const result = await testEmailConnection()
     return NextResponse.json(

@@ -1,7 +1,7 @@
 'use client';
 
 import { Equipment, Zone } from '@prisma/client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface EquipmentFormData {

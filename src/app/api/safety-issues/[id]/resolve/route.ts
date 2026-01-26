@@ -5,10 +5,11 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // POST /api/safety-issues/[id]/resolve - Resolve a safety issue
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
+    const { id } = await params;
     const body = await request.json();
 
     const {
@@ -22,7 +23,7 @@ export async function POST(
     // Verify issue belongs to this club
     const existingIssue = await prisma.safetyIssue.findFirst({
       where: {
-        id: params.id,
+        id,
         clubId: club.id,
       },
       include: {
@@ -49,7 +50,7 @@ export async function POST(
     const result = await prisma.$transaction(async (tx) => {
       // Update the safety issue
       const resolvedIssue = await tx.safetyIssue.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           status: 'RESOLVED',
           resolvedAt: new Date(),
@@ -92,10 +93,10 @@ export async function POST(
     });
 
     return NextResponse.json({ issue: result });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error resolving safety issue:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to resolve safety issue' },
+      { error: error instanceof Error ? error.message : 'Failed to resolve safety issue' },
       { status: 500 }
     );
   }

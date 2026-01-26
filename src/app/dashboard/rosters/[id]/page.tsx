@@ -183,13 +183,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     setEditingSlot(slot)
     setSelectedCoachIds(slot.session.coaches.map((c) => c.coach.id))
     setEditScope('single')
-    setEditingTime(false)
-    
-    // Set time fields
-    const startDate = new Date(slot.startsAt)
-    const endDate = new Date(slot.endsAt)
-    setSessionStartTime(format(startDate, 'HH:mm'))
-    setSessionEndTime(format(endDate, 'HH:mm'))
   }
 
   const toggleCoachSelection = (coachId: string) => {

@@ -7,7 +7,7 @@ import { generateDailyRoster } from '@/lib/rosterGenerator';
 // POST /api/roster-templates/[id]/regenerate - Regenerate all rosters from template
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('accessToken')?.value;
@@ -16,10 +16,12 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     // Fetch the template
     const template = await prisma.rosterTemplate.findUnique({
       where: {
-        id: params.id,
+        id,
         clubId: payload.clubId,
       },
     });
@@ -45,7 +47,7 @@ export async function POST(
     // Delete all existing rosters for this template
     await prisma.roster.deleteMany({
       where: {
-        templateId: params.id,
+        templateId: id,
       },
     });
 
@@ -71,7 +73,7 @@ export async function POST(
         await prisma.roster.update({
           where: { id: result.rosterId },
           data: {
-            templateId: params.id,
+            templateId: id,
             dayOfWeek: dayOfWeek,
           },
         });

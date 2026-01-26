@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/maintenance-tasks - List maintenance tasks with filtering
 export async function GET(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const { searchParams } = new URL(request.url);
     const equipmentId = searchParams.get('equipmentId');
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 // POST /api/maintenance-tasks - Create new maintenance task
 export async function POST(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const body = await request.json();
     const {

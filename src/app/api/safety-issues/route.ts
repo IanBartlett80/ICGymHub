@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/safety-issues - List all safety issues for a club
 export async function GET(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const { searchParams } = new URL(request.url);
     const zoneId = searchParams.get('zoneId');
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 // POST /api/safety-issues - Create a new safety issue
 export async function POST(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
     const body = await request.json();
 
     const {

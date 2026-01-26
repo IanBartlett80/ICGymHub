@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
-import { format, startOfWeek, endOfWeek, addDays } from 'date-fns'
+import { format, startOfWeek, endOfWeek } from 'date-fns'
 
 const localizer = momentLocalizer(moment)
 
@@ -77,7 +77,7 @@ interface CalendarEvent {
 
 export default function ClassRosteringPage() {
   const router = useRouter()
-  const [user, setUser] = useState<UserData | null>(null)
+  const [, setUser] = useState<UserData | null>(null)
   const [templates, setTemplates] = useState<RosterTemplate[]>([])
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
   const [rosterSlots, setRosterSlots] = useState<RosterSlot[]>([])

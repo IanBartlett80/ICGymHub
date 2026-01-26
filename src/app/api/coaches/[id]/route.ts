@@ -108,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    const updated = await prisma.coach.update({
+    await prisma.coach.update({
       where: { id },
       data: {
         name,

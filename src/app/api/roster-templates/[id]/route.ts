@@ -5,7 +5,7 @@ import { verifyAccessToken } from '@/lib/auth';
 // GET /api/roster-templates/[id] - Get a specific roster template
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('accessToken')?.value;
@@ -14,30 +14,35 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const template = await prisma.rosterTemplate.findUnique({
       where: {
-        id: params.id,
+        id,
         clubId: payload.clubId,
       },
       include: {
         createdBy: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            fullName: true,
           },
         },
         rosters: {
           include: {
-            sessions: {
+            slots: {
               include: {
-                classTemplate: true,
-                zone: true,
-                coaches: {
+                session: {
                   include: {
-                    coach: true,
+                    template: true,
+                    coaches: {
+                      include: {
+                        coach: true,
+                      },
+                    },
                   },
                 },
+                zone: true,
               },
             },
           },
@@ -65,7 +70,7 @@ export async function GET(
 // PATCH /api/roster-templates/[id] - Update a roster template
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('accessToken')?.value;
@@ -74,10 +79,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { name, startDate, endDate, activeDays, status } = body;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name;
     if (startDate !== undefined) updateData.startDate = new Date(startDate);
     if (endDate !== undefined) updateData.endDate = new Date(endDate);
@@ -86,7 +92,7 @@ export async function PATCH(
 
     const template = await prisma.rosterTemplate.update({
       where: {
-        id: params.id,
+        id,
         clubId: payload.clubId,
       },
       data: updateData,
@@ -94,8 +100,7 @@ export async function PATCH(
         createdBy: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            fullName: true,
           },
         },
       },
@@ -114,7 +119,7 @@ export async function PATCH(
 // DELETE /api/roster-templates/[id] - Delete a roster template
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('accessToken')?.value;
@@ -123,10 +128,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     // Check if template exists and belongs to the club
     const template = await prisma.rosterTemplate.findUnique({
       where: {
-        id: params.id,
+        id,
         clubId: payload.clubId,
       },
     });
@@ -138,7 +145,7 @@ export async function DELETE(
     // Delete the template (cascades to rosters)
     await prisma.rosterTemplate.delete({
       where: {
-        id: params.id,
+        id,
       },
     });
 

@@ -32,12 +32,14 @@ model Club {
   coachImportJobs     CoachImportJob[]
   emailVerifications  EmailVerification[]
   equipment           Equipment[]
-  EquipmentUsage      EquipmentUsage[]
+  equipmentUsage      EquipmentUsage[]
   gymsports           Gymsport[]
   injuryFormTemplates InjuryFormTemplate[]
   injuryNotifications InjuryNotification[]
   injurySubmissions   InjurySubmission[]
-  MaintenanceLog      MaintenanceLog[]
+  maintenanceLogs     MaintenanceLog[]
+  maintenanceTasks    MaintenanceTask[]
+  safetyIssues        SafetyIssue[]
   rosters             Roster[]
   rosterExports       RosterExport[]
   rosterSlots         RosterSlot[]
@@ -199,6 +201,7 @@ model Zone {
   rosterSlots      RosterSlot[]
   sessionsAllowed  SessionAllowedZone[]
   templatesAllowed TemplateAllowedZone[]
+  equipment        Equipment[]
   club             Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@unique([clubId, name])
@@ -235,7 +238,7 @@ model Coach {
   club               Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
   availability       CoachAvailability[]
   gymsports          CoachGymsport[]
-  EquipmentUsage     EquipmentUsage[]
+  equipmentUsage     EquipmentUsage[]
   sessionLinks       SessionCoach[]
   templateLinks      TemplateCoach[]
 
@@ -335,7 +338,7 @@ model ClassSession {
   generatedBy          User?                @relation("SessionGeneratedBy", fields: [generatedById], references: [id])
   template             ClassTemplate?       @relation(fields: [templateId], references: [id])
   club                 Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  EquipmentUsage       EquipmentUsage[]
+  equipmentUsage       EquipmentUsage[]
   rosterSlots          RosterSlot[]
   allowedZones         SessionAllowedZone[]
   coaches              SessionCoach[]
@@ -533,6 +536,7 @@ model InjurySubmission {
   priority         String?
   assignedToUserId String?
   assignedAt       DateTime?
+  resolvedAt       DateTime?
   retentionDate    DateTime?
   archived         Boolean                   @default(false)
   submittedAt      DateTime                  @default(now())
@@ -649,27 +653,30 @@ model InjuryNotification {
 }
 
 model Equipment {
-  id               String           @id @default(cuid())
+  id               String            @id @default(cuid())
   clubId           String
   name             String
   category         String?
-  active           Boolean          @default(true)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  serialNumber     String?          @unique
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  serialNumber     String?           @unique
   purchaseDate     DateTime?
   purchaseCost     String?
-  condition        String?          @default("Good")
+  condition        String?           @default("Good")
   location         String?
   zoneId           String?
   lastMaintenance  DateTime?
   nextMaintenance  DateTime?
   maintenanceNotes String?
-  inUse            Boolean?         @default(false)
+  inUse            Boolean?          @default(false)
   currentClass     String?
-  club             Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  EquipmentUsage   EquipmentUsage[]
-  MaintenanceLog   MaintenanceLog[]
+  club             Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  zone             Zone?             @relation(fields: [zoneId], references: [id])
+  usageHistory     EquipmentUsage[]
+  maintenanceLogs  MaintenanceLog[]
+  safetyIssues     SafetyIssue[]
+  maintenanceTasks MaintenanceTask[]
 
   @@index([clubId])
   @@index([active])
@@ -679,7 +686,7 @@ model Equipment {
 }
 
 model EquipmentUsage {
-  id           String        @id
+  id           String        @id @default(cuid())
   clubId       String
   equipmentId  String
   sessionId    String?
@@ -688,10 +695,10 @@ model EquipmentUsage {
   usedUntil    DateTime?
   notes        String?
   createdAt    DateTime      @default(now())
-  Coach        Coach?        @relation(fields: [coachId], references: [id])
-  ClassSession ClassSession? @relation(fields: [sessionId], references: [id])
-  Equipment    Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  Club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  coach        Coach?        @relation(fields: [coachId], references: [id])
+  session      ClassSession? @relation(fields: [sessionId], references: [id])
+  equipment    Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@index([usedFrom])
   @@index([sessionId])
@@ -700,7 +707,7 @@ model EquipmentUsage {
 }
 
 model MaintenanceLog {
-  id              String    @id
+  id              String    @id @default(cuid())
   clubId          String
   equipmentId     String
   maintenanceType String
@@ -709,10 +716,65 @@ model MaintenanceLog {
   cost            String?
   performedAt     DateTime  @default(now())
   createdAt       DateTime  @default(now())
-  Equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  Club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@index([performedAt])
   @@index([equipmentId])
   @@index([clubId])
+}
+
+model SafetyIssue {
+  id              String    @id @default(cuid())
+  clubId          String
+  equipmentId     String
+  issueType       String
+  title           String
+  description     String
+  reportedBy      String
+  reportedByEmail String?
+  photos          String?
+  priority        String    @default("MEDIUM")
+  status          String    @default("OPEN")
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@index([equipmentId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model MaintenanceTask {
+  id            String    @id @default(cuid())
+  clubId        String
+  equipmentId   String
+  taskType      String
+  title         String
+  description   String
+  scheduledDate DateTime?
+  dueDate       DateTime?
+  completedDate DateTime?
+  assignedTo    String?
+  completedBy   String?
+  priority      String    @default("MEDIUM")
+  status        String    @default("PENDING")
+  notes         String?
+  photos        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  equipment     Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@index([equipmentId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
 }

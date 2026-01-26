@@ -13,7 +13,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { templateId, dayOfWeek, startDate, sessionId, coachIds, startTime, endTime, zoneScope } = body;
+    const { templateId, dayOfWeek, startDate, sessionId, coachIds, startTimeLocal, endTimeLocal } = body;
 
     if (!templateId || !dayOfWeek || !startDate) {
       return NextResponse.json(
@@ -33,53 +33,44 @@ export async function PATCH(request: NextRequest) {
         clubId: payload.clubId,
       },
       include: {
-        sessions: {
+        slots: {
           include: {
-            classTemplate: true,
+            session: {
+              include: {
+                template: true,
+                coaches: true,
+              },
+            },
             zone: true,
-            slots: true,
           },
         },
       },
     });
 
-    // Get the session's class template ID to match across rosters
+    // Get the original session to match across rosters
     const originalSession = await prisma.classSession.findUnique({
       where: { id: sessionId },
-      include: { template: true, zone: true },
+      include: { template: true },
     });
 
     if (!originalSession) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    let updatedCount = 0;    const affectedRosterIds = new Set<string>();
+    let updatedCount = 0;
+    const affectedRosterIds = new Set<string>();
+
     // Update each matching session in future rosters
     for (const roster of futureRosters) {
-      // If zoneScope is 'all', find all sessions at same time
-      // Otherwise, find only the matching zone session
-      let matchingSessions = [];
-      
-      if (zoneScope === 'all') {
-        // Find all sessions at the same time slot
-        matchingSessions = roster.sessions.filter(
-          (s) => 
-            s.startTime.getTime() === originalSession.startTime.getTime() &&
-            s.endTime.getTime() === originalSession.endTime.getTime()
-        );
-      } else {
-        // Find only the session with matching class template and zone
-        const matchingSession = roster.sessions.find(
-          (s) => 
-            s.classTemplateId === originalSession.classTemplateId &&
-            s.zoneId === originalSession.zoneId
-        );
-        if (matchingSession) {
-          matchingSessions = [matchingSession];
+      // Find sessions with matching template
+      const uniqueSessions = new Map<string, typeof roster.slots[0]['session']>();
+      for (const slot of roster.slots) {
+        if (slot.session.templateId === originalSession.templateId) {
+          uniqueSessions.set(slot.session.id, slot.session);
         }
       }
 
-      for (const matchingSession of matchingSessions) {
+      for (const matchingSession of uniqueSessions.values()) {
         // Update coach assignments if provided
         if (coachIds !== undefined) {
           // Delete existing coach assignments
@@ -99,51 +90,19 @@ export async function PATCH(request: NextRequest) {
         }
 
         // Update session times if provided
-        if (startTime || endTime) {
-          const updateData: any = {};
-          if (startTime) {
-            // Combine roster date with new time
-            const sessionDate = new Date(roster.startDate);
-            const [hours, minutes] = startTime.split(':');
-            sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-            updateData.startTime = sessionDate;
+        if (startTimeLocal || endTimeLocal) {
+          const updateData: Record<string, string> = {};
+          if (startTimeLocal) {
+            updateData.startTimeLocal = startTimeLocal;
           }
-          if (endTime) {
-            const sessionDate = new Date(roster.startDate);
-            const [hours, minutes] = endTime.split(':');
-            sessionDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-            updateData.endTime = sessionDate;
+          if (endTimeLocal) {
+            updateData.endTimeLocal = endTimeLocal;
           }
 
           await prisma.classSession.update({
             where: { id: matchingSession.id },
             data: updateData,
           });
-
-          // Update slots if times changed
-          if (startTime || endTime) {
-            const slots = await prisma.rosterSlot.findMany({
-              where: { sessionId: matchingSession.id },
-              orderBy: { startsAt: 'asc' },
-            });
-
-            // Recalculate slot times based on rotation
-            for (let i = 0; i < slots.length; i++) {
-              const slot = slots[i];
-              const rotationMs = (slot.endsAt.getTime() - slot.startsAt.getTime());
-              const newStart = new Date(updateData.startTime || matchingSession.startTime);
-              newStart.setTime(newStart.getTime() + i * rotationMs);
-              const newEnd = new Date(newStart.getTime() + rotationMs);
-
-              await prisma.rosterSlot.update({
-                where: { id: slot.id },
-                data: {
-                  startsAt: newStart,
-                  endsAt: newEnd,
-                },
-              });
-            }
-          }
         }
 
         updatedCount++;

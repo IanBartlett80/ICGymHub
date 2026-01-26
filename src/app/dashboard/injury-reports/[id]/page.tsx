@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
@@ -59,18 +59,15 @@ interface Submission {
 
 export default function SubmissionDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const submissionId = params.id as string;
 
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [addingComment, setAddingComment] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     loadSubmission();
-    loadUsers();
   }, [submissionId]);
 
   const loadSubmission = async () => {
@@ -84,18 +81,6 @@ export default function SubmissionDetailPage() {
       console.error('Error loading submission:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadUsers = async () => {
-    try {
-      const res = await fetch('/api/coaches'); // Reusing coaches endpoint, could create a users endpoint
-      if (res.ok) {
-        const data = await res.json();
-        // This is a placeholder - you'd want a proper users endpoint
-      }
-    } catch (error) {
-      console.error('Error loading users:', error);
     }
   };
 

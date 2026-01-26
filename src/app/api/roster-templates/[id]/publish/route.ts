@@ -28,7 +28,7 @@ async function getAuthenticatedUser(req: NextRequest) {
 // POST /api/roster-templates/[id]/publish - Publish or unpublish template and all linked rosters
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getAuthenticatedUser(req)
@@ -36,7 +36,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await req.json().catch(() => ({}))
     const { unpublish = false } = body
     const newStatus = unpublish ? 'DRAFT' : 'PUBLISHED'

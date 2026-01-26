@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/equipment/analytics/zone-status - Calculate status for each zone
 export async function GET(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     // Get all zones for the club
     const zones = await prisma.zone.findMany({

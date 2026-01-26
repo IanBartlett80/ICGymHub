@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 // GET /api/coaches/public/[clubId] - Get coaches for public form (no auth)
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ clubId: string }> }
 ) {
   try {
