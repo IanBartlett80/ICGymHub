@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import ClassRosteringSubNav from './ClassRosteringSubNav'
+import ClubManagementSubNav from './ClubManagementSubNav'
 import NotificationBell from './NotificationBell'
 
 interface UserData {
@@ -22,9 +23,10 @@ interface DashboardLayoutProps {
   title?: string
   backTo?: { label: string; href: string }
   showClassRosteringNav?: boolean
+  showClubManagementNav?: boolean
 }
 
-export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<UserData | null>(null)
@@ -33,6 +35,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   const [showConfigMenu, setShowConfigMenu] = useState(false)
   const [showInjuryMenu, setShowInjuryMenu] = useState(false)
   const [showEquipmentMenu, setShowEquipmentMenu] = useState(false)
+  const [showAdminMenu, setShowAdminMenu] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -81,6 +84,104 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                 <span className="text-xl">🏠</span>
                 {!sidebarCollapsed && <span>Home</span>}
               </Link>
+            </li>
+
+            {/* Club Configuration */}
+            <li>
+              <button
+                onClick={() => setShowAdminMenu(!showAdminMenu)}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/admin-config')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">⚙️</span>
+                  {!sidebarCollapsed && <span>Club Management</span>}
+                </div>
+                {!sidebarCollapsed && (
+                  <span className="text-sm">{showAdminMenu ? '▼' : '▶'}</span>
+                )}
+              </button>
+
+              {/* Club Config Submenu */}
+              {showAdminMenu && !sidebarCollapsed && (
+                <ul className="ml-9 mt-2 space-y-1">
+                  <li>
+                    <Link
+                      href="/dashboard/admin-config"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        pathname === '/dashboard/admin-config'
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Overview
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/admin-config/gymsports"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/admin-config/gymsports')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      GymSports
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/admin-config/zones"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/admin-config/zones')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Gym Zones
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/admin-config/coaches"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/admin-config/coaches')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Coaches
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/admin-config/notifications"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/admin-config/notifications')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Notifications
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/admin-config/roles"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        isActive('/dashboard/admin-config/roles')
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      Roles & Permissions
+                    </Link>
+                  </li>
+                </ul>
+              )}
             </li>
 
             {/* Roster Management */}
@@ -243,7 +344,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">🔧</span>
-                  {!sidebarCollapsed && <span>Equipment</span>}
+                  {!sidebarCollapsed && <span>Equipment Management</span>}
                 </div>
                 {!sidebarCollapsed && (
                   <span className="text-sm">{showEquipmentMenu ? '▼' : '▶'}</span>
@@ -419,6 +520,13 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
         {showClassRosteringNav && (
           <div className="print:hidden">
             <ClassRosteringSubNav />
+          </div>
+        )}
+
+        {/* Club Management Sub Navigation */}
+        {showClubManagementNav && (
+          <div className="print:hidden">
+            <ClubManagementSubNav />
           </div>
         )}
 
