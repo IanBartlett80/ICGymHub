@@ -18,6 +18,7 @@
 
 ### ✅ Phase 2: Frontend Core (COMPLETED)
 - ✅ Zone-centric Equipment Dashboard (Level 1) - Zone cards with status badges
+- ✅ All Equipment Table View - Complete inventory with search and filters
 - ✅ Zone Detail Page (Level 2) - Equipment list, safety issues, maintenance tasks by zone
 - ✅ Equipment Detail Page (Level 3) - Full equipment history, issues, tasks, logs
 - ✅ Equipment List/Form components (existing)
@@ -1301,6 +1302,7 @@ Predefined categories:
 ### ✅ Frontend Pages
 **Main Views:**
 - `/src/app/dashboard/equipment/page.tsx` - Zone-centric dashboard (Level 1)
+- `/src/app/dashboard/equipment/all/page.tsx` - All equipment table view with search/filters
 - `/src/app/dashboard/equipment/zones/[id]/page.tsx` - Zone detail page (Level 2)
 - `/src/app/dashboard/equipment/items/[id]/page.tsx` - Equipment detail page (Level 3)
 

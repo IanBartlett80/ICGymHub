@@ -363,6 +363,18 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
+                      Zone Overview
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/dashboard/equipment/all"
+                      className={`block px-3 py-2 text-sm rounded-lg ${
+                        pathname === '/dashboard/equipment/all'
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
                       All Equipment
                     </Link>
                   </li>
