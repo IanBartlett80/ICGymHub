@@ -1,32 +1,41 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Equipment, Zone } from '@prisma/client';
-import { PlusIcon } from '@heroicons/react/24/outline';
-import EquipmentList from '@/components/EquipmentList';
-import EquipmentForm from '@/components/EquipmentForm';
+import { useRouter } from 'next/navigation';
+import { Zone } from '@prisma/client';
+import { QrCodeIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 
-interface EquipmentWithRelations extends Equipment {
-  zone?: Zone | null;
-  _count?: {
-    MaintenanceLog: number;
-    EquipmentUsage: number;
-  };
+interface ZoneStatus {
+  zoneId: string;
+  zoneName: string;
+  status: string;
+  statusPriority: number;
+  equipmentCount: number;
+  criticalIssues: number;
+  nonCriticalIssues: number;
+  recommendations: number;
+  overdueMaintenance: number;
+  upcomingMaintenance: number;
+  outOfServiceEquipment: number;
+  poorConditionEquipment: number;
+}
+
+interface ZoneWithStatus extends Zone {
+  statusInfo?: ZoneStatus;
 }
 
 export default function EquipmentPage() {
-  const [equipment, setEquipment] = useState<EquipmentWithRelations[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
+  const router = useRouter();
+  const [zones, setZones] = useState<ZoneWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     inUse: 0,
     maintenanceDue: 0,
     needsAttention: 0,
   });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     loadData();
@@ -35,20 +44,18 @@ export default function EquipmentPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [equipmentRes, zonesRes, statsRes] = await Promise.all([
-        fetch('/api/equipment'),
+      const [zonesRes, statsRes, statusRes] = await Promise.all([
         fetch('/api/zones'),
         fetch('/api/equipment/analytics/overview'),
+        fetch('/api/equipment/analytics/zone-status'),
       ]);
 
-      if (equipmentRes.ok) {
-        const data = await equipmentRes.json();
-        setEquipment(data.equipment || data);
-      }
+      let zonesData: Zone[] = [];
+      let statusData: ZoneStatus[] = [];
 
       if (zonesRes.ok) {
         const data = await zonesRes.json();
-        setZones(data.zones || data);
+        zonesData = data.zones || data;
       }
 
       if (statsRes.ok) {
@@ -60,6 +67,19 @@ export default function EquipmentPage() {
           needsAttention: data.needsAttentionCount || 0,
         });
       }
+
+      if (statusRes.ok) {
+        const data = await statusRes.json();
+        statusData = data.zones || [];
+      }
+
+      // Merge zone data with status info
+      const zonesWithStatus = zonesData.map(zone => ({
+        ...zone,
+        statusInfo: statusData.find(s => s.zoneId === zone.id),
+      }));
+
+      setZones(zonesWithStatus);
     } catch (error) {
       console.error('Failed to load data:', error);
       alert('Failed to load equipment data');
@@ -68,171 +88,204 @@ export default function EquipmentPage() {
     }
   };
 
-  const handleSubmit = async (formData: any) => {
-    try {
-      const url = editingEquipment ? `/api/equipment/${editingEquipment.id}` : '/api/equipment';
-      const method = editingEquipment ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save equipment');
-      }
-
-      await loadData();
-      setShowForm(false);
-      setEditingEquipment(null);
-    } catch (error: any) {
-      alert(error.message);
-    }
+  const getStatusBadgeConfig = (status: string) => {
+    const configs = {
+      NO_DEFECTS: {
+        label: 'No Defects Detected',
+        icon: '🟢',
+        bgColor: 'bg-green-100',
+        textColor: 'text-green-800',
+        borderColor: 'border-green-300',
+      },
+      NON_CRITICAL_ISSUES: {
+        label: 'Non-Critical Issues',
+        icon: '🟡',
+        bgColor: 'bg-yellow-100',
+        textColor: 'text-yellow-800',
+        borderColor: 'border-yellow-300',
+      },
+      REQUIRES_ATTENTION: {
+        label: 'Requires Attention',
+        icon: '🟠',
+        bgColor: 'bg-orange-100',
+        textColor: 'text-orange-800',
+        borderColor: 'border-orange-300',
+      },
+      CRITICAL_DEFECTS: {
+        label: 'Critical Defects',
+        icon: '🔴',
+        bgColor: 'bg-red-100',
+        textColor: 'text-red-800',
+        borderColor: 'border-red-300',
+      },
+    };
+    return configs[status as keyof typeof configs] || configs.NO_DEFECTS;
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const response = await fetch(`/api/equipment/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete equipment');
-      }
-
-      await loadData();
-    } catch (error) {
-      alert('Failed to delete equipment');
-    }
-  };
-
-  const handleEdit = (equipment: EquipmentWithRelations) => {
-    setEditingEquipment(equipment);
-    setShowForm(true);
-  };
-
-  const handleCheckout = async (id: string) => {
-    // For now, just mark as checked out without session/coach
-    try {
-      const response = await fetch(`/api/equipment/${id}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to checkout equipment');
-      }
-
-      await loadData();
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
-
-  const handleCheckin = async (id: string) => {
-    try {
-      const response = await fetch(`/api/equipment/${id}/checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to checkin equipment');
-      }
-
-      await loadData();
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
-
-  const handleViewDetails = (id: string) => {
-    window.location.href = `/dashboard/equipment/${id}`;
-  };
+  const filteredZones = statusFilter === 'all' 
+    ? zones 
+    : zones.filter(z => z.statusInfo?.status === statusFilter);
 
   if (loading) {
     return (
-      <DashboardLayout title="Equipment Management">
+      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-gray-600">Loading equipment...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Equipment Management">
-      <div className="p-6">
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
-              <p className="mt-1 text-sm text-gray-600">
-                Track and manage your gym equipment inventory
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setEditingEquipment(null);
-                setShowForm(true);
-              }}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add Equipment
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Zone-based equipment tracking and safety management
+          </p>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-600">Total Equipment</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-600">Currently In Use</p>
-              <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inUse}</p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-600">Maintenance Due</p>
-              <p className="mt-2 text-3xl font-bold text-orange-600">{stats.maintenanceDue}</p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-600">Needs Attention</p>
-              <p className="mt-2 text-3xl font-bold text-red-600">{stats.needsAttention}</p>
-            </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-600">Total Equipment</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-600">Currently In Use</p>
+            <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inUse}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-600">Maintenance Due</p>
+            <p className="mt-2 text-3xl font-bold text-orange-600">{stats.maintenanceDue}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-600">Needs Attention</p>
+            <p className="mt-2 text-3xl font-bold text-red-600">{stats.needsAttention}</p>
           </div>
         </div>
 
-        {/* Equipment List */}
-        <EquipmentList
-          equipment={equipment}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onCheckout={handleCheckout}
-          onCheckin={handleCheckin}
-          onViewDetails={handleViewDetails}
-        />
+        {/* Filter Bar */}
+        <div className="flex items-center justify-between">
+          <div>
+            <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mr-2">
+              Filter by Status:
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="all">All Zones</option>
+              <option value="NO_DEFECTS">No Defects</option>
+              <option value="NON_CRITICAL_ISSUES">Non-Critical Issues</option>
+              <option value="REQUIRES_ATTENTION">Requires Attention</option>
+              <option value="CRITICAL_DEFECTS">Critical Defects</option>
+            </select>
+          </div>
+        </div>
 
-        {/* Equipment Form Modal */}
-        {showForm && (
-          <EquipmentForm
-            equipment={editingEquipment}
-            zones={zones}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingEquipment(null);
-            }}
-          />
-        )}
+        {/* Zone Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredZones.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-500">No zones found</p>
+            </div>
+          ) : (
+            filteredZones.map(zone => {
+              const statusInfo = zone.statusInfo;
+              const statusConfig = statusInfo 
+                ? getStatusBadgeConfig(statusInfo.status)
+                : getStatusBadgeConfig('NO_DEFECTS');
+
+              return (
+                <div
+                  key={zone.id}
+                  className={`bg-white border-2 ${statusConfig.borderColor} rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer`}
+                  onClick={() => router.push(`/dashboard/equipment/zones/${zone.id}`)}
+                >
+                  {/* Zone Header */}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">{zone.name}</h3>
+                        {zone.description && (
+                          <p className="text-sm text-gray-500 mt-1">{zone.description}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.bgColor} ${statusConfig.textColor} mb-4`}>
+                      <span className="mr-2">{statusConfig.icon}</span>
+                      {statusConfig.label}
+                    </div>
+
+                    {/* Stats */}
+                    {statusInfo && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Equipment:</span>
+                          <span className="font-medium text-gray-900">{statusInfo.equipmentCount}</span>
+                        </div>
+                        {statusInfo.criticalIssues > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-red-600">Critical Issues:</span>
+                            <span className="font-bold text-red-700">{statusInfo.criticalIssues}</span>
+                          </div>
+                        )}
+                        {statusInfo.nonCriticalIssues > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-orange-600">Non-Critical Issues:</span>
+                            <span className="font-medium text-orange-700">{statusInfo.nonCriticalIssues}</span>
+                          </div>
+                        )}
+                        {statusInfo.overdueMaintenance > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-yellow-600">Overdue Maintenance:</span>
+                            <span className="font-medium text-yellow-700">{statusInfo.overdueMaintenance}</span>
+                          </div>
+                        )}
+                        {statusInfo.outOfServiceEquipment > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Out of Service:</span>
+                            <span className="font-medium text-gray-700">{statusInfo.outOfServiceEquipment}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/equipment/zones/${zone.id}`);
+                      }}
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                    >
+                      View Equipment →
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alert('QR code generation coming soon!');
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <QrCodeIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );
