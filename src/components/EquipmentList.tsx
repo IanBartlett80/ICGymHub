@@ -13,8 +13,8 @@ import {
 interface EquipmentWithRelations extends Equipment {
   zone?: Zone | null;
   _count?: {
-    maintenanceLogs: number;
-    usageHistory: number;
+    MaintenanceLog: number;
+    EquipmentUsage: number;
   };
 }
 

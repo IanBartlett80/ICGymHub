@@ -40,11 +40,10 @@ export async function GET(request: NextRequest) {
       prisma.equipment.findMany({
         where,
         include: {
-          zone: true,
           _count: {
             select: {
-              maintenanceLogs: true,
-              usageHistory: true,
+              MaintenanceLog: true,
+              EquipmentUsage: true,
             },
           },
         },
@@ -138,10 +137,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check for duplicate serial number
-    if (serialNumber) {
+    // Check for duplicate serial number (only if serialNumber is provided)
+    if (serialNumber && serialNumber.trim().length > 0) {
       const existing = await prisma.equipment.findUnique({
-        where: { serialNumber },
+        where: { serialNumber: serialNumber.trim() },
       });
       if (existing) {
         return NextResponse.json(
@@ -156,7 +155,7 @@ export async function POST(request: NextRequest) {
         clubId: auth.user.clubId,
         name: name.trim(),
         category,
-        serialNumber: serialNumber || null,
+        serialNumber: serialNumber && serialNumber.trim().length > 0 ? serialNumber.trim() : null,
         purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
         purchaseCost: purchaseCost || null,
         condition: condition || 'Good',
@@ -167,16 +166,20 @@ export async function POST(request: NextRequest) {
         maintenanceNotes: maintenanceNotes || null,
         active: true,
       },
-      include: {
-        zone: true,
-      },
     });
 
     return NextResponse.json(equipment, { status: 201 });
   } catch (error) {
     console.error('Equipment create error:', error);
+    
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create equipment' },
+      { error: 'Failed to create equipment', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

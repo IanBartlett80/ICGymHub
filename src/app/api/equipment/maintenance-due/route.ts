@@ -25,10 +25,9 @@ export async function GET(request: NextRequest) {
         },
       },
       include: {
-        zone: true,
         _count: {
           select: {
-            maintenanceLogs: true,
+            MaintenanceLog: true,
           },
         },
       },

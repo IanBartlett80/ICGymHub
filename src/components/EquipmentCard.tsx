@@ -13,8 +13,8 @@ import {
 interface EquipmentWithRelations extends Equipment {
   zone?: Zone | null;
   _count?: {
-    maintenanceLogs: number;
-    usageHistory: number;
+    MaintenanceLog: number;
+    EquipmentUsage: number;
   };
 }
 
@@ -109,8 +109,8 @@ export default function EquipmentCard({
 
       {equipment._count && (
         <div className="flex gap-4 text-xs text-gray-500 mb-3 pb-3 border-b border-gray-200">
-          <span>{equipment._count.maintenanceLogs} maintenance logs</span>
-          <span>{equipment._count.usageHistory} usage records</span>
+          <span>{equipment._count.MaintenanceLog} maintenance logs</span>
+          <span>{equipment._count.EquipmentUsage} usage records</span>
         </div>
       )}
 

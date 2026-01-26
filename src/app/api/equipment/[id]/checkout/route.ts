@@ -94,9 +94,6 @@ export async function POST(
           inUse: true,
           currentClass: sessionId || null,
         },
-        include: {
-          zone: true,
-        },
       }),
     ]);
 

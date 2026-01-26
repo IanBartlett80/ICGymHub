@@ -76,9 +76,6 @@ export async function POST(
           inUse: false,
           currentClass: null,
         },
-        include: {
-          zone: true,
-        },
       }),
     ]);
 

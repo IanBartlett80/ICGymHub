@@ -5,12 +5,13 @@ import { Equipment, Zone } from '@prisma/client';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
+import DashboardLayout from '@/components/DashboardLayout';
 
 interface EquipmentWithRelations extends Equipment {
   zone?: Zone | null;
   _count?: {
-    maintenanceLogs: number;
-    usageHistory: number;
+    MaintenanceLog: number;
+    EquipmentUsage: number;
   };
 }
 
@@ -157,78 +158,82 @@ export default function EquipmentPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading equipment...</div>
-      </div>
+      <DashboardLayout title="Equipment Management">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-600">Loading equipment...</div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Track and manage your gym equipment inventory
-            </p>
+    <DashboardLayout title="Equipment Management">
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
+              <p className="mt-1 text-sm text-gray-600">
+                Track and manage your gym equipment inventory
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingEquipment(null);
+                setShowForm(true);
+              }}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <PlusIcon className="w-5 h-5 mr-2" />
+              Add Equipment
+            </button>
           </div>
-          <button
-            onClick={() => {
-              setEditingEquipment(null);
-              setShowForm(true);
-            }}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Add Equipment
-          </button>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-gray-600">Total Equipment</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-gray-600">Currently In Use</p>
+              <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inUse}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-gray-600">Maintenance Due</p>
+              <p className="mt-2 text-3xl font-bold text-orange-600">{stats.maintenanceDue}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-gray-600">Needs Attention</p>
+              <p className="mt-2 text-3xl font-bold text-red-600">{stats.needsAttention}</p>
+            </div>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-gray-600">Total Equipment</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-gray-600">Currently In Use</p>
-            <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inUse}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-gray-600">Maintenance Due</p>
-            <p className="mt-2 text-3xl font-bold text-orange-600">{stats.maintenanceDue}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-gray-600">Needs Attention</p>
-            <p className="mt-2 text-3xl font-bold text-red-600">{stats.needsAttention}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Equipment List */}
-      <EquipmentList
-        equipment={equipment}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onCheckout={handleCheckout}
-        onCheckin={handleCheckin}
-        onViewDetails={handleViewDetails}
-      />
-
-      {/* Equipment Form Modal */}
-      {showForm && (
-        <EquipmentForm
-          equipment={editingEquipment}
-          zones={zones}
-          onSubmit={handleSubmit}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingEquipment(null);
-          }}
+        {/* Equipment List */}
+        <EquipmentList
+          equipment={equipment}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onCheckout={handleCheckout}
+          onCheckin={handleCheckin}
+          onViewDetails={handleViewDetails}
         />
-      )}
-    </div>
+
+        {/* Equipment Form Modal */}
+        {showForm && (
+          <EquipmentForm
+            equipment={editingEquipment}
+            zones={zones}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingEquipment(null);
+            }}
+          />
+        )}
+      </div>
+    </DashboardLayout>
   );
 }

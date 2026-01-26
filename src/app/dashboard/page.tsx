@@ -87,9 +87,9 @@ export default function DashboardPage() {
       description: 'Schedule equipment inspections and maintain safety logs',
       icon: '🔧',
       color: 'from-orange-600 to-orange-700',
-      href: '#',
-      cta: 'Coming Soon',
-      disabled: true,
+      href: '/dashboard/equipment',
+      cta: 'Manage Equipment',
+      disabled: false,
       hasInfoBadge: false,
     },
     {

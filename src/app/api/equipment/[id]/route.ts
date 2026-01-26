@@ -21,7 +21,6 @@ export async function GET(
         clubId: auth.user.clubId,
       },
       include: {
-        zone: true,
         maintenanceLogs: {
           orderBy: { performedAt: 'desc' },
           take: 20,
@@ -161,9 +160,6 @@ export async function PUT(
     const equipment = await prisma.equipment.update({
       where: { id },
       data: updateData,
-      include: {
-        zone: true,
-      },
     });
 
     return NextResponse.json(equipment);
