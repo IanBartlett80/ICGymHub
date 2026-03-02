@@ -198,6 +198,7 @@ model Zone {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   isFirst          Boolean               @default(false)
+  publicId         String?               @unique
   rosterSlots      RosterSlot[]
   sessionsAllowed  SessionAllowedZone[]
   templatesAllowed TemplateAllowedZone[]

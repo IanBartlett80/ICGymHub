@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { publicId: string } }
+) {
+  try {
+    const { publicId } = params;
+
+    // Find zone by publicId
+    const zone = await prisma.zone.findUnique({
+      where: { publicId },
+      include: {
+        club: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!zone) {
+      return NextResponse.json(
+        { error: 'Zone not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get equipment in this zone
+    const equipment = await prisma.equipment.findMany({
+      where: {
+        zoneId: zone.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        condition: true,
+        photoUrl: true,
+        serialNumber: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return NextResponse.json({
+      zone: {
+        id: zone.id,
+        name: zone.name,
+        description: zone.description,
+        club: zone.club,
+      },
+      equipment,
+    });
+  } catch (error) {
+    console.error('Failed to fetch zone data:', error);
+    return NextResponse.json(
+      { error: 'Failed to load zone data' },
+      { status: 500 }
+    );
+  }
+}

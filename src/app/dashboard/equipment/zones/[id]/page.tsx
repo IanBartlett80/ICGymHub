@@ -9,6 +9,7 @@ import {
   ExclamationTriangleIcon,
   WrenchScrewdriverIcon,
   CubeIcon,
+  QrCodeIcon,
 } from '@heroicons/react/24/outline';
 
 interface Zone {
@@ -17,6 +18,7 @@ interface Zone {
   description: string | null;
   allowOverlap: boolean;
   active: boolean;
+  publicId: string | null;
 }
 
 interface Equipment {
@@ -24,8 +26,8 @@ interface Equipment {
   name: string;
   category: string | null;
   condition: string;
-  safetyIssues: SafetyIssue[];
-  maintenanceTasks: MaintenanceTask[];
+  safetyIssues?: SafetyIssue[];
+  maintenanceTasks?: MaintenanceTask[];
 }
 
 interface SafetyIssue {
@@ -68,9 +70,10 @@ export default function ZoneDetailPage() {
   const [safetyIssues, setSafetyIssues] = useState<SafetyIssue[]>([]);
   const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'safety' | 'equipment' | 'tasks'>('safety');
+  const [activeTab, setActiveTab] = useState<'equipment' | 'safety' | 'tasks'>('equipment');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [zoneStatus, setZoneStatus] = useState<any>(null);
+  const [generatingQR, setGeneratingQR] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -172,6 +175,39 @@ export default function ZoneDetailPage() {
     }
   };
 
+  const handleGenerateQR = async () => {
+    try {
+      setGeneratingQR(true);
+      const response = await fetch(`/api/zones/${zoneId}/generate-qr`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate QR code');
+      }
+
+      const data = await response.json();
+      
+      // Reload zone data to get the publicId
+      await loadData();
+      
+      // Download the QR code
+      const qrLink = document.createElement('a');
+      qrLink.href = data.qrCodeDataUrl;
+      qrLink.download = `${zone?.name || 'zone'}-qr-code.png`;
+      document.body.appendChild(qrLink);
+      qrLink.click();
+      document.body.removeChild(qrLink);
+      
+      alert(`QR Code generated successfully!\\n\\nPublic URL: ${data.publicUrl}`);
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+      alert('Failed to generate QR code');
+    } finally {
+      setGeneratingQR(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -226,7 +262,17 @@ export default function ZoneDetailPage() {
               )}
             </div>
           </div>
-          {getZoneStatusBadge()}
+          <div className="flex items-center space-x-3">
+            {getZoneStatusBadge()}
+            <button
+              onClick={handleGenerateQR}
+              disabled={generatingQR}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <QrCodeIcon className="h-5 w-5 mr-2" />
+              {generatingQR ? 'Generating...' : zone.publicId ? 'Regenerate QR Code' : 'Generate QR Code'}
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -310,16 +356,6 @@ export default function ZoneDetailPage() {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
               <button
-                onClick={() => setActiveTab('safety')}
-                className={`${
-                  activeTab === 'safety'
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              >
-                Safety Issues ({safetyIssues.length})
-              </button>
-              <button
                 onClick={() => setActiveTab('equipment')}
                 className={`${
                   activeTab === 'equipment'
@@ -328,6 +364,16 @@ export default function ZoneDetailPage() {
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
               >
                 Equipment ({equipment.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('safety')}
+                className={`${
+                  activeTab === 'safety'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Safety Issues ({safetyIssues.length})
               </button>
               <button
                 onClick={() => setActiveTab('tasks')}
@@ -405,8 +451,8 @@ export default function ZoneDetailPage() {
                   <p className="text-gray-500 text-center py-8 col-span-full">No equipment in this zone</p>
                 ) : (
                   equipment.map(item => {
-                    const openIssuesCount = item.safetyIssues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length;
-                    const pendingTasksCount = item.maintenanceTasks.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
+                    const openIssuesCount = item.safetyIssues?.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length || 0;
+                    const pendingTasksCount = item.maintenanceTasks?.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length || 0;
 
                     return (
                       <Link
