@@ -173,7 +173,7 @@ export async function PUT(
     }
 
     if (assignedToName !== undefined) {
-      updateData.assignedToName = assignedToName?.trim() || null;
+      updateData.assignedTo = assignedToName?.trim() || null;
     }
 
     if (completedBy !== undefined && completedBy) {

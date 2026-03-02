@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
         description: description.trim(),
         scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        assignedTo: assignedToName?.trim() || assignedTo?.trim() || null,
+        assignedTo: assignedTo?.trim() || assignedToName?.trim() || null,
         priority: priority || 'MEDIUM',
         notes: notes?.trim() || null,
         photos: photos && photos.length > 0 ? JSON.stringify(photos) : null,

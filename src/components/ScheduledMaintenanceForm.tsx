@@ -109,7 +109,7 @@ export default function ScheduledMaintenanceForm({
       const url = existingTask
         ? `/api/maintenance-tasks/${existingTask.id}`
         : '/api/maintenance-tasks';
-      const method = existingTask ? 'PATCH' : 'POST';
+      const method = existingTask ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
