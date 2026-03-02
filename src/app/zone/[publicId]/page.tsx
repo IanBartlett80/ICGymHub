@@ -41,6 +41,7 @@ export default function PublicZoneReportPage() {
     reportedBy: '',
     reportedByEmail: '',
   });
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     loadData();
@@ -74,6 +75,54 @@ export default function PublicZoneReportPage() {
     setShowForm(true);
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const maxPhotos = 3;
+    const availableSlots = maxPhotos - photos.length;
+    
+    if (files.length > availableSlots) {
+      alert(`You can only upload ${maxPhotos} photos total. You have ${availableSlots} slot(s) remaining.`);
+      return;
+    }
+
+    const newPhotos: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select only image files');
+        continue;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`Image ${file.name} is too large. Maximum size is 5MB.`);
+        continue;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onloadend = () => {
+          if (reader.result) {
+            newPhotos.push(reader.result as string);
+          }
+          resolve(null);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    setPhotos([...photos, ...newPhotos]);
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -87,6 +136,7 @@ export default function PublicZoneReportPage() {
         body: JSON.stringify({
           equipmentId: selectedEquipment.id,
           ...formData,
+          photos: photos.length > 0 ? photos : undefined,
         }),
       });
 
@@ -102,6 +152,7 @@ export default function PublicZoneReportPage() {
         reportedBy: '',
         reportedByEmail: '',
       });
+      setPhotos([]);
     } catch (error) {
       console.error('Failed to submit report:', error);
       alert('Failed to submit report. Please try again.');
@@ -245,6 +296,44 @@ export default function PublicZoneReportPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Please provide detailed information about the defect or issue..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Photos (Optional - Max 3)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  disabled={photos.length >= 3}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Upload up to 3 photos of the issue (max 5MB each)
+                </p>
+                
+                {photos.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={photo}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-24 object-cover rounded border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>

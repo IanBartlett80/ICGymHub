@@ -10,7 +10,7 @@ export async function POST(
   try {
     const { publicId } = params;
     const body = await request.json();
-    const { equipmentId, issueType, title, description, reportedBy, reportedByEmail } = body;
+    const { equipmentId, issueType, title, description, reportedBy, reportedByEmail, photos } = body;
 
     // Validate required fields
     if (!equipmentId || !issueType || !title || !description || !reportedBy || !reportedByEmail) {
@@ -20,8 +20,28 @@ export async function POST(
       );
     }
 
+    // Validate photos if provided (max 3)
+    if (photos && (!Array.isArray(photos) || photos.length > 3)) {
+      return NextResponse.json(
+        { error: 'Photos must be an array with maximum 3 images' },
+        { status: 400 }
+      );
+    }
+
+    // Validate each photo is a base64 string
+    if (photos && photos.length > 0) {
+      for (const photo of photos) {
+        if (typeof photo !== 'string' || !photo.startsWith('data:image/')) {
+          return NextResponse.json(
+            { error: 'Invalid photo format. Photos must be base64 encoded images' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // Find zone by publicId
-    const zone = await prisma.zone.findUnique({
+    const zone = await prisma.zone.findFirst({
       where: { publicId },
       select: { id: true, clubId: true },
     });
@@ -57,6 +77,7 @@ export async function POST(
         status: 'OPEN',
         reportedBy,
         reportedByEmail,
+        photos: photos && photos.length > 0 ? JSON.stringify(photos) : null,
       },
     });
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
 import { 
   ArrowLeftIcon, 
   WrenchScrewdriverIcon,
@@ -40,7 +41,7 @@ interface SafetyIssue {
   reportedByEmail: string | null;
   status: string;
   priority: string;
-  photos: string[];
+  photos: string | null; // JSON string containing array of base64 images
   resolvedAt: string | null;
   resolvedBy: string | null;
   resolutionNotes: string | null;
@@ -86,6 +87,8 @@ export default function EquipmentDetailPage() {
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'safety' | 'tasks' | 'logs'>('safety');
+  const [showRepairQuoteForm, setShowRepairQuoteForm] = useState(false);
+  const [selectedSafetyIssue, setSelectedSafetyIssue] = useState<SafetyIssue | null>(null);
 
   useEffect(() => {
     loadData();
@@ -164,6 +167,22 @@ export default function EquipmentDetailPage() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleRequestQuote = (issue: SafetyIssue) => {
+    setSelectedSafetyIssue(issue);
+    setShowRepairQuoteForm(true);
+  };
+
+  const handleQuoteFormClose = () => {
+    setShowRepairQuoteForm(false);
+    setSelectedSafetyIssue(null);
+  };
+
+  const handleQuoteFormSuccess = () => {
+    setShowRepairQuoteForm(false);
+    setSelectedSafetyIssue(null);
+    alert('Repair quote request submitted successfully! An email has been sent to IanBartlett@icb.solutions');
   };
 
   if (loading) {
@@ -396,6 +415,46 @@ export default function EquipmentDetailPage() {
                               )}
                             </div>
                           )}
+                          
+                          {/* Photos if available */}
+                          {issue.photos && (() => {
+                            try {
+                              const photoArray = JSON.parse(issue.photos);
+                              if (Array.isArray(photoArray) && photoArray.length > 0) {
+                                return (
+                                  <div className="mt-3">
+                                    <p className="text-xs font-medium text-gray-700 mb-2">Attached Photos:</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                      {photoArray.map((photo, idx) => (
+                                        <img
+                                          key={idx}
+                                          src={photo}
+                                          alt={`Issue photo ${idx + 1}`}
+                                          className="w-full h-24 object-cover rounded border"
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            } catch (e) {
+                              return null;
+                            }
+                            return null;
+                          })()}
+                          
+                          {/* Request Quote Button */}
+                          {!issue.resolvedAt && (
+                            <div className="mt-3">
+                              <button
+                                onClick={() => handleRequestQuote(issue)}
+                                className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              >
+                                <WrenchScrewdriverIcon className="h-4 w-4 mr-2" />
+                                Request Quote for Repair
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -470,6 +529,16 @@ export default function EquipmentDetailPage() {
           </div>
         </div>
       </div>
+      
+      {/* Repair Quote Request Form Modal */}
+      {showRepairQuoteForm && equipment && (
+        <RepairQuoteRequestForm
+          equipment={equipment}
+          safetyIssue={selectedSafetyIssue || undefined}
+          onClose={handleQuoteFormClose}
+          onSuccess={handleQuoteFormSuccess}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -39,6 +39,7 @@ model Club {
   injurySubmissions   InjurySubmission[]
   maintenanceLogs     MaintenanceLog[]
   maintenanceTasks    MaintenanceTask[]
+  repairQuoteRequests RepairQuoteRequest[]
   safetyIssues        SafetyIssue[]
   rosters             Roster[]
   rosterExports       RosterExport[]
@@ -87,6 +88,7 @@ model User {
   injurySubmissionAudits    InjurySubmissionAudit[]
   injurySubmissionComments  InjurySubmissionComment[]
   passwordResets            PasswordReset[]
+  repairQuoteRequests       RepairQuoteRequest[]
   generatedRosters          Roster[]                  @relation("RosterGeneratedBy")
   createdRosterTemplates    RosterTemplate[]          @relation("RosterTemplateCreatedBy")
   sessions                  Session[]
@@ -679,6 +681,7 @@ model Equipment {
   maintenanceLogs  MaintenanceLog[]
   safetyIssues     SafetyIssue[]
   maintenanceTasks MaintenanceTask[]
+  repairQuoteRequests RepairQuoteRequest[]
 
   @@index([clubId])
   @@index([active])
@@ -745,6 +748,9 @@ model SafetyIssue {
   updatedAt       DateTime  @updatedAt
   equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  repairQuoteRequests RepairQuoteRequest[]
 
   @@index([clubId])
   @@index([equipmentId])
@@ -779,4 +785,61 @@ model MaintenanceTask {
   @@index([status])
   @@index([priority])
   @@index([dueDate])
+}
+
+// Repair Quote Requests - Track admin requests for repair quotes
+model RepairQuoteRequest {
+  id                  String     @id @default(cuid())
+  club                Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId              String
+  equipment           Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  equipmentId         String
+  safetyIssue         SafetyIssue? @relation(fields: [safetyIssueId], references: [id], onDelete: SetNull)
+  safetyIssueId       String?
+  requestedBy         User       @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  requestedById       String
+  
+  // Request details
+  issueDescription    String     // Description of the issue
+  urgency             String     @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  preferredRepairDate DateTime?
+  estimatedBudget     String?    // Budget constraints
+  contactPerson       String     // Name of contact person
+  contactPhone        String?    // Phone number
+  contactEmail        String?    // Email address
+  additionalNotes     String?    // Any additional information
+  specialRequirements String?    // Special requirements or constraints
+  
+  // Photos stored as JSON array of base64 strings
+  photos              String?    // JSON array: ["data:image/jpeg;base64,...", "data:image/png;base64,..."]
+  
+  // Status tracking
+  status              String     @default("PENDING") // "PENDING", "QUOTE_RECEIVED", "APPROVED", "REJECTED", "COMPLETED", "CANCELLED"
+  
+  // Email tracking
+  emailSent           Boolean    @default(false)
+  emailSentAt         DateTime?
+  
+  // Quote details (filled in when quote is received)
+  quoteAmount         String?    // Store as decimal string
+  quoteReceivedAt     DateTime?
+  quoteReceivedFrom   String?    // Company/person who provided quote
+  quoteNotes          String?
+  
+  // Completion tracking
+  repairCompletedAt   DateTime?
+  repairCompletedBy   String?
+  finalCost           String?
+  completionNotes     String?
+  
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  
+  @@index([clubId])
+  @@index([equipmentId])
+  @@index([safetyIssueId])
+  @@index([requestedById])
+  @@index([status])
+  @@index([urgency])
+  @@index([createdAt])
 }
