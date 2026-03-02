@@ -259,8 +259,13 @@ export async function POST(
       },
     });
 
-    // Trigger automations
-    await triggerAutomations(submission.id, 'ON_SUBMIT');
+    // Trigger automations in the background so submission success is not blocked
+    void triggerAutomations(submission.id, 'ON_SUBMIT').catch((automationError) => {
+      console.error('Background automation failed after submission:', {
+        submissionId: submission.id,
+        error: automationError,
+      });
+    });
 
     return NextResponse.json({
       success: true,
