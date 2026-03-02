@@ -28,7 +28,20 @@ export async function GET(
     }
 
     // Get the public URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const forwardedProto = req.headers.get('x-forwarded-proto');
+    const forwardedHost = req.headers.get('x-forwarded-host');
+    const host = req.headers.get('host');
+    const requestOrigin = forwardedHost
+      ? `${forwardedProto || 'https'}://${forwardedHost}`
+      : host
+      ? `${forwardedProto || 'https'}://${host}`
+      : null;
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      requestOrigin ||
+      'http://localhost:3000';
     const publicUrl = `${baseUrl}/injury-report/${template.publicUrl}`;
 
     // Generate QR code as data URL
