@@ -20,22 +20,20 @@ interface UserData {
 
 interface DashboardLayoutProps {
   children: ReactNode
-  title?: string
   backTo?: { label: string; href: string }
   showClassRosteringNav?: boolean
   showClubManagementNav?: boolean
 }
 
-export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
+type ServiceType = 'dashboard' | 'roster' | 'injury' | 'equipment' | 'icscore' | 'maintenance'
+
+export default function DashboardLayout({ children, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<UserData | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [showConfigMenu, setShowConfigMenu] = useState(false)
-  const [showInjuryMenu, setShowInjuryMenu] = useState(false)
-  const [showEquipmentMenu, setShowEquipmentMenu] = useState(false)
-  const [showAdminMenu, setShowAdminMenu] = useState(false)
+  const [activeService, setActiveService] = useState<ServiceType>('dashboard')
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -44,6 +42,23 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     }
   }, [])
 
+  // Determine active service based on current pathname
+  useEffect(() => {
+    if (pathname?.startsWith('/dashboard/class-rostering') || pathname?.startsWith('/dashboard/rosters') || pathname?.startsWith('/dashboard/roster-reports')) {
+      setActiveService('roster')
+    } else if (pathname?.startsWith('/dashboard/injury-reports') || pathname?.startsWith('/injury-report')) {
+      setActiveService('injury')
+    } else if (pathname?.startsWith('/dashboard/equipment')) {
+      setActiveService('equipment')
+    } else if (pathname?.startsWith('/dashboard/icscore')) {
+      setActiveService('icscore')
+    } else if (pathname?.startsWith('/dashboard/maintenance')) {
+      setActiveService('maintenance')
+    } else if (pathname === '/dashboard') {
+      setActiveService('dashboard')
+    }
+  }, [pathname])
+
   const handleLogout = () => {
     localStorage.removeItem('userData')
     router.push('/sign-in')
@@ -51,26 +66,18 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
 
   const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/')
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside
-        className={`${
-          sidebarCollapsed ? 'w-16' : 'w-64'
-        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
-      >
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-end">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            {sidebarCollapsed ? '→' : '←'}
-          </button>
-        </div>
+  const services = [
+    { id: 'roster' as ServiceType, name: 'Roster Management', icon: '📅', basePath: '/dashboard/class-rostering' },
+    { id: 'injury' as ServiceType, name: 'Injury Management', icon: '🏥', basePath: '/dashboard/injury-reports' },
+    { id: 'equipment' as ServiceType, name: 'Equipment Management', icon: '🔧', basePath: '/dashboard/equipment' },
+    { id: 'icscore' as ServiceType, name: 'ICScore', icon: '🏆', basePath: '/dashboard/icscore', disabled: true },
+    { id: 'maintenance' as ServiceType, name: 'Maintenance', icon: '🛠️', basePath: '/dashboard/maintenance', disabled: true },
+  ]
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+  const renderSidebarContent = () => {
+    switch (activeService) {
+      case 'dashboard':
+        return (
           <ul className="space-y-2">
             <li>
               <Link
@@ -81,345 +88,262 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <span className="text-xl">🏠</span>
-                {!sidebarCollapsed && <span>Home</span>}
+                <span className="text-xl">📊</span>
+                {!sidebarCollapsed && <span>Analytics Overview</span>}
               </Link>
             </li>
-
-            {/* Club Configuration */}
             <li>
-              <button
-                onClick={() => setShowAdminMenu(!showAdminMenu)}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/admin-config')
+              <Link
+                href="/dashboard/quick-stats"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  pathname === '/dashboard/quick-stats'
                     ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">⚙️</span>
-                  {!sidebarCollapsed && <span>Club Management</span>}
-                </div>
-                {!sidebarCollapsed && (
-                  <span className="text-sm">{showAdminMenu ? '▼' : '▶'}</span>
-                )}
-              </button>
-
-              {/* Club Config Submenu */}
-              {showAdminMenu && !sidebarCollapsed && (
-                <ul className="ml-9 mt-2 space-y-1">
-                  <li>
-                    <Link
-                      href="/dashboard/admin-config"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        pathname === '/dashboard/admin-config'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Overview
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/admin-config/gymsports"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/admin-config/gymsports')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      GymSports
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/admin-config/zones"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/admin-config/zones')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Gym Zones
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/admin-config/coaches"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/admin-config/coaches')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Coaches
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/admin-config/notifications"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/admin-config/notifications')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Notifications
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/admin-config/roles"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/admin-config/roles')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Roles & Permissions
-                    </Link>
-                  </li>
-                </ul>
-              )}
+                <span className="text-xl">⚡</span>
+                {!sidebarCollapsed && <span>Quick Stats</span>}
+              </Link>
             </li>
-
-            {/* Roster Management */}
             <li>
-              <button
-                onClick={() => setShowConfigMenu(!showConfigMenu)}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/class-rostering') || isActive('/dashboard/roster')
+              <Link
+                href="/dashboard/reports"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/reports')
                     ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📅</span>
-                  {!sidebarCollapsed && <span>Roster Management</span>}
-                </div>
-                {!sidebarCollapsed && (
-                  <span className="text-sm">{showConfigMenu ? '▼' : '▶'}</span>
-                )}
-              </button>
-
-              {/* Class Rostering Submenu */}
-              {showConfigMenu && !sidebarCollapsed && (
-                <ul className="ml-9 mt-2 space-y-1">
-                  <li>
-                    <Link
-                      href="/dashboard/class-rostering"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        pathname === '/dashboard/class-rostering'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/rosters"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/rosters')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Rosters
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/roster-reports"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/roster-reports')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Reports
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/class-rostering/guide"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        pathname === '/dashboard/class-rostering/guide'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Get Started Guide
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
-
-            {/* Injury Management */}
-            <li>
-              <button
-                onClick={() => setShowInjuryMenu(!showInjuryMenu)}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/injury-reports')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🏥</span>
-                  {!sidebarCollapsed && <span>Injury Management</span>}
-                </div>
-                {!sidebarCollapsed && (
-                  <span className="text-sm">{showInjuryMenu ? '▼' : '▶'}</span>
-                )}
-              </button>
-
-              {/* Injury Management Submenu */}
-              {showInjuryMenu && !sidebarCollapsed && (
-                <ul className="ml-9 mt-2 space-y-1">
-                  <li>
-                    <Link
-                      href="/dashboard/injury-reports"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        pathname === '/dashboard/injury-reports'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/injury-reports/forms"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/injury-reports/forms')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Manage Forms
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/injury-reports/submissions"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/injury-reports/submissions')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Reports
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/injury-reports/analytics"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/injury-reports/analytics')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Analytics
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
-
-            {/* Equipment Management */}
-            <li>
-              <button
-                onClick={() => setShowEquipmentMenu(!showEquipmentMenu)}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/equipment')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🔧</span>
-                  {!sidebarCollapsed && <span>Equipment Management</span>}
-                </div>
-                {!sidebarCollapsed && (
-                  <span className="text-sm">{showEquipmentMenu ? '▼' : '▶'}</span>
-                )}
-              </button>
-
-              {/* Equipment Submenu */}
-              {showEquipmentMenu && !sidebarCollapsed && (
-                <ul className="ml-9 mt-2 space-y-1">
-                  <li>
-                    <Link
-                      href="/dashboard/equipment"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        pathname === '/dashboard/equipment'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Zone Overview
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/equipment/all"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        pathname === '/dashboard/equipment/all'
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      All Equipment
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/equipment/maintenance"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/equipment/maintenance')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Maintenance Due
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="/dashboard/equipment/analytics"
-                      className={`block px-3 py-2 text-sm rounded-lg ${
-                        isActive('/dashboard/equipment/analytics')
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Analytics
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li>
-
-            {/* Other Services - Coming Soon */}
-            <li>
-              <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
-                <span className="text-xl">🏆</span>
-                {!sidebarCollapsed && <span className="text-sm">ICScore</span>}
-              </div>
-            </li>
-            <li>
-              <div className="flex items-center gap-3 px-3 py-2 text-gray-400 cursor-not-allowed">
-                <span className="text-xl">🛠️</span>
-                {!sidebarCollapsed && <span className="text-sm">Maintenance</span>}
-              </div>
+                <span className="text-xl">📈</span>
+                {!sidebarCollapsed && <span>All Reports</span>}
+              </Link>
             </li>
           </ul>
+        )
+
+      case 'roster':
+        return (
+          <ul className="space-y-2">
+            <li>
+              <Link
+                href="/dashboard/class-rostering"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  pathname === '/dashboard/class-rostering'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📊</span>
+                {!sidebarCollapsed && <span>Dashboard</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/rosters"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/rosters')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📋</span>
+                {!sidebarCollapsed && <span>Rosters</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/roster-reports"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/roster-reports')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📈</span>
+                {!sidebarCollapsed && <span>Reports</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/class-rostering/guide"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  pathname === '/dashboard/class-rostering/guide'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📖</span>
+                {!sidebarCollapsed && <span>Get Started Guide</span>}
+              </Link>
+            </li>
+          </ul>
+        )
+
+      case 'injury':
+        return (
+          <ul className="space-y-2">
+            <li>
+              <Link
+                href="/dashboard/injury-reports"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  pathname === '/dashboard/injury-reports'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📊</span>
+                {!sidebarCollapsed && <span>Dashboard</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/injury-reports/forms"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/injury-reports/forms')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📝</span>
+                {!sidebarCollapsed && <span>Manage Forms</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/injury-reports/submissions"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/injury-reports/submissions')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📋</span>
+                {!sidebarCollapsed && <span>Reports</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/injury-reports/analytics"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/injury-reports/analytics')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📈</span>
+                {!sidebarCollapsed && <span>Analytics</span>}
+              </Link>
+            </li>
+          </ul>
+        )
+
+      case 'equipment':
+        return (
+          <ul className="space-y-2">
+            <li>
+              <Link
+                href="/dashboard/equipment"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  pathname === '/dashboard/equipment'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📊</span>
+                {!sidebarCollapsed && <span>Zone Overview</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/equipment/all"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  pathname === '/dashboard/equipment/all'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">🔧</span>
+                {!sidebarCollapsed && <span>All Equipment</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/equipment/maintenance"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/equipment/maintenance')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">🛠️</span>
+                {!sidebarCollapsed && <span>Maintenance Due</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/equipment/analytics"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/equipment/analytics')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">📈</span>
+                {!sidebarCollapsed && <span>Analytics</span>}
+              </Link>
+            </li>
+          </ul>
+        )
+
+      case 'icscore':
+      case 'maintenance':
+        return (
+          <div className="text-center py-8 text-gray-400">
+            {!sidebarCollapsed && (
+              <div>
+                <p className="text-sm font-medium">Coming Soon</p>
+                <p className="text-xs mt-2">This service is under development</p>
+              </div>
+            )}
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside
+        className={`${
+          sidebarCollapsed ? 'w-16' : 'w-64'
+        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
+      >
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          {!sidebarCollapsed && (
+            <h2 className="font-semibold text-gray-900 truncate">
+              {activeService === 'dashboard' && 'Dashboard'}
+              {activeService === 'roster' && 'Roster Management'}
+              {activeService === 'injury' && 'Injury Management'}
+              {activeService === 'equipment' && 'Equipment Management'}
+              {activeService === 'icscore' && 'ICScore'}
+              {activeService === 'maintenance' && 'Maintenance'}
+            </h2>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            {sidebarCollapsed ? '→' : '←'}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          {renderSidebarContent()}
         </nav>
 
         {/* Club Info */}
@@ -436,39 +360,59 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
           <div className="pl-4 pr-6 py-3 flex items-center justify-between">
-            {/* Logo and Back Navigation section */}
-            <div className="flex flex-col gap-2">
-              <Link href="/dashboard" className="flex items-center">
-                <div className="relative w-96 h-24">
-                  <Image 
-                    src="/imgs/GymHub_Logo.png" 
-                    alt="GymHub"
-                    fill
-                    className="object-contain object-left"
-                    priority
-                  />
-                </div>
-              </Link>
-              {backTo && (
+            {/* Logo */}
+            <Link href="/dashboard" className="flex items-center">
+              <div className="relative w-96 h-24">
+                <Image 
+                  src="/imgs/GymHub_Logo.png" 
+                  alt="GymHub"
+                  fill
+                  className="object-contain object-left"
+                  priority
+                />
+              </div>
+            </Link>
+
+            {/* Service Navigation Tabs */}
+            <div className="flex items-center gap-1 flex-1 justify-center">
+              {services.map((service) => (
                 <Link
-                  href={backTo.href}
-                  className="text-gray-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap font-medium text-sm pl-1"
+                  key={service.id}
+                  href={service.disabled ? '#' : service.basePath}
+                  onClick={(e) => {
+                    if (service.disabled) {
+                      e.preventDefault()
+                    } else {
+                      setActiveService(service.id)
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                    activeService === service.id
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : service.disabled
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
-                  <span>←</span>
-                  <span>{backTo.label}</span>
+                  <span className="text-lg">{service.icon}</span>
+                  <span className="font-medium">{service.name}</span>
                 </Link>
-              )}
+              ))}
             </div>
 
-            {/* Page title centered */}
-            <div className="absolute left-1/2 transform -translate-x-1/2">
-              <h1 className="text-2xl font-bold text-gray-900">{title || 'Dashboard'}</h1>
-            </div>
-
-            {/* User Menu */}
+            {/* Right Side Actions */}
             <div className="flex items-center gap-3">
               {/* Notification Bell */}
               <NotificationBell />
+
+              {/* Settings Icon */}
+              <Link
+                href="/dashboard/admin-config"
+                className="p-2 hover:bg-gray-100 rounded-lg transition"
+                title="Club Settings"
+              >
+                <span className="text-2xl">⚙️</span>
+              </Link>
               
               {/* User Profile */}
               {user && (
@@ -526,6 +470,19 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
             )}
             </div>
           </div>
+
+          {/* Back Navigation (if provided) */}
+          {backTo && (
+            <div className="px-4 pb-3">
+              <Link
+                href={backTo.href}
+                className="text-gray-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap font-medium text-sm"
+              >
+                <span>←</span>
+                <span>{backTo.label}</span>
+              </Link>
+            </div>
+          )}
         </header>
 
         {/* Class Rostering Sub Navigation */}
