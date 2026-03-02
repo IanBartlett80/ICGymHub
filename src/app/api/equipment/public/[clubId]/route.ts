@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 // GET /api/equipment/public/[clubId] - Get all active equipment for a club (no auth required)
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { clubId: string } }
+  { params }: { params: Promise<{ clubId: string }> }
 ) {
   try {
-    const { clubId } = params;
+    const { clubId } = await params;
 
     const equipment = await prisma.equipment.findMany({
       where: {

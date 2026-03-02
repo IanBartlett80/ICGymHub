@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 // GET /api/zones/public/[clubId] - Get all active zones for a club (no auth required)
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { clubId: string } }
+  { params }: { params: Promise<{ clubId: string }> }
 ) {
   try {
-    const { clubId } = params;
+    const { clubId } = await params;
 
     const zones = await prisma.zone.findMany({
       where: {

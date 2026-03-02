@@ -181,12 +181,24 @@ export default function PublicSubmissionForm() {
         setThankYouMessage(data.message);
         setSubmitted(true);
       } else {
-        const error = await res.json();
-        alert(error.error || 'Failed to submit form');
+        let errorMessage = 'Failed to submit form';
+
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const error = await res.json();
+          errorMessage = error?.error || errorMessage;
+        } else {
+          const errorText = await res.text();
+          if (errorText) {
+            errorMessage = errorText;
+          }
+        }
+
+        alert(`Failed to submit form (${res.status}): ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Failed to submit form');
+      alert('Failed to submit form. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
