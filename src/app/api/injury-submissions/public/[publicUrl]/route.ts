@@ -238,62 +238,70 @@ export async function POST(
     const templateFieldIds = new Set(allFields.map((field) => field.id));
     const safeFormEntries = Object.entries(formData).filter(([fieldId]) => templateFieldIds.has(fieldId));
 
+    const submitterInfo = JSON.stringify({
+      ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
+      userAgent: req.headers.get('user-agent'),
+      submittedAt: new Date().toISOString(),
+    });
+
+    const entryRows = safeFormEntries.map(([fieldId, value]) => ({
+      fieldId,
+      value: JSON.stringify({ value, displayValue: value }),
+    }));
+
     const submissionData: any = {
-        templateId: template.id,
-        clubId: template.clubId,
-        zoneId: zoneId || null,
-        equipmentId: equipmentId || null,
-        equipmentMaintenanceSnapshot: equipmentMaintenanceSnapshot,
-        equipmentSafetySnapshot: equipmentSafetySnapshot,
-        submitterInfo: JSON.stringify({
-          ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
-          userAgent: req.headers.get('user-agent'),
-          submittedAt: new Date().toISOString(),
-        }),
-        status: 'NEW',
-        retentionDate,
-        data: {
-          create: safeFormEntries.map(([fieldId, value]) => ({
-            fieldId,
-            value: JSON.stringify({ value, displayValue: value }),
-          })),
-        },
-      };
+      templateId: template.id,
+      clubId: template.clubId,
+      zoneId: zoneId || null,
+      equipmentId: equipmentId || null,
+      equipmentMaintenanceSnapshot: equipmentMaintenanceSnapshot,
+      equipmentSafetySnapshot: equipmentSafetySnapshot,
+      submitterInfo,
+      status: 'NEW',
+      retentionDate,
+    };
 
     const legacySubmissionData: any = {
       templateId: template.id,
       clubId: template.clubId,
-      submitterInfo: submissionData.submitterInfo,
+      submitterInfo,
       status: 'NEW',
-      data: submissionData.data,
     };
 
-    let submission;
+    let submissionId: string;
     try {
-      submission = await prisma.injurySubmission.create({
+      const created = await prisma.injurySubmission.create({
         data: submissionData,
-        include: {
-          data: {
-            include: {
-              field: true,
-            },
-          },
-        },
+        select: { id: true },
       });
+      submissionId = created.id;
+
+      if (entryRows.length > 0) {
+        await prisma.injurySubmissionData.createMany({
+          data: entryRows.map((entry) => ({
+            submissionId,
+            ...entry,
+          })),
+        });
+      }
     } catch (createError) {
       console.warn('Primary injury submission create failed, retrying with legacy-compatible payload:', createError);
 
       try {
-        submission = await prisma.injurySubmission.create({
+        const createdLegacy = await prisma.injurySubmission.create({
           data: legacySubmissionData,
-          include: {
-            data: {
-              include: {
-                field: true,
-              },
-            },
-          },
+          select: { id: true },
         });
+        submissionId = createdLegacy.id;
+
+        if (entryRows.length > 0) {
+          await prisma.injurySubmissionData.createMany({
+            data: entryRows.map((entry) => ({
+              submissionId,
+              ...entry,
+            })),
+          });
+        }
       } catch (legacyCreateError) {
         console.error('Legacy-compatible injury submission create also failed:', {
           createError,
@@ -307,7 +315,7 @@ export async function POST(
     try {
       await prisma.injurySubmissionAudit.create({
         data: {
-          submissionId: submission.id,
+          submissionId,
           action: 'SUBMISSION_CREATED',
           newValue: 'NEW',
           metadata: JSON.stringify({ source: 'public_form' }),
@@ -321,16 +329,16 @@ export async function POST(
     }
 
     // Trigger automations in the background so submission success is not blocked
-    void triggerAutomations(submission.id, 'ON_SUBMIT').catch((automationError) => {
+    void triggerAutomations(submissionId, 'ON_SUBMIT').catch((automationError) => {
       console.error('Background automation failed after submission:', {
-        submissionId: submission.id,
+        submissionId,
         error: automationError,
       });
     });
 
     return NextResponse.json({
       success: true,
-      submissionId: submission.id,
+      submissionId,
       message: template.thankYouMessage,
     }, { status: 201 });
   } catch (error) {
