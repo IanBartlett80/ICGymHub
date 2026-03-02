@@ -50,7 +50,11 @@ export async function GET(req: NextRequest) {
 
     const submissions = await prisma.injurySubmission.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        status: true,
+        priority: true,
+        submittedAt: true,
         template: {
           select: {
             id: true,
@@ -65,7 +69,8 @@ export async function GET(req: NextRequest) {
           },
         },
         data: {
-          include: {
+          select: {
+            value: true,
             field: {
               select: {
                 id: true,
@@ -125,7 +130,10 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Error fetching injury submissions:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch submissions' },
+      {
+        error: 'Failed to fetch submissions',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
