@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { triggerAutomations } from '@/lib/automationEngine';
+import { Prisma } from '@prisma/client';
+
+function isSchemaDriftError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === 'P2021' || error.code === 'P2022';
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return message.includes('column') || message.includes('does not exist') || message.includes('table');
+  }
+
+  return false;
+}
 
 // GET /api/injury-submissions/public/[publicUrl] - Get public form template (no auth)
 export async function GET(
@@ -141,70 +155,78 @@ export async function POST(
     let equipmentSafetySnapshot = null;
 
     if (equipmentId) {
-      // Fetch last maintenance record
-      const lastMaintenance = await prisma.maintenanceTask.findFirst({
-        where: {
-          equipmentId,
-          status: 'COMPLETED',
-        },
-        orderBy: {
-          completedDate: 'desc',
-        },
-        select: {
-          id: true,
-          taskType: true,
-          title: true,
-          completedDate: true,
-          completedBy: true,
-          status: true,
-          notes: true,
-        },
-      });
-
-      if (lastMaintenance) {
-        equipmentMaintenanceSnapshot = JSON.stringify({
-          taskId: lastMaintenance.id,
-          taskType: lastMaintenance.taskType,
-          title: lastMaintenance.title,
-          completedDate: lastMaintenance.completedDate,
-          completedBy: lastMaintenance.completedBy,
-          status: lastMaintenance.status,
-          notes: lastMaintenance.notes,
+      try {
+        // Fetch last maintenance record
+        const lastMaintenance = await prisma.maintenanceTask.findFirst({
+          where: {
+            equipmentId,
+            status: 'COMPLETED',
+          },
+          orderBy: {
+            completedDate: 'desc',
+          },
+          select: {
+            id: true,
+            taskType: true,
+            title: true,
+            completedDate: true,
+            completedBy: true,
+            status: true,
+            notes: true,
+          },
         });
+
+        if (lastMaintenance) {
+          equipmentMaintenanceSnapshot = JSON.stringify({
+            taskId: lastMaintenance.id,
+            taskType: lastMaintenance.taskType,
+            title: lastMaintenance.title,
+            completedDate: lastMaintenance.completedDate,
+            completedBy: lastMaintenance.completedBy,
+            status: lastMaintenance.status,
+            notes: lastMaintenance.notes,
+          });
+        }
+      } catch (snapshotError) {
+        console.warn('Skipping maintenance snapshot due to schema mismatch:', snapshotError);
       }
 
-      // Fetch last safety issue
-      const lastSafetyIssue = await prisma.safetyIssue.findFirst({
-        where: {
-          equipmentId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        select: {
-          id: true,
-          issueType: true,
-          description: true,
-          priority: true,
-          status: true,
-          createdAt: true,
-          resolvedAt: true,
-        },
-      });
-
-      if (lastSafetyIssue) {
-        equipmentSafetySnapshot = JSON.stringify({
-          issueId: lastSafetyIssue.id,
-          issueType: lastSafetyIssue.issueType,
-          description: lastSafetyIssue.description,
-          priority: lastSafetyIssue.priority,
-          severity: lastSafetyIssue.priority,
-          status: lastSafetyIssue.status,
-          createdAt: lastSafetyIssue.createdAt,
-          reportedDate: lastSafetyIssue.createdAt,
-          resolvedAt: lastSafetyIssue.resolvedAt,
-          resolvedDate: lastSafetyIssue.resolvedAt,
+      try {
+        // Fetch last safety issue
+        const lastSafetyIssue = await prisma.safetyIssue.findFirst({
+          where: {
+            equipmentId,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          select: {
+            id: true,
+            issueType: true,
+            description: true,
+            priority: true,
+            status: true,
+            createdAt: true,
+            resolvedAt: true,
+          },
         });
+
+        if (lastSafetyIssue) {
+          equipmentSafetySnapshot = JSON.stringify({
+            issueId: lastSafetyIssue.id,
+            issueType: lastSafetyIssue.issueType,
+            description: lastSafetyIssue.description,
+            priority: lastSafetyIssue.priority,
+            severity: lastSafetyIssue.priority,
+            status: lastSafetyIssue.status,
+            createdAt: lastSafetyIssue.createdAt,
+            reportedDate: lastSafetyIssue.createdAt,
+            resolvedAt: lastSafetyIssue.resolvedAt,
+            resolvedDate: lastSafetyIssue.resolvedAt,
+          });
+        }
+      } catch (snapshotError) {
+        console.warn('Skipping safety snapshot due to schema mismatch:', snapshotError);
       }
     }
 
@@ -238,26 +260,60 @@ export async function POST(
         },
       };
 
-    const submission = await prisma.injurySubmission.create({
-      data: submissionData,
-      include: {
-        data: {
-          include: {
-            field: true,
+    const legacySubmissionData: any = {
+      templateId: template.id,
+      clubId: template.clubId,
+      submitterInfo: submissionData.submitterInfo,
+      status: 'NEW',
+      data: submissionData.data,
+    };
+
+    let submission;
+    try {
+      submission = await prisma.injurySubmission.create({
+        data: submissionData,
+        include: {
+          data: {
+            include: {
+              field: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (createError) {
+      if (!isSchemaDriftError(createError)) {
+        throw createError;
+      }
+
+      console.warn('Retrying injury submission with legacy-compatible payload:', createError);
+      submission = await prisma.injurySubmission.create({
+        data: legacySubmissionData,
+        include: {
+          data: {
+            include: {
+              field: true,
+            },
+          },
+        },
+      });
+    }
 
     // Create audit log for submission
-    await prisma.injurySubmissionAudit.create({
-      data: {
-        submissionId: submission.id,
-        action: 'SUBMISSION_CREATED',
-        newValue: 'NEW',
-        metadata: JSON.stringify({ source: 'public_form' }),
-      },
-    });
+    try {
+      await prisma.injurySubmissionAudit.create({
+        data: {
+          submissionId: submission.id,
+          action: 'SUBMISSION_CREATED',
+          newValue: 'NEW',
+          metadata: JSON.stringify({ source: 'public_form' }),
+        },
+      });
+    } catch (auditError) {
+      if (!isSchemaDriftError(auditError)) {
+        throw auditError;
+      }
+      console.warn('Skipping injury submission audit due to schema mismatch:', auditError);
+    }
 
     // Trigger automations in the background so submission success is not blocked
     void triggerAutomations(submission.id, 'ON_SUBMIT').catch((automationError) => {
@@ -275,7 +331,10 @@ export async function POST(
   } catch (error) {
     console.error('Error creating injury submission:', error);
     return NextResponse.json(
-      { error: 'Failed to submit form' },
+      {
+        error: 'Failed to submit form',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
