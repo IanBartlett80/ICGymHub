@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/apiAuth';
 
+function parseSubmissionValue(rawValue: unknown): any {
+  if (rawValue == null) {
+    return { value: null, displayValue: null };
+  }
+
+  if (typeof rawValue !== 'string') {
+    return rawValue;
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch {
+    return { value: rawValue, displayValue: rawValue };
+  }
+}
+
 // GET /api/injury-submissions - List all submissions for a club
 export async function GET(req: NextRequest) {
   try {
@@ -76,7 +92,7 @@ export async function GET(req: NextRequest) {
       let programName = null;
 
       submission.data.forEach((dataItem) => {
-        const value = typeof dataItem.value === 'string' ? JSON.parse(dataItem.value) : dataItem.value;
+        const value = parseSubmissionValue(dataItem.value);
         const displayValue = value.displayValue || value.value || value;
 
         if (dataItem.field.label === 'Athlete Name') {

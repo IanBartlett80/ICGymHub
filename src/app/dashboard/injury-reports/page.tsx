@@ -41,6 +41,7 @@ export default function InjuryReportsDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [programFilter, setProgramFilter] = useState<string>('all');
   const [coachFilter, setCoachFilter] = useState<string>('all');
@@ -53,6 +54,7 @@ export default function InjuryReportsDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Load statistics
       const statsRes = await fetch('/api/injury-submissions/stats');
@@ -70,9 +72,14 @@ export default function InjuryReportsDashboard() {
       if (submissionsRes.ok) {
         const data = await submissionsRes.json();
         setSubmissions(data.submissions);
+      } else {
+        setSubmissions([]);
+        setError('Could not load injury submissions. Please refresh and try again.');
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      setSubmissions([]);
+      setError('Could not load injury submissions. Please refresh and try again.');
     } finally {
       setLoading(false);
     }
@@ -268,6 +275,11 @@ export default function InjuryReportsDashboard() {
         </div>
 
         <div className="overflow-x-auto">
+          {error && (
+            <div className="mx-6 mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {filteredSubmissions.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-lg mb-2">No submissions found</div>

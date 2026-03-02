@@ -31,6 +31,7 @@ interface Submission {
 export default function SubmissionsReportsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [programFilter, setProgramFilter] = useState<string>('all');
   const [coachFilter, setCoachFilter] = useState<string>('all');
@@ -43,6 +44,7 @@ export default function SubmissionsReportsPage() {
   const loadSubmissions = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       const submissionsUrl = statusFilter === 'all' 
         ? '/api/injury-submissions'
@@ -52,9 +54,14 @@ export default function SubmissionsReportsPage() {
       if (submissionsRes.ok) {
         const data = await submissionsRes.json();
         setSubmissions(data.submissions);
+      } else {
+        setSubmissions([]);
+        setError('Could not load injury submissions. Please refresh and try again.');
       }
     } catch (error) {
       console.error('Error loading submissions:', error);
+      setSubmissions([]);
+      setError('Could not load injury submissions. Please refresh and try again.');
     } finally {
       setLoading(false);
     }
@@ -200,6 +207,11 @@ export default function SubmissionsReportsPage() {
           </div>
 
           <div className="overflow-x-auto">
+            {error && (
+              <div className="mx-6 mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
             {filteredSubmissions.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 text-lg mb-2">No submissions found</div>
