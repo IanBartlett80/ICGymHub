@@ -39,7 +39,6 @@ export async function GET(
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_BASE_URL ||
       requestOrigin ||
       'http://localhost:3000';
     const publicUrl = `${baseUrl}/injury-report/${template.publicUrl}`;
