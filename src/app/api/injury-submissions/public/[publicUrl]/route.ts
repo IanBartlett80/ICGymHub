@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { triggerAutomations } from '@/lib/automationEngine';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 function isSchemaDriftError(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -307,7 +308,33 @@ export async function POST(
           createError,
           legacyCreateError,
         });
-        throw legacyCreateError;
+
+        const rawFallbackSubmissionId = randomUUID();
+
+        try {
+          await prisma.$transaction(async (tx) => {
+            await tx.$executeRaw`
+              INSERT INTO "InjurySubmission" ("id", "templateId", "clubId", "submitterInfo", "status")
+              VALUES (${rawFallbackSubmissionId}, ${template.id}, ${template.clubId}, ${submitterInfo}, ${'NEW'})
+            `;
+
+            for (const entry of entryRows) {
+              await tx.$executeRaw`
+                INSERT INTO "InjurySubmissionData" ("id", "submissionId", "fieldId", "value")
+                VALUES (${randomUUID()}, ${rawFallbackSubmissionId}, ${entry.fieldId}, ${entry.value})
+              `;
+            }
+          });
+
+          submissionId = rawFallbackSubmissionId;
+        } catch (rawFallbackError) {
+          console.error('Raw SQL legacy fallback failed:', {
+            createError,
+            legacyCreateError,
+            rawFallbackError,
+          });
+          throw rawFallbackError;
+        }
       }
     }
 
