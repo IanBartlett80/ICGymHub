@@ -39,6 +39,19 @@ interface Coach {
   phone: string | null;
 }
 
+interface Zone {
+  id: string;
+  name: string;
+}
+
+interface Equipment {
+  id: string;
+  name: string;
+  serialNumber: string | null;
+  category: string | null;
+  zoneId: string | null;
+}
+
 export default function PublicSubmissionForm() {
   const params = useParams();
   const publicUrl = params.publicUrl as string;
@@ -46,6 +59,9 @@ export default function PublicSubmissionForm() {
   const [template, setTemplate] = useState<Template | null>(null);
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -63,9 +79,13 @@ export default function PublicSubmissionForm() {
       if (res.ok) {
         const data = await res.json();
         setTemplate(data.template);
-        // Load coaches for this club
+        // Load coaches, zones, and equipment for this club
         if (data.template.clubId) {
-          await loadCoaches(data.template.clubId);
+          await Promise.all([
+            loadCoaches(data.template.clubId),
+            loadZones(data.template.clubId),
+            loadEquipment(data.template.clubId)
+          ]);
         }
       } else {
         alert('Form not found or inactive');
@@ -86,6 +106,30 @@ export default function PublicSubmissionForm() {
       }
     } catch (error) {
       console.error('Error loading coaches:', error);
+    }
+  };
+
+  const loadZones = async (clubId: string) => {
+    try {
+      const res = await fetch(`/api/zones/public/${clubId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setZones(data.zones || []);
+      }
+    } catch (error) {
+      console.error('Error loading zones:', error);
+    }
+  };
+
+  const loadEquipment = async (clubId: string) => {
+    try {
+      const res = await fetch(`/api/equipment/public/${clubId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEquipment(data.equipment || []);
+      }
+    } catch (error) {
+      console.error('Error loading equipment:', error);
     }
   };
 
@@ -278,8 +322,66 @@ export default function PublicSubmissionForm() {
         );
 
       case 'DROPDOWN':
-        const dropdownOptions = field.options ? JSON.parse(field.options) : [];
         const isCoachField = field.label === 'Supervising Coach';
+        const isZoneField = field.label.includes('Zone') || field.label.includes('Area');
+        const isEquipmentField = field.label.includes('Equipment') || field.label.includes('Apparatus');
+        
+        // Zone dropdown - populated from zones state
+        if (isZoneField) {
+          return (
+            <select
+              value={value}
+              onChange={(e) => {
+                const zoneId = e.target.value;
+                setSelectedZoneId(zoneId);
+                updateValue(zoneId);
+                // Clear equipment selection when zone changes
+                const equipmentField = section.fields.find(f => 
+                  f.label.includes('Equipment') || f.label.includes('Apparatus')
+                );
+                if (equipmentField) {
+                  setFormData({ ...formData, [field.id]: zoneId, [equipmentField.id]: '' });
+                }
+              }}
+              className={commonInputClass}
+            >
+              <option value="">Select a zone...</option>
+              {zones.map((zone) => (
+                <option key={zone.id} value={zone.id}>
+                  {zone.name}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        
+        // Equipment dropdown - filtered by selected zone
+        if (isEquipmentField) {
+          const filteredEquipment = selectedZoneId 
+            ? equipment.filter(e => e.zoneId === selectedZoneId)
+            : equipment;
+          
+          return (
+            <select
+              value={value}
+              onChange={(e) => updateValue(e.target.value)}
+              className={commonInputClass}
+              disabled={!selectedZoneId}
+            >
+              <option value="">
+                {selectedZoneId ? 'Select equipment...' : 'Please select a zone first'}
+              </option>
+              {filteredEquipment.map((equip) => (
+                <option key={equip.id} value={equip.id}>
+                  {equip.name}{equip.serialNumber ? ` (${equip.serialNumber})` : ''}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        
+        // Regular dropdown (coach or other)
+        const dropdownOptions = field.options ? JSON.parse(field.options) : [];
         
         return (
           <select
@@ -294,9 +396,9 @@ export default function PublicSubmissionForm() {
             className={commonInputClass}
           >
             <option value="">Select an option...</option>
-            {dropdownOptions.map((option: string, index: number) => (
-              <option key={index} value={option}>
-                {option}
+            {dropdownOptions.map((option: any, index: number) => (
+              <option key={index} value={typeof option === 'object' ? option.id : option}>
+                {typeof option === 'object' ? option.name : option}
               </option>
             ))}
           </select>

@@ -205,6 +205,7 @@ model Zone {
   sessionsAllowed  SessionAllowedZone[]
   templatesAllowed TemplateAllowedZone[]
   equipment        Equipment[]
+  injurySubmissions InjurySubmission[]
   club             Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@unique([clubId, name])
@@ -540,12 +541,18 @@ model InjurySubmission {
   assignedToUserId String?
   assignedAt       DateTime?
   resolvedAt       DateTime?
+  zoneId           String?
+  equipmentId      String?
+  equipmentMaintenanceSnapshot String?
+  equipmentSafetySnapshot String?
   retentionDate    DateTime?
   archived         Boolean                   @default(false)
   submittedAt      DateTime                  @default(now())
   updatedAt        DateTime                  @updatedAt
   notifications    InjuryNotification[]
   assignedTo       User?                     @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id])
+  zone             Zone?                     @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  equipment        Equipment?                @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
   club             Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   template         InjuryFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
   auditLog         InjurySubmissionAudit[]
@@ -558,6 +565,8 @@ model InjurySubmission {
   @@index([assignedToUserId])
   @@index([submittedAt])
   @@index([retentionDate])
+  @@index([zoneId])
+  @@index([equipmentId])
 }
 
 model InjurySubmissionData {
@@ -681,6 +690,7 @@ model Equipment {
   maintenanceLogs  MaintenanceLog[]
   safetyIssues     SafetyIssue[]
   maintenanceTasks MaintenanceTask[]
+  injurySubmissions InjurySubmission[]
   repairQuoteRequests RepairQuoteRequest[]
 
   @@index([clubId])

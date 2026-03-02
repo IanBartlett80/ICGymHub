@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
     // Generate unique public URL slug
     const publicUrl = `injury-report-${nanoid(10)}`;
 
-    // Fetch coaches, gymsports, and class templates for default fields
-    const [coaches, gymsports, classTemplates] = await Promise.all([
+    // Fetch coaches, gymsports, class templates, and zones for default fields
+    const [coaches, gymsports, classTemplates, zones] = await Promise.all([
       prisma.coach.findMany({
         where: { clubId: authResult.user.clubId },
         select: { id: true, name: true },
@@ -77,6 +77,11 @@ export async function POST(req: NextRequest) {
       }),
       prisma.classTemplate.findMany({
         where: { clubId: authResult.user.clubId },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.zone.findMany({
+        where: { clubId: authResult.user.clubId, active: true },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       }),
@@ -139,10 +144,34 @@ export async function POST(req: NextRequest) {
         templateId: template.id,
         sectionId: section1.id,
         fieldType: 'DROPDOWN',
+        label: 'Gym Zone / Area',
+        description: 'Select the zone or area where the incident occurred',
+        placeholder: 'Choose a zone...',
+        required: true,
+        order: 3,
+        options: zones.length > 0 
+          ? JSON.stringify(zones.map(z => ({ id: z.id, name: z.name })))
+          : JSON.stringify([]),
+      },
+      {
+        templateId: template.id,
+        sectionId: section1.id,
+        fieldType: 'DROPDOWN',
+        label: 'Equipment / Apparatus',
+        description: 'Select the specific equipment or apparatus involved in the incident',
+        placeholder: 'Select equipment...',
+        required: true,
+        order: 4,
+        options: JSON.stringify([]), // Will be populated dynamically based on selected zone
+      },
+      {
+        templateId: template.id,
+        sectionId: section1.id,
+        fieldType: 'DROPDOWN',
         label: 'Supervising Coach',
         description: 'Coach who was supervising at the time of incident',
         required: true,
-        order: 3,
+        order: 5,
         options: coaches.length > 0 
           ? JSON.stringify(coaches.map(c => c.name))
           : JSON.stringify(['No coaches available']),
@@ -154,7 +183,7 @@ export async function POST(req: NextRequest) {
         label: 'Coach Email',
         description: 'Email address of the supervising coach',
         required: false,
-        order: 4,
+        order: 6,
       },
       {
         templateId: template.id,
@@ -163,7 +192,7 @@ export async function POST(req: NextRequest) {
         label: 'Coach Phone',
         description: 'Phone number of the supervising coach',
         required: false,
-        order: 5,
+        order: 7,
       },
       {
         templateId: template.id,
@@ -172,7 +201,7 @@ export async function POST(req: NextRequest) {
         label: 'Detailed Description of What Happened',
         description: 'Please provide a detailed account of the incident',
         required: true,
-        order: 6,
+        order: 8,
       },
     ];
 

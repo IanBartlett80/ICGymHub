@@ -34,6 +34,21 @@ export async function GET(
             },
           },
         },
+        zone: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        equipment: {
+          select: {
+            id: true,
+            name: true,
+            serialNumber: true,
+            category: true,
+            condition: true,
+          },
+        },
         data: {
           include: {
             field: true,

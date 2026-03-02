@@ -98,15 +98,143 @@ export async function POST(
       }
     }
 
+    // Extract zone and equipment IDs from form data
+    const zoneField = allFields.find(f => f.label.includes('Zone') || f.label.includes('Area'));
+    const equipmentField = allFields.find(f => f.label.includes('Equipment') || f.label.includes('Apparatus'));
+    
+    const zoneId = zoneField ? formData[zoneField.id] : null;
+    const equipmentId = equipmentField ? formData[equipmentField.id] : null;
+
+    if (zoneId) {
+      const zone = await prisma.zone.findFirst({
+        where: {
+          id: zoneId,
+          clubId: template.clubId,
+          active: true,
+        },
+        select: { id: true },
+      });
+
+      if (!zone) {
+        return NextResponse.json(
+          { error: 'Selected zone is invalid' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (equipmentId) {
+      const equipment = await prisma.equipment.findFirst({
+        where: {
+          id: equipmentId,
+          clubId: template.clubId,
+          active: true,
+        },
+        select: {
+          id: true,
+          zoneId: true,
+        },
+      });
+
+      if (!equipment) {
+        return NextResponse.json(
+          { error: 'Selected equipment is invalid' },
+          { status: 400 }
+        );
+      }
+
+      if (zoneId && equipment.zoneId && equipment.zoneId !== zoneId) {
+        return NextResponse.json(
+          { error: 'Selected equipment does not belong to the selected zone' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Fetch equipment context if equipment is selected
+    let equipmentMaintenanceSnapshot = null;
+    let equipmentSafetySnapshot = null;
+
+    if (equipmentId) {
+      // Fetch last maintenance record
+      const lastMaintenance = await prisma.maintenanceTask.findFirst({
+        where: {
+          equipmentId,
+          status: 'COMPLETED',
+        },
+        orderBy: {
+          completedDate: 'desc',
+        },
+        select: {
+          id: true,
+          taskType: true,
+          title: true,
+          completedDate: true,
+          completedBy: true,
+          status: true,
+          notes: true,
+        },
+      });
+
+      if (lastMaintenance) {
+        equipmentMaintenanceSnapshot = JSON.stringify({
+          taskId: lastMaintenance.id,
+          taskType: lastMaintenance.taskType,
+          title: lastMaintenance.title,
+          completedDate: lastMaintenance.completedDate,
+          completedBy: lastMaintenance.completedBy,
+          status: lastMaintenance.status,
+          notes: lastMaintenance.notes,
+        });
+      }
+
+      // Fetch last safety issue
+      const lastSafetyIssue = await prisma.safetyIssue.findFirst({
+        where: {
+          equipmentId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          issueType: true,
+          description: true,
+          priority: true,
+          status: true,
+          createdAt: true,
+          resolvedAt: true,
+        },
+      });
+
+      if (lastSafetyIssue) {
+        equipmentSafetySnapshot = JSON.stringify({
+          issueId: lastSafetyIssue.id,
+          issueType: lastSafetyIssue.issueType,
+          description: lastSafetyIssue.description,
+          priority: lastSafetyIssue.priority,
+          severity: lastSafetyIssue.priority,
+          status: lastSafetyIssue.status,
+          createdAt: lastSafetyIssue.createdAt,
+          reportedDate: lastSafetyIssue.createdAt,
+          resolvedAt: lastSafetyIssue.resolvedAt,
+          resolvedDate: lastSafetyIssue.resolvedAt,
+        });
+      }
+    }
+
     // Calculate retention date (5 years for Australian WHS compliance)
     const retentionDate = new Date();
     retentionDate.setFullYear(retentionDate.getFullYear() + 5);
 
     // Create submission
-    const submission = await prisma.injurySubmission.create({
-      data: {
+    const submissionData: any = {
         templateId: template.id,
         clubId: template.clubId,
+        zoneId: zoneId || null,
+        equipmentId: equipmentId || null,
+        equipmentMaintenanceSnapshot: equipmentMaintenanceSnapshot,
+        equipmentSafetySnapshot: equipmentSafetySnapshot,
         submitterInfo: JSON.stringify({
           ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
           userAgent: req.headers.get('user-agent'),
@@ -120,7 +248,10 @@ export async function POST(
             value: JSON.stringify({ value, displayValue: value }),
           })),
         },
-      },
+      };
+
+    const submission = await prisma.injurySubmission.create({
+      data: submissionData,
       include: {
         data: {
           include: {
