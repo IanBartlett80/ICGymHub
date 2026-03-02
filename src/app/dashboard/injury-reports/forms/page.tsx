@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
-import { showToast, confirmAndDelete } from '@/lib/toast';
+import { showToast } from '@/lib/toast';
+import { useConfirm } from '@/components/ConfirmProvider';
 
 interface FormTemplate {
   id: string;
@@ -23,6 +24,7 @@ export default function FormTemplatesPage() {
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQRCode, setShowQRCode] = useState<string | null>(null);
+  const { confirm } = useConfirm();
 
   useEffect(() => {
     loadTemplates();
@@ -96,23 +98,31 @@ export default function FormTemplatesPage() {
   };
 
   const deleteTemplate = async (id: string, name: string) => {
-    confirmAndDelete(`form "${name}"`, async () => {
-      try {
-        const res = await fetch(`/api/injury-forms/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (res.ok) {
-          loadTemplates();
-        } else {
-          const error = await res.json();
-          showToast.error(error.error || 'Failed to delete form');
-        }
-      } catch (error) {
-        console.error('Error deleting template:', error);
-        showToast.error('Failed to delete form');
-      }
+    const confirmed = await confirm({
+      title: 'Delete Form',
+      message: `Are you sure you want to delete the form "${name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      variant: 'danger',
     });
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/injury-forms/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        showToast.deleteSuccess('Form');
+        loadTemplates();
+      } else {
+        const error = await res.json();
+        showToast.error(error.error || 'Failed to delete form');
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      showToast.error('Failed to delete form');
+    }
   };
 
   if (loading) {

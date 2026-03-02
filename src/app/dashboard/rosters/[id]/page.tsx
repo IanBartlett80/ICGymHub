@@ -181,15 +181,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
       { title: `${action.charAt(0).toUpperCase() + action.slice(1)} Roster`, confirmText: action.charAt(0).toUpperCase() + action.slice(1) }
     )
   }
-      } else {
-        setError(`Failed to ${action} roster`)
-      }
-    } catch (err) {
-      setError(`Failed to ${action} roster`)
-    } finally {
-      setPublishing(false)
-    }
-  }
 
   const handleEventClick = (event: CalendarEvent) => {
     const slot = event.resource

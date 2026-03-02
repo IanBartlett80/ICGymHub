@@ -192,17 +192,6 @@ export default function RostersPage() {
       { title: `${action.charAt(0).toUpperCase() + action.slice(1)} Template`, confirmText: action.charAt(0).toUpperCase() + action.slice(1) }
     )
   }
-        setSuccess(`Successfully ${action}ed ${data.count} roster(s)`)
-        setTimeout(() => setSuccess(''), 3000)
-      } else {
-        setError(`Failed to ${action} template rosters`)
-      }
-    } catch (err) {
-      setError(`Failed to ${action} template rosters`)
-    } finally {
-      setPublishingTemplate(null)
-    }
-  }
 
   if (loading) {
     return (

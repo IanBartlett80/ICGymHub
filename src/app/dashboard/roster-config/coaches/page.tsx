@@ -167,7 +167,6 @@ export default function CoachesPage() {
       }
     })
   }
-  }
 
   const handleDownloadTemplate = async () => {
     try {
