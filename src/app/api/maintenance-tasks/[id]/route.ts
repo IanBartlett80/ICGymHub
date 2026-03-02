@@ -5,15 +5,14 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/maintenance-tasks/[id] - Get single maintenance task
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { club } = await authenticateRequest(request);
-    const { id } = await params;
+    const { user, club } = await authenticateRequest(request);
 
     const task = await prisma.maintenanceTask.findFirst({
       where: {
-        id,
+        id: params.id,
         clubId: club.id,
       },
       include: {
@@ -45,11 +44,10 @@ export async function GET(
 // PUT /api/maintenance-tasks/[id] - Update maintenance task
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { club } = await authenticateRequest(request);
-    const { id } = await params;
+    const { user, club } = await authenticateRequest(request);
 
     const body = await request.json();
     const {
@@ -60,16 +58,28 @@ export async function PUT(
       scheduledDate,
       dueDate,
       assignedTo,
+      assignedToName,
+      assignedToEmail,
       completedBy,
       completedDate,
       cost,
       notes,
+      // Recurring fields
+      isRecurring,
+      recurrencePattern,
+      recurrenceInterval,
+      recurrenceDay,
+      recurrenceDayOfWeek,
+      recurrenceEndDate,
+      // Reminder fields
+      reminderDays,
+      nextReminderDate,
     } = body;
 
     // Verify task exists and belongs to club
     const existing = await prisma.maintenanceTask.findFirst({
       where: {
-        id,
+        id: params.id,
         clubId: club.id,
       },
       include: {
@@ -81,7 +91,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Maintenance task not found' }, { status: 404 });
     }
 
-    const updateData: Record<string, unknown> = {};
+    const updateData: any = {};
 
     if (title !== undefined) {
       if (!title.trim()) {
@@ -136,7 +146,7 @@ export async function PUT(
             description: `${existing.title}\n${existing.description}${notes ? '\n\nNotes: ' + notes : ''}`,
             performedBy: completedBy.trim(),
             cost: cost || null,
-            performedAt: updateData.completedDate as Date,
+            performedAt: updateData.completedDate,
           },
         });
 
@@ -144,7 +154,7 @@ export async function PUT(
         await prisma.equipment.update({
           where: { id: existing.equipmentId },
           data: { 
-            lastMaintenance: updateData.completedDate as Date,
+            lastMaintenance: updateData.completedDate,
           },
         });
       }
@@ -173,6 +183,14 @@ export async function PUT(
       updateData.assignedTo = assignedTo?.trim() || null;
     }
 
+    if (assignedToName !== undefined) {
+      updateData.assignedToName = assignedToName?.trim() || null;
+    }
+
+    if (assignedToEmail !== undefined) {
+      updateData.assignedToEmail = assignedToEmail?.trim() || null;
+    }
+
     if (completedBy !== undefined && completedBy) {
       updateData.completedBy = completedBy.trim();
     }
@@ -181,12 +199,46 @@ export async function PUT(
       updateData.cost = cost || null;
     }
 
+    // Recurring fields
+    if (isRecurring !== undefined) {
+      updateData.isRecurring = isRecurring;
+    }
+
+    if (recurrencePattern !== undefined) {
+      updateData.recurrencePattern = recurrencePattern || null;
+    }
+
+    if (recurrenceInterval !== undefined) {
+      updateData.recurrenceInterval = recurrenceInterval || null;
+    }
+
+    if (recurrenceDay !== undefined) {
+      updateData.recurrenceDay = recurrenceDay || null;
+    }
+
+    if (recurrenceDayOfWeek !== undefined) {
+      updateData.recurrenceDayOfWeek = recurrenceDayOfWeek || null;
+    }
+
+    if (recurrenceEndDate !== undefined) {
+      updateData.recurrenceEndDate = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
+    }
+
+    // Reminder fields
+    if (reminderDays !== undefined) {
+      updateData.reminderDays = reminderDays || null;
+    }
+
+    if (nextReminderDate !== undefined) {
+      updateData.nextReminderDate = nextReminderDate ? new Date(nextReminderDate) : null;
+    }
+
     if (notes !== undefined) {
       updateData.notes = notes?.trim() || null;
     }
 
     const task = await prisma.maintenanceTask.update({
-      where: { id },
+      where: { id: params.id },
       data: updateData,
       include: {
         equipment: {
@@ -213,16 +265,15 @@ export async function PUT(
 // DELETE /api/maintenance-tasks/[id] - Delete maintenance task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { club } = await authenticateRequest(request);
-    const { id } = await params;
+    const { user, club } = await authenticateRequest(request);
 
     // Verify task exists and belongs to club
     const existing = await prisma.maintenanceTask.findFirst({
       where: {
-        id,
+        id: params.id,
         clubId: club.id,
       },
     });
@@ -232,7 +283,7 @@ export async function DELETE(
     }
 
     await prisma.maintenanceTask.delete({
-      where: { id },
+      where: { id: params.id },
     });
 
     return NextResponse.json({ success: true });

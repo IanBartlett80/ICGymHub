@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
+import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import { 
   ArrowLeftIcon, 
   WrenchScrewdriverIcon,
   ExclamationTriangleIcon,
   ClockIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 
 interface Equipment {
@@ -89,6 +91,8 @@ export default function EquipmentDetailPage() {
   const [activeTab, setActiveTab] = useState<'safety' | 'tasks' | 'logs'>('safety');
   const [showRepairQuoteForm, setShowRepairQuoteForm] = useState(false);
   const [selectedSafetyIssue, setSelectedSafetyIssue] = useState<SafetyIssue | null>(null);
+  const [showScheduledMaintenanceForm, setShowScheduledMaintenanceForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<MaintenanceTask | null>(null);
 
   useEffect(() => {
     loadData();
@@ -183,6 +187,27 @@ export default function EquipmentDetailPage() {
     setShowRepairQuoteForm(false);
     setSelectedSafetyIssue(null);
     alert('Repair quote request submitted successfully! An email has been sent to IanBartlett@icb.solutions');
+  };
+
+  const handleScheduleMaintenance = () => {
+    setEditingTask(null);
+    setShowScheduledMaintenanceForm(true);
+  };
+
+  const handleEditTask = (task: MaintenanceTask) => {
+    setEditingTask(task);
+    setShowScheduledMaintenanceForm(true);
+  };
+
+  const handleMaintenanceFormClose = () => {
+    setShowScheduledMaintenanceForm(false);
+    setEditingTask(null);
+  };
+
+  const handleMaintenanceFormSuccess = () => {
+    setShowScheduledMaintenanceForm(false);
+    setEditingTask(null);
+    loadData();
   };
 
   if (loading) {
@@ -466,8 +491,18 @@ export default function EquipmentDetailPage() {
             {/* Maintenance Tasks Tab */}
             {activeTab === 'tasks' && (
               <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Scheduled Maintenance</h3>
+                  <button
+                    onClick={handleScheduleMaintenance}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                    Schedule Maintenance
+                  </button>
+                </div>
                 {maintenanceTasks.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No maintenance tasks</p>
+                  <p className="text-gray-500 text-center py-8">No maintenance tasks scheduled</p>
                 ) : (
                   maintenanceTasks.map(task => (
                     <div key={task.id} className="border border-gray-200 rounded-lg p-4">
@@ -491,6 +526,14 @@ export default function EquipmentDetailPage() {
                             {task.cost && <div>Cost: ${task.cost}</div>}
                           </div>
                         </div>
+                        {task.status !== 'COMPLETED' && task.status !== 'CANCELLED' && (
+                          <button
+                            onClick={() => handleEditTask(task)}
+                            className="ml-4 px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                          >
+                            Edit
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -537,6 +580,17 @@ export default function EquipmentDetailPage() {
           safetyIssue={selectedSafetyIssue || undefined}
           onClose={handleQuoteFormClose}
           onSuccess={handleQuoteFormSuccess}
+        />
+      )}
+
+      {/* Scheduled Maintenance Form Modal */}
+      {showScheduledMaintenanceForm && equipment && (
+        <ScheduledMaintenanceForm
+          equipmentId={equipment.id}
+          equipmentName={equipment.name}
+          onClose={handleMaintenanceFormClose}
+          onSuccess={handleMaintenanceFormSuccess}
+          existingTask={editingTask || undefined}
         />
       )}
     </DashboardLayout>
