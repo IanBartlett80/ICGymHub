@@ -22,6 +22,7 @@ interface Equipment {
   lastMaintenance: string | null;
   nextMaintenance: string | null;
   maintenanceNotes: string | null;
+  photoUrl: string | null;
   inUse: boolean;
   currentClass: string | null;
   zone?: {
@@ -215,6 +216,18 @@ export default function EquipmentDetailPage() {
         {/* Equipment Details Card */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Equipment Details</h2>
+          
+          {/* Equipment Photo */}
+          {equipment.photoUrl && (
+            <div className="mb-6">
+              <img
+                src={equipment.photoUrl}
+                alt={equipment.name}
+                className="w-full max-w-md h-64 object-cover rounded-lg border-2 border-gray-200"
+              />
+            </div>
+          )}
+
           <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <dt className="text-sm font-medium text-gray-500">Serial Number</dt>

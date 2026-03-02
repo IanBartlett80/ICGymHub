@@ -79,6 +79,7 @@ export async function PUT(
       lastMaintenance,
       nextMaintenance,
       maintenanceNotes,
+      photoUrl,
       inUse,
       currentClass,
       active,
@@ -153,6 +154,7 @@ export async function PUT(
     if (lastMaintenance !== undefined) updateData.lastMaintenance = lastMaintenance ? new Date(lastMaintenance) : null;
     if (nextMaintenance !== undefined) updateData.nextMaintenance = nextMaintenance ? new Date(nextMaintenance) : null;
     if (maintenanceNotes !== undefined) updateData.maintenanceNotes = maintenanceNotes || null;
+    if (photoUrl !== undefined) updateData.photoUrl = photoUrl || null;
     if (inUse !== undefined) updateData.inUse = inUse;
     if (currentClass !== undefined) updateData.currentClass = currentClass || null;
     if (active !== undefined) updateData.active = active;

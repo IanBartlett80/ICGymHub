@@ -16,6 +16,7 @@ interface EquipmentFormData {
   lastMaintenance?: string;
   nextMaintenance?: string;
   maintenanceNotes?: string;
+  photoUrl?: string;
 }
 
 interface EquipmentFormProps {
@@ -53,10 +54,12 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
     lastMaintenance: equipment?.lastMaintenance ? new Date(equipment.lastMaintenance).toISOString().split('T')[0] : '',
     nextMaintenance: equipment?.nextMaintenance ? new Date(equipment.nextMaintenance).toISOString().split('T')[0] : '',
     maintenanceNotes: equipment?.maintenanceNotes || '',
+    photoUrl: equipment?.photoUrl || '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoPreview, setPhotoPreview] = useState<string>(equipment?.photoUrl || '');
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -100,6 +103,43 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
         return newErrors;
       });
     }
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, photo: 'Please select an image file' }));
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, photo: 'Image must be less than 5MB' }));
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({ ...prev, photoUrl: base64String }));
+      setPhotoPreview(base64String);
+      // Clear photo error
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.photo;
+        return newErrors;
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setFormData(prev => ({ ...prev, photoUrl: '' }));
+    setPhotoPreview('');
   };
 
   return (
@@ -209,6 +249,60 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                   placeholder="e.g., Storage Room B, Row 3"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Photo Upload */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Photo</h3>
+            <div className="space-y-4">
+              {photoPreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={photoPreview}
+                    alt="Equipment preview"
+                    className="w-64 h-64 object-cover rounded-lg border-2 border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <svg
+                      className="w-12 h-12 text-gray-400 mb-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span className="text-sm text-gray-600">Click to upload equipment photo</span>
+                    <span className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</span>
+                  </label>
+                </div>
+              )}
+              {errors.photo && <p className="text-sm text-red-600">{errors.photo}</p>}
             </div>
           </div>
 

@@ -179,7 +179,7 @@ export default function RostersPage() {
           if (res.ok) {
             const data = await res.json()
             await fetchRosters()
-            showToast.success(`${data.updatedCount} rosters ${action}ed successfully`)
+            showToast.success(`${data.count} rosters ${action}ed successfully`)
           } else {
             showToast.error(`Failed to ${action} template`)
           }

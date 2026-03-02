@@ -77,6 +77,17 @@ export default function EquipmentCard({
         </span>
       </div>
 
+      {/* Equipment Photo Thumbnail */}
+      {equipment.photoUrl && (
+        <div className="mb-3">
+          <img
+            src={equipment.photoUrl}
+            alt={equipment.name}
+            className="w-full h-32 object-cover rounded border border-gray-200"
+          />
+        </div>
+      )}
+
       <div className="space-y-2 mb-3">
         {equipment.serialNumber && (
           <p className="text-sm text-gray-600">

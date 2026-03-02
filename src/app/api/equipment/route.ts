@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       lastMaintenance,
       nextMaintenance,
       maintenanceNotes,
+      photoUrl,
     } = body;
 
     // Validation
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
         lastMaintenance: lastMaintenance ? new Date(lastMaintenance) : null,
         nextMaintenance: nextMaintenance ? new Date(nextMaintenance) : null,
         maintenanceNotes: maintenanceNotes || null,
+        photoUrl: photoUrl || null,
         active: true,
       },
     });
