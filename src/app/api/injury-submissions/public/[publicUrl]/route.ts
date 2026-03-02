@@ -281,21 +281,26 @@ export async function POST(
         },
       });
     } catch (createError) {
-      if (!isSchemaDriftError(createError)) {
-        throw createError;
-      }
+      console.warn('Primary injury submission create failed, retrying with legacy-compatible payload:', createError);
 
-      console.warn('Retrying injury submission with legacy-compatible payload:', createError);
-      submission = await prisma.injurySubmission.create({
-        data: legacySubmissionData,
-        include: {
-          data: {
-            include: {
-              field: true,
+      try {
+        submission = await prisma.injurySubmission.create({
+          data: legacySubmissionData,
+          include: {
+            data: {
+              include: {
+                field: true,
+              },
             },
           },
-        },
-      });
+        });
+      } catch (legacyCreateError) {
+        console.error('Legacy-compatible injury submission create also failed:', {
+          createError,
+          legacyCreateError,
+        });
+        throw legacyCreateError;
+      }
     }
 
     // Create audit log for submission
