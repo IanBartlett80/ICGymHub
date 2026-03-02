@@ -180,18 +180,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Template not found' }, { status: 404 });
     }
 
-    // Check if there are any submissions
-    const submissionCount = await prisma.injurySubmission.count({
-      where: { templateId: id },
-    });
-
-    if (submissionCount > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete template with existing submissions. Please archive it instead.' },
-        { status: 400 }
-      );
-    }
-
     await prisma.injuryFormTemplate.delete({
       where: { id },
     });
