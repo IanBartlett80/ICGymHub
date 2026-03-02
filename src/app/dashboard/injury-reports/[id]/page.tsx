@@ -57,6 +57,15 @@ interface Submission {
   auditLog: AuditLog[];
 }
 
+function parseJsonSafe(value: string | null | undefined) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 export default function SubmissionDetailPage() {
   const params = useParams();
   const submissionId = params.id as string;
@@ -180,7 +189,7 @@ export default function SubmissionDetailPage() {
     );
   }
 
-  const submitterInfo = submission.submitterInfo ? JSON.parse(submission.submitterInfo) : {};
+  const submitterInfo = parseJsonSafe(submission.submitterInfo) || {};
   const sortedData = [...submission.data].sort((a, b) => a.field.order - b.field.order);
 
   const getStatusColor = (status: string) => {
@@ -264,7 +273,7 @@ export default function SubmissionDetailPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Report Data</h2>
             <div className="space-y-4">
               {sortedData.map((data) => {
-                const value = JSON.parse(data.value);
+                const value = parseJsonSafe(data.value) || { value: data.value, displayValue: data.value };
                 return (
                   <div key={data.id} className="border-b border-gray-200 pb-4 last:border-0">
                     <div className="text-sm font-medium text-gray-700 mb-1">

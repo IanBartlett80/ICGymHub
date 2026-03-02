@@ -3,6 +3,20 @@ import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/apiAuth';
 import { triggerAutomations } from '@/lib/automationEngine';
 
+function isSchemaDriftError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes('does not exist') ||
+      message.includes('unknown column') ||
+      message.includes('unknown field') ||
+      message.includes('column') ||
+      message.includes('table')
+    );
+  }
+  return false;
+}
+
 // GET /api/injury-submissions/[id] - Get a specific submission
 export async function GET(
   req: NextRequest,
@@ -16,76 +30,131 @@ export async function GET(
 
     const { id } = await params;
 
-    const submission = await prisma.injurySubmission.findFirst({
-      where: {
-        id: id,
-        clubId: authResult.user.clubId,
-      },
-      include: {
-        template: {
-          include: {
-            sections: {
-              include: {
-                fields: {
-                  orderBy: { order: 'asc' },
+    let submission: any;
+    try {
+      submission = await prisma.injurySubmission.findFirst({
+        where: {
+          id: id,
+          clubId: authResult.user.clubId,
+        },
+        include: {
+          template: {
+            include: {
+              sections: {
+                include: {
+                  fields: {
+                    orderBy: { order: 'asc' },
+                  },
+                },
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+          zone: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          equipment: {
+            select: {
+              id: true,
+              name: true,
+              serialNumber: true,
+              category: true,
+              condition: true,
+            },
+          },
+          data: {
+            include: {
+              field: true,
+            },
+          },
+          assignedTo: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+          comments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
                 },
               },
-              orderBy: { order: 'asc' },
             },
+            orderBy: { createdAt: 'desc' },
+          },
+          auditLog: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
           },
         },
-        zone: {
-          select: {
-            id: true,
-            name: true,
-          },
+      });
+    } catch (fullQueryError) {
+      if (!isSchemaDriftError(fullQueryError)) {
+        throw fullQueryError;
+      }
+
+      const fallbackSubmission = await prisma.injurySubmission.findFirst({
+        where: {
+          id: id,
+          clubId: authResult.user.clubId,
         },
-        equipment: {
-          select: {
-            id: true,
-            name: true,
-            serialNumber: true,
-            category: true,
-            condition: true,
-          },
-        },
-        data: {
-          include: {
-            field: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-          },
-        },
-        comments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                email: true,
+        select: {
+          id: true,
+          status: true,
+          priority: true,
+          submittedAt: true,
+          submitterInfo: true,
+          template: {
+            include: {
+              sections: {
+                include: {
+                  fields: {
+                    orderBy: { order: 'asc' },
+                  },
+                },
+                orderBy: { order: 'asc' },
               },
             },
           },
-          orderBy: { createdAt: 'desc' },
-        },
-        auditLog: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-              },
+          assignedTo: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
             },
           },
-          orderBy: { createdAt: 'desc' },
+          data: {
+            include: {
+              field: true,
+            },
+          },
         },
-      },
-    });
+      });
+
+      submission = fallbackSubmission
+        ? {
+            ...fallbackSubmission,
+            zone: null,
+            equipment: null,
+            comments: [],
+            auditLog: [],
+          }
+        : null;
+    }
 
     if (!submission) {
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
@@ -95,7 +164,10 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching injury submission:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch submission' },
+      {
+        error: 'Failed to fetch submission',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
