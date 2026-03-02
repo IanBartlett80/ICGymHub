@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+import { verifyAuth } from '@/lib/apiAuth'
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('accessToken')?.value
-    if (!token) {
+    const authResult = await verifyAuth(req)
+    if (!authResult.authenticated || !authResult.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; clubId: string }
+    const decoded = { clubId: authResult.user.clubId }
 
     const now = new Date()
     
@@ -106,7 +104,7 @@ export async function GET(req: NextRequest) {
       where: {
         clubId: decoded.clubId,
         status: {
-          in: ['PENDING', 'IN_REVIEW', 'REQUIRES_ACTION']
+          in: ['NEW', 'UNDER_REVIEW']
         }
       }
     })
@@ -134,7 +132,7 @@ export async function GET(req: NextRequest) {
       where: {
         clubId: decoded.clubId,
         status: {
-          in: ['PENDING', 'IN_REVIEW', 'REQUIRES_ACTION']
+          in: ['NEW', 'UNDER_REVIEW']
         },
         template: {
           name: { contains: 'Critical' }
