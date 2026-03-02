@@ -25,7 +25,7 @@ interface DashboardLayoutProps {
   showClubManagementNav?: boolean
 }
 
-type ServiceType = 'dashboard' | 'roster' | 'injury' | 'equipment' | 'icscore' | 'maintenance'
+type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment'
 
 export default function DashboardLayout({ children, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const router = useRouter()
@@ -45,15 +45,11 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
   // Determine active service based on current pathname
   useEffect(() => {
     if (pathname?.startsWith('/dashboard/class-rostering') || pathname?.startsWith('/dashboard/rosters') || pathname?.startsWith('/dashboard/roster-reports')) {
-      setActiveService('roster')
+      setActiveService('rosters')
     } else if (pathname?.startsWith('/dashboard/injury-reports') || pathname?.startsWith('/injury-report')) {
-      setActiveService('injury')
+      setActiveService('safety')
     } else if (pathname?.startsWith('/dashboard/equipment')) {
       setActiveService('equipment')
-    } else if (pathname?.startsWith('/dashboard/icscore')) {
-      setActiveService('icscore')
-    } else if (pathname?.startsWith('/dashboard/maintenance')) {
-      setActiveService('maintenance')
     } else if (pathname === '/dashboard') {
       setActiveService('dashboard')
     }
@@ -67,11 +63,10 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
   const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/')
 
   const services = [
-    { id: 'roster' as ServiceType, name: 'Roster Management', icon: '📅', basePath: '/dashboard/class-rostering' },
-    { id: 'injury' as ServiceType, name: 'Injury Management', icon: '🏥', basePath: '/dashboard/injury-reports' },
-    { id: 'equipment' as ServiceType, name: 'Equipment Management', icon: '🔧', basePath: '/dashboard/equipment' },
-    { id: 'icscore' as ServiceType, name: 'ICScore', icon: '🏆', basePath: '/dashboard/icscore', disabled: true },
-    { id: 'maintenance' as ServiceType, name: 'Maintenance', icon: '🛠️', basePath: '/dashboard/maintenance', disabled: true },
+    { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
+    { id: 'safety' as ServiceType, name: 'Safety', basePath: '/dashboard/injury-reports' },
+    { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
+    { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
   ]
 
   const renderSidebarContent = () => {
@@ -121,7 +116,7 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
           </ul>
         )
 
-      case 'roster':
+      case 'rosters':
         return (
           <ul className="space-y-2">
             <li>
@@ -179,7 +174,7 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
           </ul>
         )
 
-      case 'injury':
+      case 'safety':
         return (
           <ul className="space-y-2">
             <li>
@@ -295,19 +290,6 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
           </ul>
         )
 
-      case 'icscore':
-      case 'maintenance':
-        return (
-          <div className="text-center py-8 text-gray-400">
-            {!sidebarCollapsed && (
-              <div>
-                <p className="text-sm font-medium">Coming Soon</p>
-                <p className="text-xs mt-2">This service is under development</p>
-              </div>
-            )}
-          </div>
-        )
-
       default:
         return null
     }
@@ -326,11 +308,9 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
           {!sidebarCollapsed && (
             <h2 className="font-semibold text-gray-900 truncate">
               {activeService === 'dashboard' && 'Dashboard'}
-              {activeService === 'roster' && 'Roster Management'}
-              {activeService === 'injury' && 'Injury Management'}
-              {activeService === 'equipment' && 'Equipment Management'}
-              {activeService === 'icscore' && 'ICScore'}
-              {activeService === 'maintenance' && 'Maintenance'}
+              {activeService === 'rosters' && 'Rosters'}
+              {activeService === 'safety' && 'Safety'}
+              {activeService === 'equipment' && 'Equipment'}
             </h2>
           )}
           <button
@@ -373,31 +353,40 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
               </div>
             </Link>
 
-            {/* Service Navigation Tabs */}
-            <div className="flex items-center gap-1 flex-1 justify-center">
-              {services.map((service) => (
-                <Link
-                  key={service.id}
-                  href={service.disabled ? '#' : service.basePath}
-                  onClick={(e) => {
-                    if (service.disabled) {
-                      e.preventDefault()
-                    } else {
-                      setActiveService(service.id)
-                    }
-                  }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                    activeService === service.id
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : service.disabled
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <span className="text-lg">{service.icon}</span>
-                  <span className="font-medium">{service.name}</span>
-                </Link>
-              ))}
+            {/* Google-Style Service Navigation Tabs */}
+            <div className="flex items-center gap-6 flex-1 justify-center">
+              {services.map((service) => {
+                if (service.external) {
+                  return (
+                    <a
+                      key={service.id}
+                      href={service.basePath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      {service.name}
+                    </a>
+                  )
+                }
+                return (
+                  <Link
+                    key={service.id}
+                    href={service.basePath}
+                    onClick={() => setActiveService(service.id as ServiceType)}
+                    className={`relative px-3 py-2 text-sm font-medium transition-colors ${
+                      activeService === service.id
+                        ? 'text-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {service.name}
+                    {activeService === service.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                    )}
+                  </Link>
+                )
+              })}
             </div>
 
             {/* Right Side Actions */}
