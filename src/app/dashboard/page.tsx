@@ -157,9 +157,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Section */}
-        {stats?.charts && (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Weekly Class Schedule */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -172,7 +170,7 @@ export default function DashboardPage() {
                   </Link>
                 </div>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={stats.charts.weeklyClasses}>
+                  <BarChart data={stats?.charts?.weeklyClasses || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="day" />
                     <YAxis />
@@ -196,7 +194,7 @@ export default function DashboardPage() {
                   </Link>
                 </div>
                 <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={stats.charts.injuryTrends}>
+                  <LineChart data={stats?.charts?.injuryTrends || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -222,7 +220,7 @@ export default function DashboardPage() {
                     View Details →
                   </Link>
                 </div>
-                {stats.charts.equipmentStatus.length > 0 ? (
+                {stats?.charts?.equipmentStatus && stats.charts.equipmentStatus.length > 0 ? (
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
@@ -299,8 +297,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          </>
-        )}
 
         {/* Recent Activity Feed (Placeholder) */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">

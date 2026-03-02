@@ -339,7 +339,7 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
       <div className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300 print:ml-0`}>
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
-          <div className="pl-4 pr-6 py-3 flex items-center justify-between">
+          <div className="px-4 py-2 flex items-center justify-between">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center">
               <div className="relative w-96 h-24">
@@ -354,7 +354,7 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
             </Link>
 
             {/* Google-Style Service Navigation Tabs */}
-            <div className="flex items-center gap-6 flex-1 justify-center">
+            <div className="flex items-center gap-4 ml-8">
               {services.map((service) => {
                 if (service.external) {
                   return (
@@ -363,7 +363,7 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
                       href={service.basePath}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="relative px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                      className="relative px-2 py-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       {service.name}
                     </a>
@@ -374,7 +374,7 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
                     key={service.id}
                     href={service.basePath}
                     onClick={() => setActiveService(service.id as ServiceType)}
-                    className={`relative px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`relative px-2 py-1 text-sm transition-colors ${
                       activeService === service.id
                         ? 'text-blue-600'
                         : 'text-gray-600 hover:text-gray-900'
