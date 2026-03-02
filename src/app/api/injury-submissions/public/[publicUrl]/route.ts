@@ -60,7 +60,7 @@ export async function POST(
   try {
     const { publicUrl } = await params;
     const body = await req.json();
-    const { formData } = body;
+    const formData = (body?.formData && typeof body.formData === 'object') ? body.formData : {};
 
     // Get template
     const template = await prisma.injuryFormTemplate.findFirst({
@@ -98,57 +98,42 @@ export async function POST(
       }
     }
 
-    // Extract zone and equipment IDs from form data
-    const zoneField = allFields.find(f => f.label.includes('Zone') || f.label.includes('Area'));
-    const equipmentField = allFields.find(f => f.label.includes('Equipment') || f.label.includes('Apparatus'));
-    
-    const zoneId = zoneField ? formData[zoneField.id] : null;
-    const equipmentId = equipmentField ? formData[equipmentField.id] : null;
+    // Resolve zone/equipment IDs from valid submitted values instead of label heuristics
+    const submittedStringValues = Object.values(formData).filter(
+      (value): value is string => typeof value === 'string' && value.trim().length > 0
+    );
 
-    if (zoneId) {
-      const zone = await prisma.zone.findFirst({
+    const [matchingZones, matchingEquipment] = await Promise.all([
+      prisma.zone.findMany({
         where: {
-          id: zoneId,
           clubId: template.clubId,
           active: true,
+          id: { in: submittedStringValues },
         },
         select: { id: true },
-      });
-
-      if (!zone) {
-        return NextResponse.json(
-          { error: 'Selected zone is invalid' },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (equipmentId) {
-      const equipment = await prisma.equipment.findFirst({
+      }),
+      prisma.equipment.findMany({
         where: {
-          id: equipmentId,
           clubId: template.clubId,
           active: true,
+          id: { in: submittedStringValues },
         },
         select: {
           id: true,
           zoneId: true,
         },
-      });
+      }),
+    ]);
 
-      if (!equipment) {
-        return NextResponse.json(
-          { error: 'Selected equipment is invalid' },
-          { status: 400 }
-        );
-      }
+    const zoneId = matchingZones[0]?.id || null;
+    const equipmentRecord = matchingEquipment[0] || null;
+    const equipmentId = equipmentRecord?.id || null;
 
-      if (zoneId && equipment.zoneId && equipment.zoneId !== zoneId) {
-        return NextResponse.json(
-          { error: 'Selected equipment does not belong to the selected zone' },
-          { status: 400 }
-        );
-      }
+    if (zoneId && equipmentRecord?.zoneId && equipmentRecord.zoneId !== zoneId) {
+      return NextResponse.json(
+        { error: 'Selected equipment does not belong to the selected zone' },
+        { status: 400 }
+      );
     }
 
     // Fetch equipment context if equipment is selected
@@ -228,6 +213,9 @@ export async function POST(
     retentionDate.setFullYear(retentionDate.getFullYear() + 5);
 
     // Create submission
+    const templateFieldIds = new Set(allFields.map((field) => field.id));
+    const safeFormEntries = Object.entries(formData).filter(([fieldId]) => templateFieldIds.has(fieldId));
+
     const submissionData: any = {
         templateId: template.id,
         clubId: template.clubId,
@@ -243,7 +231,7 @@ export async function POST(
         status: 'NEW',
         retentionDate,
         data: {
-          create: Object.entries(formData).map(([fieldId, value]) => ({
+          create: safeFormEntries.map(([fieldId, value]) => ({
             fieldId,
             value: JSON.stringify({ value, displayValue: value }),
           })),
