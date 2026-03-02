@@ -666,6 +666,7 @@ model Equipment {
   condition        String?           @default("Good")
   location         String?
   zoneId           String?
+  photoUrl         String?
   lastMaintenance  DateTime?
   nextMaintenance  DateTime?
   maintenanceNotes String?
@@ -686,19 +687,19 @@ model Equipment {
 }
 
 model EquipmentUsage {
-  id           String        @id @default(cuid())
-  clubId       String
-  equipmentId  String
-  sessionId    String?
-  coachId      String?
-  usedFrom     DateTime
-  usedUntil    DateTime?
-  notes        String?
-  createdAt    DateTime      @default(now())
-  coach        Coach?        @relation(fields: [coachId], references: [id])
-  session      ClassSession? @relation(fields: [sessionId], references: [id])
-  equipment    Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id          String        @id @default(cuid())
+  clubId      String
+  equipmentId String
+  sessionId   String?
+  coachId     String?
+  usedFrom    DateTime
+  usedUntil   DateTime?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  coach       Coach?        @relation(fields: [coachId], references: [id])
+  session     ClassSession? @relation(fields: [sessionId], references: [id])
+  equipment   Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  club        Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   @@index([usedFrom])
   @@index([sessionId])
