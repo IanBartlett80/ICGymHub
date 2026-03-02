@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import { showToast, confirmAndDelete } from '@/lib/toast'
 
 interface Gymsport {
   id: string
@@ -17,7 +18,6 @@ export default function AdminGymsportsPage() {
   const [success, setSuccess] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', active: true })
 
   useEffect(() => {
@@ -97,23 +97,24 @@ export default function AdminGymsportsPage() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!deleteConfirmId) return
-
-    try {
-      const res = await fetch(`/api/gymsports/${deleteConfirmId}`, { method: 'DELETE' })
-      
-      if (res.ok) {
-        await fetchGymsports()
-        setDeleteConfirmId(null)
-        setSuccess('Gymsport deleted successfully')
-      } else {
-        const data = await res.json()
-        setError(data.error || 'Failed to delete gymsport')
+  const handleDelete = async (id: string) => {
+    const gymsport = gymsports.find(g => g.id === id)
+    const gymsportName = gymsport?.name || 'gymsport'
+    
+    confirmAndDelete(gymsportName, async () => {
+      try {
+        const res = await fetch(`/api/gymsports/${id}`, { method: 'DELETE' })
+        
+        if (res.ok) {
+          await fetchGymsports()
+        } else {
+          const data = await res.json()
+          showToast.error(data.error || 'Failed to delete gymsport')
+        }
+      } catch (err) {
+        showToast.error('Failed to delete gymsport')
       }
-    } catch (err) {
-      setError('Failed to delete gymsport')
-    }
+    })
   }
 
   if (loading) {
@@ -253,7 +254,7 @@ export default function AdminGymsportsPage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => setDeleteConfirmId(gymsport.id)}
+                              onClick={() => handleDelete(gymsport.id)}
                               className="text-red-600 hover:text-red-800"
                             >
                               Delete
@@ -267,32 +268,6 @@ export default function AdminGymsportsPage() {
               </table>
             )}
           </div>
-
-          {/* Delete Confirmation Modal */}
-          {deleteConfirmId && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete this gymsport? This action cannot be undone and may affect associated coaches and class templates.
-                </p>
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() => setDeleteConfirmId(null)}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </DashboardLayout>

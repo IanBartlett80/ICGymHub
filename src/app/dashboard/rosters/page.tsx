@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import { format } from 'date-fns'
+import { showToast, confirmAndDelete, confirmDelete } from '@/lib/toast'
 
 type Roster = {
   id: string
@@ -98,18 +99,18 @@ export default function RostersPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this roster?')) return
-
-    try {
-      const res = await fetch(`/api/rosters/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        await fetchRosters()
-      } else {
-        setError('Failed to delete roster')
+    confirmAndDelete('roster', async () => {
+      try {
+        const res = await fetch(`/api/rosters/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          await fetchRosters()
+        } else {
+          showToast.error('Failed to delete roster')
+        }
+      } catch (err) {
+        showToast.error('Failed to delete roster')
       }
-    } catch (err) {
-      setError('Failed to delete roster')
-    }
+    })
   }
 
   const handleDeleteTemplate = async (templateId: string) => {
@@ -143,35 +144,54 @@ export default function RostersPage() {
   }
 
   const handleRegenerateTemplate = async (templateId: string) => {
-    if (!confirm('This will delete all existing rosters and regenerate them from the template. Continue?')) return
-
-    try {
-      const res = await fetch(`/api/roster-templates/${templateId}/regenerate`, { method: 'POST' })
-      if (res.ok) {
-        await fetchRosters()
-        alert('Template regenerated successfully!')
-      } else {
-        setError('Failed to regenerate template')
-      }
-    } catch (err) {
-      setError('Failed to regenerate template')
-    }
+    confirmDelete(
+      'This will delete all existing rosters and regenerate them from the template.',
+      async () => {
+        try {
+          const res = await fetch(`/api/roster-templates/${templateId}/regenerate`, { method: 'POST' })
+          if (res.ok) {
+            await fetchRosters()
+            showToast.success('Template regenerated successfully!')
+          } else {
+            showToast.error('Failed to regenerate template')
+          }
+        } catch (err) {
+          showToast.error('Failed to regenerate template')
+        }
+      },
+      { title: 'Regenerate Template', confirmText: 'Regenerate' }
+    )
   }
 
   const handlePublishTemplate = async (templateId: string, unpublish = false) => {
     const action = unpublish ? 'unpublish' : 'publish'
-    if (!confirm(`This will ${action} all rosters in this template. Continue?`)) return
-
-    setPublishingTemplate(templateId)
-    try {
-      const res = await fetch(`/api/roster-templates/${templateId}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unpublish })
-      })
-      if (res.ok) {
-        const data = await res.json()
-        await fetchRosters()
+    
+    confirmDelete(
+      `This will ${action} all rosters in this template.`,
+      async () => {
+        setPublishingTemplate(templateId)
+        try {
+          const res = await fetch(`/api/roster-templates/${templateId}/publish`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unpublish })
+          })
+          if (res.ok) {
+            const data = await res.json()
+            await fetchRosters()
+            showToast.success(`${data.updatedCount} rosters ${action}ed successfully`)
+          } else {
+            showToast.error(`Failed to ${action} template`)
+          }
+        } catch (err) {
+          showToast.error(`Failed to ${action} template`)
+        } finally {
+          setPublishingTemplate(null)
+        }
+      },
+      { title: `${action.charAt(0).toUpperCase() + action.slice(1)} Template`, confirmText: action.charAt(0).toUpperCase() + action.slice(1) }
+    )
+  }
         setSuccess(`Successfully ${action}ed ${data.count} roster(s)`)
         setTimeout(() => setSuccess(''), 3000)
       } else {

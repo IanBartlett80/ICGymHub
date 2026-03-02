@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface Field {
   id: string;
@@ -31,6 +32,7 @@ interface Automation {
 
 export default function AutomationBuilderPage() {
   const params = useParams();
+  const router = useRouter();
   const templateId = params.id as string;
 
   const [template, setTemplate] = useState<any>(null);
@@ -237,20 +239,23 @@ export default function AutomationBuilderPage() {
     }
   };
 
-  const deleteAutomation = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this automation?')) return;
+  const deleteAutomation = async (id: string, name: string) => {
+    confirmAndDelete(`automation "${name}"`, async () => {
+      try {
+        const res = await fetch(`/api/injury-forms/${templateId}/automations/${id}`, {
+          method: 'DELETE',
+        });
 
-    try {
-      const res = await fetch(`/api/injury-forms/${templateId}/automations/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        loadAutomations();
+        if (res.ok) {
+          loadAutomations();
+        } else {
+          showToast.error('Failed to delete automation');
+        }
+      } catch (error) {
+        console.error('Error deleting automation:', error);
+        showToast.error('Failed to delete automation');
       }
-    } catch (error) {
-      console.error('Error deleting automation:', error);
-    }
+    });
   };
 
   const viewLogs = async (automationId: string, automationName: string) => {
@@ -383,7 +388,7 @@ export default function AutomationBuilderPage() {
                       Logs
                     </button>
                     <button
-                      onClick={() => deleteAutomation(automation.id)}
+                      onClick={() => deleteAutomation(automation.id, automation.name)}
                       className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
                     >
                       Delete

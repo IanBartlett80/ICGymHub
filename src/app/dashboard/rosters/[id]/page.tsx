@@ -5,6 +5,7 @@ import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay } from 'date-fns'
 import DashboardLayout from '@/components/DashboardLayout'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+import { showToast, confirmDelete } from '@/lib/toast'
 
 const locales = {
   'en-US': require('date-fns/locale/en-US'),
@@ -154,20 +155,32 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
     const newStatus = roster.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
     const action = newStatus === 'PUBLISHED' ? 'publish' : 'unpublish'
     
-    if (!confirm(`Are you sure you want to ${action} this roster?`)) return
+    confirmDelete(
+      `Are you sure you want to ${action} this roster?`,
+      async () => {
+        setPublishing(true)
+        try {
+          const res = await fetch(`/api/rosters/${resolvedParams.id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus }),
+          })
 
-    setPublishing(true)
-    try {
-      const res = await fetch(`/api/rosters/${resolvedParams.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (res.ok) {
-        await fetchRoster()
-        setSuccess(`Roster ${action}ed successfully`)
-        setTimeout(() => setSuccess(''), 3000)
+          if (res.ok) {
+            await fetchRoster()
+            showToast.success(`Roster ${action}ed successfully`)
+          } else {
+            showToast.error(`Failed to ${action} roster`)
+          }
+        } catch (err) {
+          showToast.error(`Failed to ${action} roster`)
+        } finally {
+          setPublishing(false)
+        }
+      },
+      { title: `${action.charAt(0).toUpperCase() + action.slice(1)} Roster`, confirmText: action.charAt(0).toUpperCase() + action.slice(1) }
+    )
+  }
       } else {
         setError(`Failed to ${action} roster`)
       }

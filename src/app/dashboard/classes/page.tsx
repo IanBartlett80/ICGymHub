@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { showToast, confirmAndDelete } from '@/lib/toast'
 
 type Zone = {
   id: string
@@ -188,19 +189,21 @@ export default function ClassesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this class?')) return
-
-    try {
-      const res = await fetch(`/api/classes/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        await fetchData()
-        setSuccess('Class deleted successfully')
-      } else {
-        setError('Failed to delete class')
+    const classToDelete = classes.find(c => c.id === id)
+    const className = classToDelete?.name || 'class'
+    
+    confirmAndDelete(className, async () => {
+      try {
+        const res = await fetch(`/api/classes/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          await fetchData()
+        } else {
+          showToast.error('Failed to delete class')
+        }
+      } catch (err) {
+        showToast.error('Failed to delete class')
       }
-    } catch (err) {
-      setError('Failed to delete class')
-    }
+    })
   }
 
   const toggleDay = (day: string) => {

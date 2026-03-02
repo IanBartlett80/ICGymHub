@@ -7,6 +7,7 @@ import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
+import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface EquipmentWithRelations extends Equipment {
   zone?: Zone | null;
@@ -75,29 +76,31 @@ export default function AllEquipmentPage() {
       await loadData();
       setShowForm(false);
       setEditingEquipment(null);
+      showToast.saveSuccess('Equipment');
     } catch (error: any) {
-      alert(error.message);
+      showToast.error(error.message);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this equipment?')) {
-      return;
-    }
+    const item = equipment.find(e => e.id === id);
+    const equipmentName = item?.name || 'equipment';
+    
+    confirmAndDelete(equipmentName, async () => {
+      try {
+        const response = await fetch(`/api/equipment/${id}`, {
+          method: 'DELETE',
+        });
 
-    try {
-      const response = await fetch(`/api/equipment/${id}`, {
-        method: 'DELETE',
-      });
+        if (!response.ok) {
+          throw new Error('Failed to delete equipment');
+        }
 
-      if (!response.ok) {
-        throw new Error('Failed to delete equipment');
+        await loadData();
+      } catch (error) {
+        showToast.error('Failed to delete equipment');
       }
-
-      await loadData();
-    } catch (error) {
-      alert('Failed to delete equipment');
-    }
+    });
   };
 
   const handleEdit = (equipment: EquipmentWithRelations) => {
@@ -119,8 +122,9 @@ export default function AllEquipmentPage() {
       }
 
       await loadData();
+      showToast.success('Equipment checked out successfully');
     } catch (error: any) {
-      alert(error.message);
+      showToast.error(error.message);
     }
   };
 
@@ -138,8 +142,9 @@ export default function AllEquipmentPage() {
       }
 
       await loadData();
+      showToast.success('Equipment checked in successfully');
     } catch (error: any) {
-      alert(error.message);
+      showToast.error(error.message);
     }
   };
 

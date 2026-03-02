@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface FormTemplate {
   id: string;
@@ -82,7 +83,7 @@ export default function FormTemplatesPage() {
   const copyPublicUrl = (publicUrl: string) => {
     const fullUrl = `${window.location.origin}/injury-report/${publicUrl}`;
     navigator.clipboard.writeText(fullUrl);
-    alert('URL copied to clipboard!');
+    showToast.success('URL copied to clipboard!');
   };
 
   const downloadQRCode = (template: FormTemplate) => {
@@ -95,26 +96,23 @@ export default function FormTemplatesPage() {
   };
 
   const deleteTemplate = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete the form "${name}"? This action cannot be undone.`)) {
-      return;
-    }
+    confirmAndDelete(`form "${name}"`, async () => {
+      try {
+        const res = await fetch(`/api/injury-forms/${id}`, {
+          method: 'DELETE',
+        });
 
-    try {
-      const res = await fetch(`/api/injury-forms/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        alert('Form deleted successfully');
-        loadTemplates();
-      } else {
-        const error = await res.json();
-        alert(error.error || 'Failed to delete form');
+        if (res.ok) {
+          loadTemplates();
+        } else {
+          const error = await res.json();
+          showToast.error(error.error || 'Failed to delete form');
+        }
+      } catch (error) {
+        console.error('Error deleting template:', error);
+        showToast.error('Failed to delete form');
       }
-    } catch (error) {
-      console.error('Error deleting template:', error);
-      alert('Failed to delete form');
-    }
+    });
   };
 
   if (loading) {

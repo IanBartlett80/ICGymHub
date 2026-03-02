@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface FormField {
   id?: string;
@@ -93,12 +94,12 @@ export default function EditFormPage() {
         
         setTemplate(parsedTemplate);
       } else {
-        alert('Form not found');
+        showToast.error('Form not found');
         router.push('/dashboard/injury-reports/forms');
       }
     } catch (error) {
       console.error('Error loading template:', error);
-      alert('Error loading form');
+      showToast.error('Error loading form');
     } finally {
       setLoading(false);
     }
@@ -126,8 +127,11 @@ export default function EditFormPage() {
   };
 
   const removeSection = (index: number) => {
-    const newSections = template.sections.filter((_, i) => i !== index);
-    setTemplate({ ...template, sections: newSections });
+    const sectionTitle = template.sections[index].title || 'section';
+    confirmAndDelete(`${sectionTitle}`, () => {
+      const newSections = template.sections.filter((_, i) => i !== index);
+      setTemplate({ ...template, sections: newSections });
+    });
   };
 
   const addField = (sectionIndex: number) => {
@@ -151,14 +155,18 @@ export default function EditFormPage() {
   };
 
   const removeField = (sectionIndex: number, fieldIndex: number) => {
-    const newSections = [...template.sections];
-    newSections[sectionIndex].fields = newSections[sectionIndex].fields.filter((_, i) => i !== fieldIndex);
-    setTemplate({ ...template, sections: newSections });
+    const field = template.sections[sectionIndex].fields[fieldIndex];
+    const fieldLabel = field.label || 'question';
+    confirmAndDelete(`${fieldLabel}`, () => {
+      const newSections = [...template.sections];
+      newSections[sectionIndex].fields = newSections[sectionIndex].fields.filter((_, i) => i !== fieldIndex);
+      setTemplate({ ...template, sections: newSections });
+    });
   };
 
   const handleSave = async () => {
     if (!template.name.trim()) {
-      alert('Please enter a form name');
+      showToast.error('Please enter a form name');
       return;
     }
 
@@ -171,15 +179,15 @@ export default function EditFormPage() {
       });
 
       if (res.ok) {
-        alert('Form updated successfully!');
+        showToast.saveSuccess('Form');
         router.push('/dashboard/injury-reports/forms');
       } else {
         const data = await res.json();
-        alert(`Error: ${data.error || 'Failed to update form'}`);
+        showToast.error(data.error || 'Failed to update form');
       }
     } catch (error) {
       console.error('Error saving form:', error);
-      alert('Error saving form');
+      showToast.error('Error saving form');
     } finally {
       setSaving(false);
     }

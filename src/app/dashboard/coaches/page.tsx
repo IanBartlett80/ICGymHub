@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { showToast, confirmAndDelete } from '@/lib/toast'
 
 type Gymsport = {
   id: string
@@ -149,19 +150,21 @@ export default function CoachesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this coach?')) return
-
-    try {
-      const res = await fetch(`/api/coaches/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        await fetchData()
-        setSuccess('Coach deleted successfully')
-      } else {
-        setError('Failed to delete coach')
+    const coach = coaches.find(c => c.id === id)
+    const coachName = coach?.name || 'coach'
+    
+    confirmAndDelete(coachName, async () => {
+      try {
+        const res = await fetch(`/api/coaches/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          await fetchData()
+        } else {
+          showToast.error('Failed to delete coach')
+        }
+      } catch (err) {
+        showToast.error('Failed to delete coach')
       }
-    } catch (err) {
-      setError('Failed to delete coach')
-    }
+    })
   }
 
   const handleDownloadTemplate = async () => {

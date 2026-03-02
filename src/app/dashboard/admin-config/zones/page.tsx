@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import { showToast, confirmAndDelete } from '@/lib/toast'
 
 interface Zone {
   id: string
@@ -18,7 +19,7 @@ export default function AdminZonesPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
 
@@ -78,20 +79,22 @@ export default function AdminZonesPage() {
     setShowForm(true)
   }
 
-  const handleDelete = async () => {
-    if (!deleteConfirmId) return
-    try {
-      const res = await fetch(`/api/zones/${deleteConfirmId}`, { method: 'DELETE' })
-      if (res.ok) {
-        await fetchZones()
-        setDeleteConfirmId(null)
-        setSuccess('Zone deleted successfully')
-      } else {
-        setError('Failed to delete zone')
+  const handleDelete = async (id: string) => {
+    const zone = zones.find(z => z.id === id)
+    const zoneName = zone?.name || 'zone'
+    
+    confirmAndDelete(zoneName, async () => {
+      try {
+        const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          await fetchZones()
+        } else {
+          showToast.error('Failed to delete zone')
+        }
+      } catch (err) {
+        showToast.error('Failed to delete zone')
       }
-    } catch (err) {
-      setError('Failed to delete zone')
-    }
+    })
   }
 
   if (loading) {
@@ -246,7 +249,7 @@ export default function AdminZonesPage() {
                         Edit
                       </button>
                       <button
-                        onClick={() => setDeleteConfirmId(zone.id)}
+                        onClick={() => handleDelete(zone.id)}
                         className="text-red-600 hover:text-red-800"
                       >
                         Delete
@@ -260,32 +263,6 @@ export default function AdminZonesPage() {
               <div className="text-center py-8 text-gray-500">No zones configured yet.</div>
             )}
           </div>
-
-          {/* Delete Confirmation Modal */}
-          {deleteConfirmId && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete this zone? This action cannot be undone.
-                </p>
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() => setDeleteConfirmId(null)}
-                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </DashboardLayout>

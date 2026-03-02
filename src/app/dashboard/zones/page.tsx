@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { showToast, confirmAndDelete } from '@/lib/toast'
 
 type Zone = {
   id: string
@@ -83,18 +84,21 @@ export default function ZonesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this zone?')) return
-
-    try {
-      const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        await fetchZones()
-      } else {
-        setError('Failed to delete zone')
+    const zone = zones.find(z => z.id === id)
+    const zoneName = zone?.name || 'zone'
+    
+    confirmAndDelete(zoneName, async () => {
+      try {
+        const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          await fetchZones()
+        } else {
+          showToast.error('Failed to delete zone')
+        }
+      } catch (err) {
+        showToast.error('Failed to delete zone')
       }
-    } catch (err) {
-      setError('Failed to delete zone')
-    }
+    })
   }
 
   if (loading) return <div className="p-8">Loading...</div>
