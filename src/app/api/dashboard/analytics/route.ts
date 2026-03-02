@@ -27,8 +27,19 @@ export async function GET(req: NextRequest) {
     sunday.setDate(monday.getDate() + 6)
     sunday.setHours(23, 59, 59, 999)
 
+    // Previous week for comparison
+    const previousMonday = new Date(monday)
+    previousMonday.setDate(monday.getDate() - 7)
+    const previousSunday = new Date(previousMonday)
+    previousSunday.setDate(previousMonday.getDate() + 6)
+    previousSunday.setHours(23, 59, 59, 999)
+
     // First day of current month
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    
+    // Previous month for comparison
+    const firstDayOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastDayOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
     
     // Last 6 months for trends
     const sixMonthsAgo = new Date(now)
@@ -41,6 +52,16 @@ export async function GET(req: NextRequest) {
         date: {
           gte: monday,
           lte: sunday
+        }
+      }
+    })
+
+    const previousWeekClasses = await prisma.classSession.count({
+      where: {
+        clubId: decoded.clubId,
+        date: {
+          gte: previousMonday,
+          lte: previousSunday
         }
       }
     })
@@ -65,7 +86,19 @@ export async function GET(req: NextRequest) {
           gte: now
         }
       },
-      take: 20
+      take: 100
+    })
+
+    const totalCoaches = await prisma.coach.count({
+      where: {
+        clubId: decoded.clubId
+      }
+    })
+
+    const totalGymsports = await prisma.gymsport.count({
+      where: {
+        clubId: decoded.clubId
+      }
     })
 
     // SAFETY/INJURY STATS
@@ -87,6 +120,16 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    const totalIncidentsPreviousMonth = await prisma.injurySubmission.count({
+      where: {
+        clubId: decoded.clubId,
+        submittedAt: {
+          gte: firstDayOfPreviousMonth,
+          lte: lastDayOfPreviousMonth
+        }
+      }
+    })
+
     const criticalIncidents = await prisma.injurySubmission.count({
       where: {
         clubId: decoded.clubId,
@@ -94,10 +137,42 @@ export async function GET(req: NextRequest) {
           in: ['PENDING', 'IN_REVIEW', 'REQUIRES_ACTION']
         },
         template: {
-          formType: 'CRITICAL_INCIDENT'
+          name: { contains: 'Critical' }
         }
       }
     })
+
+    const resolvedThisMonth = await prisma.injurySubmission.count({
+      where: {
+        clubId: decoded.clubId,
+        status: 'RESOLVED',
+        updatedAt: {
+          gte: firstDayOfMonth
+        }
+      }
+    })
+
+    // Calculate average response time (in hours)
+    const resolvedSubmissions = await prisma.injurySubmission.findMany({
+      where: {
+        clubId: decoded.clubId,
+        status: 'RESOLVED',
+        updatedAt: {
+          gte: sixMonthsAgo
+        }
+      },
+      select: {
+        submittedAt: true,
+        updatedAt: true
+      }
+    })
+
+    const avgResponseTime = resolvedSubmissions.length > 0
+      ? resolvedSubmissions.reduce((sum, sub) => {
+          const hours = (new Date(sub.updatedAt).getTime() - new Date(sub.submittedAt).getTime()) / (1000 * 60 * 60)
+          return sum + hours
+        }, 0) / resolvedSubmissions.length
+      : 0
 
     // EQUIPMENT STATS
     const totalEquipment = await prisma.equipment.count({
@@ -129,6 +204,57 @@ export async function GET(req: NextRequest) {
       where: {
         clubId: decoded.clubId,
         inUse: true
+      }
+    })
+
+    const openSafetyIssues = await prisma.safetyIssue.count({
+      where: {
+        clubId: decoded.clubId,
+        status: {
+          in: ['OPEN', 'IN_PROGRESS']
+        }
+      }
+    })
+
+    // MAINTENANCE TASK STATS
+    const pendingMaintenanceTasks = await prisma.maintenanceTask.count({
+      where: {
+        clubId: decoded.clubId,
+        status: {
+          in: ['PENDING', 'IN_PROGRESS']
+        }
+      }
+    })
+
+    const overdueTasks = await prisma.maintenanceTask.count({
+      where: {
+        clubId: decoded.clubId,
+        status: {
+          in: ['PENDING', 'IN_PROGRESS']
+        },
+        dueDate: {
+          lt: now
+        }
+      }
+    })
+
+    const completedThisMonth = await prisma.maintenanceTask.count({
+      where: {
+        clubId: decoded.clubId,
+        status: 'COMPLETED',
+        completedDate: {
+          gte: firstDayOfMonth
+        }
+      }
+    })
+
+    const recurringTasks = await prisma.maintenanceTask.count({
+      where: {
+        clubId: decoded.clubId,
+        isRecurring: true,
+        status: {
+          not: 'CANCELLED'
+        }
       }
     })
 
@@ -199,7 +325,7 @@ export async function GET(req: NextRequest) {
             lte: lastDay
           },
           template: {
-            formType: 'CRITICAL_INCIDENT'
+            name: { contains: 'Critical' }
           }
         }
       })
@@ -226,32 +352,175 @@ export async function GET(req: NextRequest) {
       value: item._count,
       color: item.condition === 'Excellent' ? '#10b981' :
              item.condition === 'Good' ? '#3b82f6' :
-             item.condition === 'Fair' ? '#f59e0b' : '#ef4444'
+             item.condition === 'Fair' ? '#f59e0b' : 
+             item.condition === 'Poor' ? '#f97316' : '#ef4444'
     }))
+
+    // MAINTENANCE TASK TRENDS (last 6 months)
+    const maintenanceTrends = []
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = new Date(now)
+      monthDate.setMonth(now.getMonth() - i)
+      const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+      const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59)
+
+      const completed = await prisma.maintenanceTask.count({
+        where: {
+          clubId: decoded.clubId,
+          status: 'COMPLETED',
+          completedDate: {
+            gte: firstDay,
+            lte: lastDay
+          }
+        }
+      })
+
+      const pending = await prisma.maintenanceTask.count({
+        where: {
+          clubId: decoded.clubId,
+          status: {
+            in: ['PENDING', 'IN_PROGRESS']
+          },
+          dueDate: {
+            gte: firstDay,
+            lte: lastDay
+          }
+        }
+      })
+
+      maintenanceTrends.push({
+        month: monthNames[monthDate.getMonth()],
+        completed,
+        pending
+      })
+    }
+
+    // COACH UTILIZATION (classes per coach this week via SessionCoach)
+    const coachUtilization = await prisma.sessionCoach.groupBy({
+      by: ['coachId'],
+      where: {
+        session: {
+          clubId: decoded.clubId,
+          date: {
+            gte: monday,
+            lte: sunday
+          }
+        }
+      },
+      _count: true
+    })
+
+    const avgClassesPerCoach = totalCoaches > 0 
+      ? Math.round((coachUtilization.reduce((sum, c) => sum + (c._count || 0), 0) / totalCoaches) * 10) / 10
+      : 0
+
+    // INJURY BY SEVERITY
+    const injuryBySeverity = await prisma.injurySubmission.groupBy({
+      by: ['status'],
+      where: {
+        clubId: decoded.clubId,
+        submittedAt: {
+          gte: firstDayOfMonth
+        }
+      },
+      _count: true
+    })
+
+    const injurySeverityData = injuryBySeverity.map(item => ({
+      name: item.status.replace('_', ' '),
+      value: item._count,
+      color: item.status === 'RESOLVED' ? '#10b981' :
+             item.status === 'PENDING' ? '#f59e0b' :
+             item.status === 'IN_REVIEW' ? '#3b82f6' : '#ef4444'
+    }))
+
+    // SAFETY ISSUE TRENDS
+    const safetyIssueTrends = []
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = new Date(now)
+      monthDate.setMonth(now.getMonth() - i)
+      const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+      const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59)
+
+      const total = await prisma.safetyIssue.count({
+        where: {
+          clubId: decoded.clubId,
+          createdAt: {
+            gte: firstDay,
+            lte: lastDay
+          }
+        }
+      })
+
+      const critical = await prisma.safetyIssue.count({
+        where: {
+          clubId: decoded.clubId,
+          createdAt: {
+            gte: firstDay,
+            lte: lastDay
+          },
+          issueType: 'CRITICAL'
+        }
+      })
+
+      safetyIssueTrends.push({
+        month: monthNames[monthDate.getMonth()],
+        total,
+        critical
+      })
+    }
+
+    // Calculate trends (% change from previous period)
+    const classGrowth = previousWeekClasses > 0 
+      ? ((weeklyClasses - previousWeekClasses) / previousWeekClasses * 100).toFixed(1)
+      : '0'
+    
+    const injuryTrend = totalIncidentsPreviousMonth > 0
+      ? ((totalIncidentsThisMonth - totalIncidentsPreviousMonth) / totalIncidentsPreviousMonth * 100).toFixed(1)
+      : '0'
 
     return NextResponse.json({
       rosters: {
         weeklyClasses,
         activeConflicts,
         upcomingClasses,
-        coachUtilization: 0 // TODO: Calculate from coach assignments
+        totalCoaches,
+        totalGymsports,
+        coachUtilization: Math.round(avgClassesPerCoach * 10) / 10,
+        classGrowth: parseFloat(classGrowth)
       },
       safety: {
         openIncidents,
         totalThisMonth: totalIncidentsThisMonth,
         criticalIssues: criticalIncidents,
-        avgResponseTime: 0 // TODO: Calculate from submission/resolution times
+        resolvedThisMonth,
+        avgResponseTime: Math.round(avgResponseTime * 10) / 10,
+        injuryTrend: parseFloat(injuryTrend)
       },
       equipment: {
         totalItems: totalEquipment,
         maintenanceDue,
         criticalIssues: criticalEquipment,
-        inUse: equipmentInUse
+        inUse: equipmentInUse,
+        openSafetyIssues,
+        utilizationRate: totalEquipment > 0 ? Math.round((equipmentInUse / totalEquipment) * 100) : 0
+      },
+      maintenance: {
+        pendingTasks: pendingMaintenanceTasks,
+        overdueTasks,
+        completedThisMonth,
+        recurringTasks,
+        completionRate: (pendingMaintenanceTasks + completedThisMonth) > 0
+          ? Math.round((completedThisMonth / (pendingMaintenanceTasks + completedThisMonth)) * 100)
+          : 0
       },
       charts: {
         weeklyClasses: weeklyClassData,
         injuryTrends,
-        equipmentStatus: equipmentStatusData
+        equipmentStatus: equipmentStatusData,
+        maintenanceTrends,
+        injurySeverity: injurySeverityData,
+        safetyIssueTrends
       }
     })
 

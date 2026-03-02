@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts'
 
@@ -24,24 +24,41 @@ interface DashboardStats {
     weeklyClasses: number
     activeConflicts: number
     upcomingClasses: number
+    totalCoaches: number
+    totalGymsports: number
     coachUtilization: number
+    classGrowth: number
   }
   safety: {
     openIncidents: number
     totalThisMonth: number
     criticalIssues: number
+    resolvedThisMonth: number
     avgResponseTime: number
+    injuryTrend: number
   }
   equipment: {
     totalItems: number
     maintenanceDue: number
     criticalIssues: number
     inUse: number
+    openSafetyIssues: number
+    utilizationRate: number
+  }
+  maintenance: {
+    pendingTasks: number
+    overdueTasks: number
+    completedThisMonth: number
+    recurringTasks: number
+    completionRate: number
   }
   charts: {
     weeklyClasses: Array<{ day: string; classes: number; conflicts: number }>
     injuryTrends: Array<{ month: string; incidents: number; critical: number }>
     equipmentStatus: Array<{ name: string; value: number; color: string }>
+    maintenanceTrends: Array<{ month: string; completed: number; pending: number }>
+    injurySeverity: Array<{ name: string; value: number; color: string }>
+    safetyIssueTrends: Array<{ month: string; total: number; critical: number }>
   }
 }
 
@@ -69,6 +86,7 @@ export default function DashboardPage() {
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('Dashboard analytics:', data)
         setStats(data)
       } else {
         console.error('Failed to fetch dashboard analytics:', response.statusText)
@@ -76,6 +94,12 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error)
     }
+  }
+
+  const getTrendIndicator = (value: number) => {
+    if (value > 0) return <span className="text-green-600 text-sm">↑ {value}%</span>
+    if (value < 0) return <span className="text-red-600 text-sm">↓ {Math.abs(value)}%</span>
+    return <span className="text-gray-600 text-sm">→ 0%</span>
   }
 
   if (loading || !user) {
@@ -107,12 +131,19 @@ export default function DashboardPage() {
               <span className="text-blue-100 text-sm">This Week</span>
             </div>
             <p className="text-3xl font-bold mb-1">{stats?.rosters.weeklyClasses || 0}</p>
-            <p className="text-blue-100 text-sm">Scheduled Classes</p>
-            {stats && stats.rosters.activeConflicts > 0 && (
-              <div className="mt-3 bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1 text-xs">
-                ⚠️ {stats.rosters.activeConflicts} conflict{stats.rosters.activeConflicts > 1 ? 's' : ''}
-              </div>
-            )}
+            <p className="text-blue-100 text-sm mb-2">Scheduled Classes</p>
+            <div className="flex items-center justify-between">
+              {stats && stats.rosters.activeConflicts > 0 ? (
+                <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
+                  ⚠️ {stats.rosters.activeConflicts} conflict{stats.rosters.activeConflicts > 1 ? 's' : ''}
+                </span>
+              ) : (
+                <span className="text-xs text-blue-100">No conflicts</span>
+              )}
+              {stats && stats.rosters.classGrowth !== undefined && (
+                getTrendIndicator(stats.rosters.classGrowth)
+              )}
+            </div>
           </Link>
 
           <Link href="/dashboard/injury-reports" className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
@@ -121,12 +152,21 @@ export default function DashboardPage() {
               <span className="text-red-100 text-sm">Active</span>
             </div>
             <p className="text-3xl font-bold mb-1">{stats?.safety.openIncidents || 0}</p>
-            <p className="text-red-100 text-sm">Open Incidents</p>
-            {stats && stats.safety.criticalIssues > 0 && (
-              <div className="mt-3 bg-yellow-500 bg-opacity-20 border border-yellow-200 rounded px-2 py-1 text-xs">
-                ⚠️ {stats.safety.criticalIssues} critical
-              </div>
-            )}
+            <p className="text-red-100 text-sm mb-2">Open Incidents</p>
+            <div className="flex items-center justify-between">
+              {stats && stats.safety.criticalIssues > 0 ? (
+                <span className="text-xs bg-yellow-500 bg-opacity-20 border border-yellow-200 rounded px-2 py-1">
+                  ⚠️ {stats.safety.criticalIssues} critical
+                </span>
+              ) : (
+                <span className="text-xs text-red-100">No critical issues</span>
+              )}
+              {stats && stats.safety.injuryTrend !== undefined && (
+                <span className="text-xs text-red-100">
+                  {stats.safety.injuryTrend > 0 ? '↑' : stats.safety.injuryTrend < 0 ? '↓' : '→'} {Math.abs(stats.safety.injuryTrend)}%
+                </span>
+              )}
+            </div>
           </Link>
 
           <Link href="/dashboard/equipment" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
@@ -135,194 +175,316 @@ export default function DashboardPage() {
               <span className="text-orange-100 text-sm">Total Items</span>
             </div>
             <p className="text-3xl font-bold mb-1">{stats?.equipment.totalItems || 0}</p>
-            <p className="text-orange-100 text-sm">Equipment Tracked</p>
-            {stats && stats.equipment.maintenanceDue > 0 && (
-              <div className="mt-3 bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1 text-xs">
-                🛠️ {stats.equipment.maintenanceDue} maintenance due
-              </div>
-            )}
+            <p className="text-orange-100 text-sm mb-2">Equipment Tracked</p>
+            <div className="flex items-center justify-between">
+              {stats && stats.equipment.maintenanceDue > 0 ? (
+                <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
+                  🛠️ {stats.equipment.maintenanceDue} due
+                </span>
+              ) : (
+                <span className="text-xs text-orange-100">Up to date</span>
+              )}
+              {stats && (
+                <span className="text-xs text-orange-100">{stats.equipment.utilizationRate}% in use</span>
+              )}
+            </div>
           </Link>
 
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <span className="text-4xl">📊</span>
-              <span className="text-green-100 text-sm">Overall</span>
+              <span className="text-green-100 text-sm">Maintenance</span>
             </div>
-            <p className="text-3xl font-bold mb-1">Excellent</p>
-            <p className="text-green-100 text-sm">Club Health Status</p>
-            <div className="mt-3 bg-white bg-opacity-20 rounded px-2 py-1 text-xs">
-              ✓ All systems operational
+            <p className="text-3xl font-bold mb-1">{stats?.maintenance.completedThisMonth || 0}</p>
+            <p className="text-green-100 text-sm mb-2">Completed This Month</p>
+            <div className="flex items-center justify-between">
+              {stats && stats.maintenance.overdueTasks > 0 ? (
+                <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
+                  ⏰ {stats.maintenance.overdueTasks} overdue
+                </span>
+              ) : (
+                <span className="text-xs text-green-100">On track</span>
+              )}
+              {stats && (
+                <span className="text-xs text-green-100">{stats.maintenance.completionRate}% rate</span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Charts Section */}
+        {/* Charts Section - Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Weekly Class Schedule */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Weekly Class Schedule</h3>
-                    <p className="text-sm text-gray-600">Classes vs Conflicts</p>
-                  </div>
-                  <Link href="/dashboard/rosters" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View All →
-                  </Link>
-                </div>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={stats?.charts?.weeklyClasses || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="classes" fill="#3b82f6" name="Classes" />
-                    <Bar dataKey="conflicts" fill="#ef4444" name="Conflicts" />
-                  </BarChart>
-                </ResponsiveContainer>
+          {/* Weekly Class Schedule */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Weekly Class Schedule</h3>
+                <p className="text-sm text-gray-600">Last 7 days - Classes vs Conflicts</p>
               </div>
+              <Link href="/dashboard/rosters" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                View All →
+              </Link>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={stats?.charts?.weeklyClasses || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="day" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="classes" fill="#3b82f6" name="Classes" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="conflicts" fill="#ef4444" name="Conflicts" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
 
-              {/* Injury Trends */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Injury Report Trends</h3>
-                    <p className="text-sm text-gray-600">Last 6 Months</p>
-                  </div>
-                  <Link href="/dashboard/injury-reports/analytics" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View Analytics →
-                  </Link>
-                </div>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={stats?.charts?.injuryTrends || []}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="incidents" stroke="#f59e0b" strokeWidth={2} name="Total Incidents" />
-                    <Line type="monotone" dataKey="critical" stroke="#ef4444" strokeWidth={2} name="Critical" />
-                  </LineChart>
-                </ResponsiveContainer>
+          {/* Injury Trends */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Injury Report Trends</h3>
+                <p className="text-sm text-gray-600">Last 6 months</p>
+              </div>
+              <Link href="/dashboard/injury-reports/analytics" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                View Analytics →
+              </Link>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={stats?.charts?.injuryTrends || []}>
+                <defs>
+                  <linearGradient id="colorIncidents" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Area type="monotone" dataKey="incidents" stroke="#f59e0b" fillOpacity={1} fill="url(#colorIncidents)" name="Total Incidents" strokeWidth={2} />
+                <Area type="monotone" dataKey="critical" stroke="#ef4444" fillOpacity={1} fill="url(#colorCritical)" name="Critical" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Charts Section - Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Equipment Status Distribution */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Equipment Condition</h3>
+                <p className="text-sm text-gray-600">Current distribution</p>
               </div>
             </div>
-
-            {/* Equipment and Additional Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Equipment Status Distribution */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Equipment Condition</h3>
-                    <p className="text-sm text-gray-600">Current Status Distribution</p>
-                  </div>
-                  <Link href="/dashboard/equipment/analytics" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View Details →
-                  </Link>
+            {stats?.charts?.equipmentStatus && stats.charts.equipmentStatus.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={stats.charts.equipmentStatus}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                    outerRadius={70}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {stats.charts.equipmentStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">📊</div>
+                  <p className="text-sm">No equipment data yet</p>
                 </div>
-                {stats?.charts?.equipmentStatus && stats.charts.equipmentStatus.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={stats.charts.equipmentStatus}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {stats.charts.equipmentStatus.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-gray-500">
-                    No equipment data available
-                  </div>
-                )}
               </div>
+            )}
+          </div>
 
-              {/* Quick Actions & Stats */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                <div className="space-y-3">
-                  <Link href="/dashboard/rosters" className="flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">📋</span>
-                      <div>
-                        <p className="font-medium text-gray-900">View Rosters</p>
-                        <p className="text-xs text-gray-600">Manage class schedules</p>
-                      </div>
-                    </div>
-                    <span className="text-blue-600">→</span>
-                  </Link>
-
-                  <Link href="/injury-report" className="flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 rounded-lg transition">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">📝</span>
-                      <div>
-                        <p className="font-medium text-gray-900">Report Incident</p>
-                        <p className="text-xs text-gray-600">Submit new injury report</p>
-                      </div>
-                    </div>
-                    <span className="text-red-600">→</span>
-                  </Link>
-
-                  <Link href="/dashboard/equipment/all" className="flex items-center justify-between p-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🔧</span>
-                      <div>
-                        <p className="font-medium text-gray-900">Manage Equipment</p>
-                        <p className="text-xs text-gray-600">View all equipment</p>
-                      </div>
-                    </div>
-                    <span className="text-orange-600">→</span>
-                  </Link>
-
-                  <Link href="/dashboard/admin-config" className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">⚙️</span>
-                      <div>
-                        <p className="font-medium text-gray-900">Club Settings</p>
-                        <p className="text-xs text-gray-600">Configure your club</p>
-                      </div>
-                    </div>
-                    <span className="text-gray-600">→</span>
-                  </Link>
-                </div>
+          {/* Injury Severity */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Injury Status</h3>
+                <p className="text-sm text-gray-600">This month</p>
               </div>
             </div>
+            {stats?.charts?.injurySeverity && stats.charts.injurySeverity.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={stats.charts.injurySeverity}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    outerRadius={70}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {stats.charts.injurySeverity.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">🏥</div>
+                  <p className="text-sm">No injury data this month</p>
+                </div>
+              </div>
+            )}
+          </div>
 
-        {/* Recent Activity Feed (Placeholder) */}
+          {/* Key Stats Summary */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Metrics</h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Coach Utilization</span>
+                  <span className="text-lg font-bold text-blue-600">{stats?.rosters.coachUtilization || 0}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">Classes per coach/week</div>
+              </div>
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Avg Response Time</span>
+                  <span className="text-lg font-bold text-green-600">{stats?.safety.avgResponseTime || 0}h</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">Injury report resolution</div>
+              </div>
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Recurring Tasks</span>
+                  <span className="text-lg font-bold text-purple-600">{stats?.maintenance.recurringTasks || 0}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">Scheduled maintenance</div>
+              </div>
+              <div className="border-t pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Gymsports</span>
+                  <span className="text-lg font-bold text-indigo-600">{stats?.rosters.totalGymsports || 0}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">Active programs</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section - Row 3 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Maintenance Trends */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Maintenance Activity</h3>
+                <p className="text-sm text-gray-600">Last 6 months</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={stats?.charts?.maintenanceTrends || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name="Completed" dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="pending" stroke="#f59e0b" strokeWidth={2} name="Pending" dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Safety Issue Trends */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Safety Issues</h3>
+                <p className="text-sm text-gray-600">Last 6 months</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={stats?.charts?.safetyIssueTrends || []}>
+                <defs>
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorSafetyCritical" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#dc2626" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Area type="monotone" dataKey="total" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTotal)" name="Total Issues" strokeWidth={2} />
+                <Area type="monotone" dataKey="critical" stroke="#dc2626" fillOpacity={1} fill="url(#colorSafetyCritical)" name="Critical" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-xl">📅</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">New roster published for Week 12</p>
-                <p className="text-xs text-gray-600">2 hours ago</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Link href="/dashboard/rosters" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+              <span className="text-3xl">📋</span>
+              <div>
+                <p className="font-medium text-gray-900">View Rosters</p>
+                <p className="text-xs text-gray-600">Manage class schedules</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-xl">🏥</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Injury report submitted by Coach Sarah</p>
-                <p className="text-xs text-gray-600">5 hours ago</p>
+            </Link>
+
+            <Link href="/injury-report" className="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition">
+              <span className="text-3xl">📝</span>
+              <div>
+                <p className="font-medium text-gray-900">Report Incident</p>
+                <p className="text-xs text-gray-600">Submit injury report</p>
               </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-              <span className="text-xl">🔧</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Equipment maintenance completed on Vault #3</p>
-                <p className="text-xs text-gray-600">1 day ago</p>
+            </Link>
+
+            <Link href="/dashboard/equipment" className="flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition">
+              <span className="text-3xl">🔧</span>
+              <div>
+                <p className="font-medium text-gray-900">Equipment</p>
+                <p className="text-xs text-gray-600">Manage equipment</p>
               </div>
-            </div>
+            </Link>
+
+            <Link href="/dashboard/admin-config" className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
+              <span className="text-3xl">⚙️</span>
+              <div>
+                <p className="font-medium text-gray-900">Settings</p>
+                <p className="text-xs text-gray-600">Configure club</p>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
