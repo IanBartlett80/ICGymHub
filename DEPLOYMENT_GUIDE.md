@@ -1,6 +1,6 @@
 # ICGymHub - Digital Ocean Deployment Guide
 
-This guide will walk you through deploying ICGymHub from local development to production on Digital Ocean with a managed PostgreSQL database.
+This guide walks through deploying ICGymHub to production on Digital Ocean with a managed PostgreSQL database.
 
 ## Prerequisites
 
@@ -12,21 +12,12 @@ This guide will walk you through deploying ICGymHub from local development to pr
 
 ## Part 1: Prepare Your Application for Production
 
-### Step 1: Update Database Configuration for PostgreSQL
+### Step 1: Confirm Database Configuration
 
-Currently, your app uses SQLite. We need to switch to PostgreSQL for production.
+ICGymHub runs on PostgreSQL in production.
 
-**1.1 Update `prisma/schema.prisma`:**
+**1.1 Ensure `prisma/schema.prisma` datasource is:**
 
-Change the datasource from:
-```prisma
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-```
-
-To:
 ```prisma
 datasource db {
   provider = "postgresql"
@@ -45,7 +36,7 @@ npx prisma generate
 Create a `.env.production` file (don't commit this):
 ```env
 # Database
-DATABASE_URL="postgresql://user:password@host:port/database?schema=public"
+DATABASE_URL="postgresql://doadmin:<DIGITALOCEAN_DB_PASSWORD>@icgymhub-db-do-user-25561005-0.m.db.ondigitalocean.com:25060/icgymhub_production?sslmode=require"
 
 # Auth
 JWT_SECRET="your-production-jwt-secret-min-32-chars"

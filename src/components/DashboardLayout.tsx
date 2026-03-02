@@ -20,6 +20,7 @@ interface UserData {
 
 interface DashboardLayoutProps {
   children: ReactNode
+  title?: string
   backTo?: { label: string; href: string }
   showClassRosteringNav?: boolean
   showClubManagementNav?: boolean
@@ -27,7 +28,7 @@ interface DashboardLayoutProps {
 
 type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment'
 
-export default function DashboardLayout({ children, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<UserData | null>(null)
@@ -489,7 +490,14 @@ export default function DashboardLayout({ children, backTo, showClassRosteringNa
         )}
 
         {/* Page Content */}
-        <main>{children}</main>
+        <main>
+          {title && (
+            <div className="px-6 pt-6 pb-2 print:hidden">
+              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   )

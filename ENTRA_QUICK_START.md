@@ -23,7 +23,7 @@ AZURE_SENDER_EMAIL=your-email@domain.com
 
 ### 5. Test
 ```bash
-curl http://localhost:3000/api/test-email
+curl https://your-production-domain.com/api/test-email
 ```
 
 ## Full Documentation

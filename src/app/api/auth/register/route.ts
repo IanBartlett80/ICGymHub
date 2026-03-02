@@ -8,6 +8,22 @@ import crypto from 'crypto'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    const forwardedProto = req.headers.get('x-forwarded-proto')
+    const forwardedHost = req.headers.get('x-forwarded-host')
+    const host = req.headers.get('host')
+    const requestOrigin = forwardedHost
+      ? `${forwardedProto || 'https'}://${forwardedHost}`
+      : host
+      ? `${forwardedProto || 'https'}://${host}`
+      : null
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || requestOrigin
+
+    if (!appUrl) {
+      return NextResponse.json(
+        { error: 'Application base URL is not configured' },
+        { status: 500 }
+      )
+    }
 
     // Validate input
     const result = clubRegistrationSchema.safeParse(body)
@@ -165,7 +181,6 @@ export async function POST(req: NextRequest) {
 
     // Send verification email to all users (consumer or business)
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       await sendVerificationEmail({
         to: adminEmail,
         clubName,
@@ -209,7 +224,7 @@ export async function POST(req: NextRequest) {
         note: isConsumer 
           ? 'Please check your email to verify your account. Consumer email addresses (Gmail, Yahoo, etc.) must also be verified.'
           : 'Please check your email to verify your account and club domain.',
-        verificationLink: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`, // Development only
+        verificationLink: `${appUrl}/verify-email?token=${verificationToken}`,
       },
       { status: 201 }
     )

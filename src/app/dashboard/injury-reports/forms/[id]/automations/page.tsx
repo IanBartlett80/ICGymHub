@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
@@ -32,7 +32,6 @@ interface Automation {
 
 export default function AutomationBuilderPage() {
   const params = useParams();
-  const router = useRouter();
   const templateId = params.id as string;
 
   const [template, setTemplate] = useState<any>(null);

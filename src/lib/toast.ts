@@ -116,7 +116,7 @@ export const confirmDelete = (
   const confirmText = options?.confirmText || 'Delete';
   const cancelText = options?.cancelText || 'Cancel';
 
-  const confirmed = window.confirm(`${title}\n\n${message}`);
+  const confirmed = window.confirm(`${title}\n\n${message}\n\n[${confirmText}] / [${cancelText}]`);
   
   if (confirmed) {
     const result = onConfirm();

@@ -272,6 +272,296 @@ async function main() {
   }
   console.log('✓ Seeded class templates with allowed zones and default coaches')
 
+  // Sample analytics data (only when club has no operational records yet)
+  const existingSessionCount = await prisma.classSession.count({ where: { clubId: testClub.id } })
+  if (existingSessionCount === 0) {
+    const recreationTemplate = await prisma.classTemplate.findUnique({
+      where: { clubId_name: { clubId: testClub.id, name: 'Recreation Level 1' } },
+    })
+
+    const primaryZone = zoneByName['Floor'] || zoneRecords[0]
+    const secondaryZone = zoneByName['Beam'] || zoneRecords[1] || zoneRecords[0]
+    const assignedZoneSequence = JSON.stringify(
+      [primaryZone?.id, secondaryZone?.id].filter(Boolean)
+    )
+
+    const createdSessions = []
+    for (let i = 9; i >= 0; i--) {
+      const sessionDate = new Date()
+      sessionDate.setHours(0, 0, 0, 0)
+      sessionDate.setDate(sessionDate.getDate() - i)
+
+      const session = await prisma.classSession.create({
+        data: {
+          clubId: testClub.id,
+          templateId: recreationTemplate?.id,
+          date: sessionDate,
+          startTimeLocal: '16:00',
+          endTimeLocal: '17:00',
+          rotationMinutes: 15,
+          allowOverlap: false,
+          assignedZoneSequence,
+          status: 'PUBLISHED',
+          conflictFlag: i === 2,
+          generatedById: testUser.id,
+        },
+      })
+      createdSessions.push(session)
+    }
+
+    const emmaCoach = coachByEmail['emma.coach@elitegymnastics.com.au']
+    const liamCoach = coachByEmail['liam.coach@elitegymnastics.com.au']
+    if (emmaCoach || liamCoach) {
+      for (let i = 0; i < createdSessions.length; i++) {
+        const selectedCoach = i % 2 === 0 ? emmaCoach : (liamCoach || emmaCoach)
+        if (!selectedCoach) continue
+        await prisma.sessionCoach.create({
+          data: {
+            sessionId: createdSessions[i].id,
+            coachId: selectedCoach.id,
+          },
+        })
+      }
+    }
+
+    const rosterStart = new Date()
+    rosterStart.setHours(0, 0, 0, 0)
+    const rosterEnd = new Date(rosterStart)
+    rosterEnd.setDate(rosterStart.getDate() + 6)
+
+    const roster = await prisma.roster.create({
+      data: {
+        clubId: testClub.id,
+        scope: 'WEEK',
+        dayOfWeek: null,
+        startDate: rosterStart,
+        endDate: rosterEnd,
+        status: 'PUBLISHED',
+        generatedAt: new Date(),
+        generatedById: testUser.id,
+      },
+    })
+
+    for (let i = 0; i < Math.min(4, createdSessions.length); i++) {
+      const session = createdSessions[createdSessions.length - 1 - i]
+      const startsAt = new Date(session.date)
+      startsAt.setHours(16, 0, 0, 0)
+      const endsAt = new Date(session.date)
+      endsAt.setHours(17, 0, 0, 0)
+
+      await prisma.rosterSlot.create({
+        data: {
+          clubId: testClub.id,
+          rosterId: roster.id,
+          sessionId: session.id,
+          zoneId: primaryZone.id,
+          startsAt,
+          endsAt,
+          conflictFlag: i === 1,
+          conflictType: i === 1 ? 'coach' : null,
+          allowOverlap: false,
+        },
+      })
+    }
+
+    console.log('✓ Seeded sample class sessions, coaches, and roster slots')
+  }
+
+  const existingEquipmentCount = await prisma.equipment.count({ where: { clubId: testClub.id } })
+  if (existingEquipmentCount === 0) {
+    const floorZone = zoneByName['Floor'] || zoneRecords[0]
+    const beamZone = zoneByName['Beam'] || zoneRecords[1] || zoneRecords[0]
+    const vaultZone = zoneByName['Vault'] || zoneRecords[2] || zoneRecords[0]
+
+    await prisma.equipment.createMany({
+      data: [
+        {
+          clubId: testClub.id,
+          name: 'Main Floor Mat',
+          category: 'Gymnastics Apparatus',
+          serialNumber: `EGC-FLOOR-${testClub.id.slice(-4)}`,
+          condition: 'Good',
+          location: 'Floor',
+          zoneId: floorZone?.id,
+          inUse: true,
+          nextMaintenance: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          active: true,
+        },
+        {
+          clubId: testClub.id,
+          name: 'Competition Beam',
+          category: 'Gymnastics Apparatus',
+          serialNumber: `EGC-BEAM-${testClub.id.slice(-4)}`,
+          condition: 'Fair',
+          location: 'Beam',
+          zoneId: beamZone?.id,
+          inUse: false,
+          nextMaintenance: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+          active: true,
+        },
+        {
+          clubId: testClub.id,
+          name: 'Vault Table A',
+          category: 'Gymnastics Apparatus',
+          serialNumber: `EGC-VAULT-${testClub.id.slice(-4)}`,
+          condition: 'Excellent',
+          location: 'Vault',
+          zoneId: vaultZone?.id,
+          inUse: true,
+          nextMaintenance: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
+          active: true,
+        },
+      ],
+    })
+
+    console.log('✓ Seeded sample equipment')
+  }
+
+  const equipmentRecords = await prisma.equipment.findMany({ where: { clubId: testClub.id, active: true } })
+  const primaryEquipment = equipmentRecords[0]
+
+  const existingSafetyIssueCount = await prisma.safetyIssue.count({ where: { clubId: testClub.id } })
+  if (existingSafetyIssueCount === 0 && primaryEquipment) {
+    await prisma.safetyIssue.createMany({
+      data: [
+        {
+          clubId: testClub.id,
+          equipmentId: primaryEquipment.id,
+          issueType: 'CRITICAL',
+          title: 'Mat edge separation',
+          description: 'Edge seam has separated and exposes foam core.',
+          reportedBy: 'Emma Coach',
+          reportedByEmail: 'emma.coach@elitegymnastics.com.au',
+          status: 'OPEN',
+          priority: 'HIGH',
+          createdAt: new Date(),
+        },
+        {
+          clubId: testClub.id,
+          equipmentId: primaryEquipment.id,
+          issueType: 'NON_CRITICAL',
+          title: 'Surface scuffing',
+          description: 'Minor surface wear observed during inspection.',
+          reportedBy: 'Liam Coach',
+          reportedByEmail: 'liam.coach@elitegymnastics.com.au',
+          status: 'IN_PROGRESS',
+          priority: 'MEDIUM',
+          createdAt: new Date(new Date().setMonth(new Date().getMonth() - 1)),
+        },
+      ],
+    })
+
+    console.log('✓ Seeded sample safety issues')
+  }
+
+  const existingMaintenanceTaskCount = await prisma.maintenanceTask.count({ where: { clubId: testClub.id } })
+  if (existingMaintenanceTaskCount === 0 && primaryEquipment) {
+    const now = new Date()
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    await prisma.maintenanceTask.createMany({
+      data: [
+        {
+          clubId: testClub.id,
+          equipmentId: primaryEquipment.id,
+          taskType: 'INSPECTION',
+          title: 'Monthly floor inspection',
+          description: 'Routine monthly safety inspection.',
+          scheduledDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+          dueDate: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+          status: 'IN_PROGRESS',
+          priority: 'HIGH',
+          isRecurring: true,
+          recurrencePattern: 'MONTHLY',
+        },
+        {
+          clubId: testClub.id,
+          equipmentId: primaryEquipment.id,
+          taskType: 'REPAIR',
+          title: 'Repair mat edge seam',
+          description: 'Repair and reseal floor mat edge.',
+          scheduledDate: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+          dueDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
+          status: 'PENDING',
+          priority: 'MEDIUM',
+          isRecurring: false,
+        },
+        {
+          clubId: testClub.id,
+          equipmentId: primaryEquipment.id,
+          taskType: 'CLEANING',
+          title: 'Deep clean landing zones',
+          description: 'Monthly deep clean completed by maintenance team.',
+          scheduledDate: new Date(thisMonthStart.getTime() + 2 * 24 * 60 * 60 * 1000),
+          dueDate: new Date(thisMonthStart.getTime() + 4 * 24 * 60 * 60 * 1000),
+          completedDate: new Date(thisMonthStart.getTime() + 4 * 24 * 60 * 60 * 1000),
+          status: 'COMPLETED',
+          priority: 'LOW',
+          isRecurring: true,
+          recurrencePattern: 'MONTHLY',
+        },
+      ],
+    })
+
+    console.log('✓ Seeded sample maintenance tasks')
+  }
+
+  const existingInjuryCount = await prisma.injurySubmission.count({ where: { clubId: testClub.id } })
+  if (existingInjuryCount === 0) {
+    let criticalTemplate = await prisma.injuryFormTemplate.findFirst({
+      where: {
+        clubId: testClub.id,
+        name: { contains: 'Critical' },
+      },
+    })
+
+    if (!criticalTemplate) {
+      criticalTemplate = await prisma.injuryFormTemplate.create({
+        data: {
+          clubId: testClub.id,
+          name: 'Critical Injury Form',
+          description: 'Template for high-severity incident reports',
+          publicUrl: `${testClub.slug}-critical-injury-form`,
+          isDefault: false,
+          active: true,
+        },
+      })
+    }
+
+    for (let i = 0; i < 6; i++) {
+      const submittedAt = new Date()
+      submittedAt.setMonth(submittedAt.getMonth() - i)
+      submittedAt.setDate(10)
+
+      const status = i === 0 ? 'NEW' : i === 1 ? 'UNDER_REVIEW' : 'RESOLVED'
+      const useCriticalTemplate = i % 2 === 0
+
+      const submission = await prisma.injurySubmission.create({
+        data: {
+          clubId: testClub.id,
+          templateId: useCriticalTemplate ? criticalTemplate.id : null,
+          templateName: useCriticalTemplate ? criticalTemplate.name : 'General Injury Form',
+          status,
+          priority: useCriticalTemplate ? 'CRITICAL' : 'MEDIUM',
+          submittedAt,
+          zoneId: zoneByName['Floor']?.id || null,
+          equipmentId: primaryEquipment?.id || null,
+        },
+      })
+
+      if (status === 'RESOLVED') {
+        await prisma.injurySubmission.update({
+          where: { id: submission.id },
+          data: {
+            status: 'RESOLVED',
+          },
+        })
+      }
+    }
+
+    console.log('✓ Seeded sample injury submissions')
+  }
+
   console.log('')
   console.log('🎉 Database seed completed!')
   console.log('')

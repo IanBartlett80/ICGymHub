@@ -40,7 +40,23 @@ export async function POST(
     }
 
     // Generate public URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get('origin') || 'http://localhost:3000';
+    const forwardedProto = req.headers.get('x-forwarded-proto');
+    const forwardedHost = req.headers.get('x-forwarded-host');
+    const host = req.headers.get('host');
+    const requestOrigin = forwardedHost
+      ? `${forwardedProto || 'https'}://${forwardedHost}`
+      : host
+      ? `${forwardedProto || 'https'}://${host}`
+      : req.headers.get('origin');
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || requestOrigin;
+
+    if (!baseUrl) {
+      return NextResponse.json(
+        { error: 'Application base URL is not configured' },
+        { status: 500 }
+      );
+    }
+
     const publicUrl = `${baseUrl}/zone/${publicId}`;
 
     // Generate QR code data URL (using a simple text representation for now)

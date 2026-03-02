@@ -39,8 +39,15 @@ export async function GET(
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
-      requestOrigin ||
-      'http://localhost:3000';
+      requestOrigin;
+
+    if (!baseUrl) {
+      return NextResponse.json(
+        { error: 'Application base URL is not configured' },
+        { status: 500 }
+      );
+    }
+
     const publicUrl = `${baseUrl}/injury-report/${template.publicUrl}`;
 
     // Generate QR code as data URL

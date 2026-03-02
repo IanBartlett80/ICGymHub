@@ -42,12 +42,11 @@ Replace:
 
 ### 4. Test Your Configuration
 
-After updating `.env.local`, restart your development server and test the SMTP connection:
+After updating environment variables, restart the app service and test the SMTP connection:
 
 ```bash
-# Restart the dev server
 # Then visit:
-http://localhost:3000/api/test-email
+https://your-production-domain.com/api/test-email
 ```
 
 You should see:
@@ -60,7 +59,7 @@ You should see:
 
 ### 5. Verify Email Workflow
 
-1. **Register a new club** at http://localhost:3000/register
+1. **Register a new club** at https://your-production-domain.com/register
    - Use a real email address that matches your domain
    - You'll receive a verification email
 
@@ -84,13 +83,13 @@ You should see:
 
 #### Emails not sending
 - Check the terminal/console for error messages
-- Verify `.env.local` file has been saved
-- Restart the dev server after changing environment variables
+- Verify environment variables are saved in your deployment platform
+- Restart/redeploy the app after changing environment variables
 
 #### Error: "SMTP configuration is incomplete"
-- Ensure all SMTP variables are set in `.env.local`
+- Ensure all SMTP variables are set in your deployment environment
 - No quotes needed around values
-- Restart dev server after changes
+- Restart/redeploy after changes
 
 ### Microsoft 365 SMTP Limits
 

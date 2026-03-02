@@ -16,7 +16,7 @@ GymHub is a multi-tenant web application designed specifically for Australian gy
 
 - **Frontend**: Next.js 15 with React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
-- **Database**: SQLite (local dev), PostgreSQL (production on DigitalOcean)
+- **Database**: PostgreSQL (production on DigitalOcean)
 - **ORM**: Prisma
 - **Authentication**: Custom JWT-based auth with secure sessions
 - **Multi-Tenancy**: Strict app-level club data separation with optional Postgres RLS
@@ -25,7 +25,7 @@ GymHub is a multi-tenant web application designed specifically for Australian gy
 
 - Node.js 18+ and npm/yarn
 - Git
-- **No Docker needed!** (SQLite runs locally)
+- **No Docker needed!**
 
 ## Quick Start (2 minutes)
 
@@ -41,7 +41,7 @@ npm install
 npm run prisma:migrate
 ```
 
-This creates the SQLite database at `prisma/dev.db`
+This applies migrations to the configured PostgreSQL database.
 
 ### 3. Seed Test Data (Optional)
 
@@ -59,14 +59,14 @@ Creates test club: **Elite Gymnastics Club**
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open your deployed app URL.
 
 ## Key URLs
 
-- **Landing Page**: [http://localhost:3000](http://localhost:3000)
-- **Register**: [http://localhost:3000/register](http://localhost:3000/register)
-- **Sign In**: [http://localhost:3000/sign-in](http://localhost:3000/sign-in)
-- **Dashboard**: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+- **Landing Page**: https://your-production-domain.com
+- **Register**: https://your-production-domain.com/register
+- **Sign In**: https://your-production-domain.com/sign-in
+- **Dashboard**: https://your-production-domain.com/dashboard
 
 ## Features Implemented ✅
 
@@ -80,14 +80,10 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Database
 
-**Local Development**: SQLite (`prisma/dev.db`)
-- Zero setup, instant development
-- Database file auto-created on first migration
-
 **Production** (DigitalOcean):
-- Switch datasource to PostgreSQL in Prisma schema
-- Use DigitalOcean Managed PostgreSQL connection string
-- Same codebase, just change `.env` variables
+- Use the DigitalOcean Managed PostgreSQL connection string in `DATABASE_URL`
+- Ensure SSL is enabled via `?sslmode=require`
+- Keep App Platform environment variables set for runtime
 
 ## Project Structure
 
@@ -111,8 +107,7 @@ ICGymHub/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── seed.js
-│   └── dev.db (auto-created)
-├── .env.local (or .env) pointing to prisma/dev.db
+├── .env.local (or .env) pointing to DigitalOcean PostgreSQL
 └── package.json
 ```
 

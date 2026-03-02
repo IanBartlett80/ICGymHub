@@ -79,7 +79,6 @@ export async function GET(req: NextRequest) {
     const totalSubmissions = submissions.length;
 
     // Average response time (time from submission to first status change)
-    // Note: Using simple calculation instead of complex SQL for SQLite compatibility
     const submissionsWithAudit = await prisma.injurySubmission.findMany({
       where: {
         clubId: authResult.user.clubId,

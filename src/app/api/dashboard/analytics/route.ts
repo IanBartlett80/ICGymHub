@@ -249,7 +249,6 @@ export async function GET(req: NextRequest) {
     const recurringTasks = await prisma.maintenanceTask.count({
       where: {
         clubId: decoded.clubId,
-        isRecurring: true,
         status: {
           not: 'CANCELLED'
         }

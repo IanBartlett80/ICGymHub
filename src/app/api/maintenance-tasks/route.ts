@@ -5,7 +5,7 @@ import { authenticateRequest } from '@/lib/apiAuth';
 // GET /api/maintenance-tasks - List maintenance tasks with filtering
 export async function GET(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const { searchParams } = new URL(request.url);
     const equipmentId = searchParams.get('equipmentId');
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 // POST /api/maintenance-tasks - Create new maintenance task
 export async function POST(request: NextRequest) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const body = await request.json();
     const {
@@ -109,20 +109,9 @@ export async function POST(request: NextRequest) {
       dueDate,
       assignedTo,
       assignedToName,
-      assignedToEmail,
       priority,
       notes,
       photos,
-      // Recurring fields
-      isRecurring,
-      recurrencePattern,
-      recurrenceInterval,
-      recurrenceDay,
-      recurrenceDayOfWeek,
-      recurrenceEndDate,
-      // Reminder fields
-      reminderDays,
-      nextReminderDate,
     } = body;
 
     // Validation
@@ -188,24 +177,10 @@ export async function POST(request: NextRequest) {
         description: description.trim(),
         scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        assignedTo: assignedTo?.trim() || null,
-        assignedToName: assignedToName?.trim() || null,
-        assignedToEmail: assignedToEmail?.trim() || null,
+        assignedTo: assignedToName?.trim() || assignedTo?.trim() || null,
         priority: priority || 'MEDIUM',
         notes: notes?.trim() || null,
         photos: photos && photos.length > 0 ? JSON.stringify(photos) : null,
-        // Recurring fields
-        isRecurring: isRecurring || false,
-        recurrencePattern: isRecurring ? recurrencePattern : null,
-        recurrenceInterval: isRecurring ? recurrenceInterval : null,
-        recurrenceDay: isRecurring ? recurrenceDay : null,
-        recurrenceDayOfWeek: isRecurring ? recurrenceDayOfWeek : null,
-        recurrenceEndDate: isRecurring && recurrenceEndDate ? new Date(recurrenceEndDate) : null,
-        // Reminder fields
-        reminderDays: reminderDays || null,
-        nextReminderDate: nextReminderDate ? new Date(nextReminderDate) : null,
-        remindersSent: null,
-        lastReminderSent: null,
         status: 'PENDING',
       },
       include: {

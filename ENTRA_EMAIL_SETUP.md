@@ -58,7 +58,7 @@ After registration, you'll see the Overview page. **Copy these values** (you'll 
 
 ### 5. Configure Environment Variables
 
-Update your `.env.local` file with the values you copied:
+Update your deployment environment variables with the values you copied:
 
 ```bash
 # Email Configuration - Azure Entra ID (Microsoft Graph API)
@@ -68,7 +68,7 @@ AZURE_CLIENT_SECRET=your-secret-value-from-step-3
 AZURE_SENDER_EMAIL=your-email@yourdomain.com
 
 # App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://your-production-domain.com
 ```
 
 **Important Notes:**
@@ -76,21 +76,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - This email address will be used as the "From" address for all emails
 - The mailbox must exist and be active (can be a shared mailbox)
 
-### 6. Restart Your Dev Server
+### 6. Redeploy / Restart the App Service
 
 ```bash
-# Kill existing process
-pkill -f "next dev"
-
-# Start fresh
-npm run dev
+# Trigger a new deployment (or restart the service)
 ```
 
 ### 7. Test Your Configuration
 
 #### Option A: Using the API Endpoint
 ```bash
-curl http://localhost:3000/api/test-email
+curl https://your-production-domain.com/api/test-email
 ```
 
 **Success Response:**
@@ -103,7 +99,7 @@ curl http://localhost:3000/api/test-email
 ```
 
 #### Option B: Register a Test Club
-1. Go to http://localhost:3000/register
+1. Go to https://your-production-domain.com/register
 2. Use a real email address from your domain
 3. Complete the registration form
 4. Check your inbox for the verification email
@@ -133,9 +129,9 @@ Check your terminal output. You should see:
 **Problem**: Incorrect Tenant ID.
 
 **Solution**:
-1. Verify your `AZURE_TENANT_ID` in .env.local
+1. Verify your `AZURE_TENANT_ID` in deployment environment variables
 2. Check Azure Portal → Azure Active Directory → Overview → Tenant ID
-3. Ensure no extra spaces or quotes in the .env file
+3. Ensure no extra spaces or quotes in your environment variable values
 
 ### Error: "AADSTS7000215: Invalid client secret provided"
 
@@ -144,15 +140,15 @@ Check your terminal output. You should see:
 **Solution**:
 1. Go to App Registration → Certificates & secrets
 2. Create a new client secret
-3. Update `AZURE_CLIENT_SECRET` in .env.local
-4. Restart dev server
+3. Update `AZURE_CLIENT_SECRET` in deployment environment variables
+4. Redeploy/restart the service
 
 ### Error: "Sender email not configured"
 
 **Problem**: `AZURE_SENDER_EMAIL` is not set or mailbox doesn't exist.
 
 **Solution**:
-1. Set `AZURE_SENDER_EMAIL` in .env.local
+1. Set `AZURE_SENDER_EMAIL` in deployment environment variables
 2. Verify the mailbox exists in Microsoft 365 Admin Center
 3. Use the full email address (e.g., noreply@yourdomain.com)
 

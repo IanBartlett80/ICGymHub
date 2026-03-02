@@ -67,6 +67,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('userData')
@@ -81,20 +82,47 @@ export default function DashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
+      setAnalyticsError(null)
       const response = await fetch('/api/dashboard/analytics', {
         credentials: 'include'
       })
+
+      if (response.status === 401) {
+        localStorage.removeItem('userData')
+        setAnalyticsError('Your session expired. Please sign in again.')
+        router.push('/sign-in?sessionExpired=true')
+        return
+      }
+
       if (response.ok) {
         const data = await response.json()
         console.log('Dashboard analytics:', data)
         setStats(data)
       } else {
         console.error('Failed to fetch dashboard analytics:', response.statusText)
+        setAnalyticsError('Unable to load analytics data right now.')
       }
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error)
+      setAnalyticsError('Unable to load analytics data right now.')
     }
   }
+
+  const hasAnalyticsData = !!stats && (
+    stats.rosters.weeklyClasses > 0 ||
+    stats.rosters.activeConflicts > 0 ||
+    stats.safety.totalThisMonth > 0 ||
+    stats.safety.openIncidents > 0 ||
+    stats.equipment.totalItems > 0 ||
+    stats.maintenance.pendingTasks > 0 ||
+    stats.maintenance.completedThisMonth > 0 ||
+    stats.charts.weeklyClasses.some(item => item.classes > 0 || item.conflicts > 0) ||
+    stats.charts.injuryTrends.some(item => item.incidents > 0 || item.critical > 0) ||
+    stats.charts.equipmentStatus.some(item => item.value > 0) ||
+    stats.charts.maintenanceTrends.some(item => item.completed > 0 || item.pending > 0) ||
+    stats.charts.injurySeverity.some(item => item.value > 0) ||
+    stats.charts.safetyIssueTrends.some(item => item.total > 0 || item.critical > 0)
+  )
 
   const getTrendIndicator = (value: number) => {
     if (value > 0) return <span className="text-green-600 text-sm">↑ {value}%</span>
@@ -122,6 +150,18 @@ export default function DashboardPage() {
             Here's what's happening at {user.clubName} today
           </p>
         </div>
+
+        {analyticsError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {analyticsError}
+          </div>
+        )}
+
+        {stats && !hasAnalyticsData && !analyticsError && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+            No analytics data yet for your club. Add classes, injury reports, equipment, or maintenance tasks to populate the dashboard graphs.
+          </div>
+        )}
 
         {/* Key Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const task = await prisma.maintenanceTask.findFirst({
       where: {
@@ -47,7 +47,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     const body = await request.json();
     const {
@@ -59,21 +59,10 @@ export async function PUT(
       dueDate,
       assignedTo,
       assignedToName,
-      assignedToEmail,
       completedBy,
       completedDate,
       cost,
       notes,
-      // Recurring fields
-      isRecurring,
-      recurrencePattern,
-      recurrenceInterval,
-      recurrenceDay,
-      recurrenceDayOfWeek,
-      recurrenceEndDate,
-      // Reminder fields
-      reminderDays,
-      nextReminderDate,
     } = body;
 
     // Verify task exists and belongs to club
@@ -187,50 +176,12 @@ export async function PUT(
       updateData.assignedToName = assignedToName?.trim() || null;
     }
 
-    if (assignedToEmail !== undefined) {
-      updateData.assignedToEmail = assignedToEmail?.trim() || null;
-    }
-
     if (completedBy !== undefined && completedBy) {
       updateData.completedBy = completedBy.trim();
     }
 
     if (cost !== undefined) {
       updateData.cost = cost || null;
-    }
-
-    // Recurring fields
-    if (isRecurring !== undefined) {
-      updateData.isRecurring = isRecurring;
-    }
-
-    if (recurrencePattern !== undefined) {
-      updateData.recurrencePattern = recurrencePattern || null;
-    }
-
-    if (recurrenceInterval !== undefined) {
-      updateData.recurrenceInterval = recurrenceInterval || null;
-    }
-
-    if (recurrenceDay !== undefined) {
-      updateData.recurrenceDay = recurrenceDay || null;
-    }
-
-    if (recurrenceDayOfWeek !== undefined) {
-      updateData.recurrenceDayOfWeek = recurrenceDayOfWeek || null;
-    }
-
-    if (recurrenceEndDate !== undefined) {
-      updateData.recurrenceEndDate = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
-    }
-
-    // Reminder fields
-    if (reminderDays !== undefined) {
-      updateData.reminderDays = reminderDays || null;
-    }
-
-    if (nextReminderDate !== undefined) {
-      updateData.nextReminderDate = nextReminderDate ? new Date(nextReminderDate) : null;
     }
 
     if (notes !== undefined) {
@@ -268,7 +219,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { user, club } = await authenticateRequest(request);
+    const { club } = await authenticateRequest(request);
 
     // Verify task exists and belongs to club
     const existing = await prisma.maintenanceTask.findFirst({

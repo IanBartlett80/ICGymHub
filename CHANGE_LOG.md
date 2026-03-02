@@ -114,6 +114,6 @@ model InjurySubmission {
 
 ## Notes
 
-- Current database: SQLite
+- Current database: PostgreSQL (DigitalOcean Managed Database)
 - Schema location: `/workspaces/ICGymHub/prisma/schema.prisma`
 - Migration directory: `/workspaces/ICGymHub/prisma/migrations/`
