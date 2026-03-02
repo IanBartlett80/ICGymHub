@@ -340,10 +340,10 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       <div className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300 print:ml-0`}>
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
-          <div className="px-4 py-2 flex items-center justify-between">
+          <div className="px-4 py-1.5 flex items-center justify-between">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center">
-              <div className="relative w-96 h-24">
+              <div className="relative w-40 h-14">
                 <Image 
                   src="/imgs/GymHub_Logo.png" 
                   alt="GymHub"
@@ -354,54 +354,21 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               </div>
             </Link>
 
-            {/* Google-Style Service Navigation Tabs */}
-            <div className="flex items-center gap-4 ml-8">
-              {services.map((service) => {
-                if (service.external) {
-                  return (
-                    <a
-                      key={service.id}
-                      href={service.basePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative px-2 py-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      {service.name}
-                    </a>
-                  )
-                }
-                return (
-                  <Link
-                    key={service.id}
-                    href={service.basePath}
-                    onClick={() => setActiveService(service.id as ServiceType)}
-                    className={`relative px-2 py-1 text-sm transition-colors ${
-                      activeService === service.id
-                        ? 'text-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {service.name}
-                    {activeService === service.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-
             {/* Right Side Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Notification Bell */}
               <NotificationBell />
 
               {/* Settings Icon */}
               <Link
                 href="/dashboard/admin-config"
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
+                className="p-2 hover:bg-gray-100 rounded-full transition text-gray-500 hover:text-gray-700"
                 title="Club Settings"
               >
-                <span className="text-2xl">⚙️</span>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
               </Link>
               
               {/* User Profile */}
@@ -409,13 +376,13 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+                    className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition"
                   >
                     <div className="text-right">
                       <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
                       <p className="text-xs text-gray-500">{user.role}</p>
                     </div>
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
                       {user.fullName.charAt(0).toUpperCase()}
                     </div>
                   </button>
@@ -458,6 +425,44 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                 )}
               </div>
             )}
+            </div>
+          </div>
+
+          {/* Service Navigation Tabs - Bottom Left */}
+          <div className="px-4 border-t border-gray-100">
+            <div className="flex items-center gap-5 min-h-10">
+              {services.map((service) => {
+                if (service.external) {
+                  return (
+                    <a
+                      key={service.id}
+                      href={service.basePath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative px-1 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      {service.name}
+                    </a>
+                  )
+                }
+                return (
+                  <Link
+                    key={service.id}
+                    href={service.basePath}
+                    onClick={() => setActiveService(service.id as ServiceType)}
+                    className={`relative px-1 py-2.5 text-sm transition-colors ${
+                      activeService === service.id
+                        ? 'text-blue-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {service.name}
+                    {activeService === service.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                    )}
+                  </Link>
+                )
+              })}
             </div>
           </div>
 
