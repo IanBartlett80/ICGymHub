@@ -149,6 +149,8 @@ model ComplianceItem {
   categoryId      String?
   owner           User?              @relation("ComplianceItemOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   ownerId         String?
+  ownerName       String?            // Quick-add owner without creating User account
+  ownerEmail      String?
   createdBy       User?              @relation("ComplianceItemCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdById     String?
   completedBy     User?              @relation("ComplianceItemCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
@@ -158,6 +160,7 @@ model ComplianceItem {
   description     String?
   deadlineDate    DateTime
   status          String             @default("OPEN") // OPEN, IN_PROGRESS, COMPLETED
+  recurringSchedule String?          @default("NONE") // NONE, DAILY, WEEKLY, MONTHLY, YEARLY
 
   // Reminders and files are stored as JSON strings
   reminderSchedule String?           // JSON array of day offsets: [90,30,7,1]

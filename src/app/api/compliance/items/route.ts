@@ -5,6 +5,7 @@ import {
   calculateNextReminderDate,
   getDerivedComplianceStatus,
   normalizeFileLinks,
+  normalizeRecurringSchedule,
   normalizeReminderSchedule,
   parseJsonArray,
 } from '@/lib/compliance'
@@ -147,8 +148,11 @@ export async function POST(request: NextRequest) {
     const description = typeof body.description === 'string' ? body.description.trim() : ''
     const categoryId = typeof body.categoryId === 'string' && body.categoryId !== 'none' ? body.categoryId : null
     const ownerId = typeof body.ownerId === 'string' && body.ownerId !== 'none' ? body.ownerId : null
+    const ownerName = typeof body.ownerName === 'string' ? body.ownerName.trim() : ''
+    const ownerEmail = typeof body.ownerEmail === 'string' ? body.ownerEmail.trim() : ''
     const notes = typeof body.notes === 'string' ? body.notes.trim() : ''
     const status = typeof body.status === 'string' ? body.status : 'OPEN'
+    const recurringSchedule = normalizeRecurringSchedule(body.recurringSchedule)
 
     if (!title) {
       return NextResponse.json({ error: 'Item title is required' }, { status: 400 })
@@ -205,11 +209,14 @@ export async function POST(request: NextRequest) {
         clubId: club.id,
         categoryId,
         ownerId,
+        ownerName: ownerName || null,
+        ownerEmail: ownerEmail || null,
         createdById: user.id,
         title,
         description: description || null,
         deadlineDate,
         status,
+        recurringSchedule,
         reminderSchedule: reminderSchedule.length ? JSON.stringify(reminderSchedule) : null,
         nextReminderDate,
         fileLinks: fileLinks.length ? JSON.stringify(fileLinks) : null,

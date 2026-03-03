@@ -2,6 +2,9 @@ export const ALLOWED_REMINDER_DAYS = [90, 30, 7, 1] as const
 
 export type ReminderDay = typeof ALLOWED_REMINDER_DAYS[number]
 
+export const RECURRING_SCHEDULES = ['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] as const
+export type RecurringSchedule = typeof RECURRING_SCHEDULES[number]
+
 export interface FileLink {
   name: string
   url: string
@@ -72,4 +75,35 @@ export function calculateNextReminderDate(deadlineDate: Date, reminderDays: numb
   }
 
   return null
+}
+
+export function normalizeRecurringSchedule(input: unknown): RecurringSchedule {
+  if (typeof input === 'string' && RECURRING_SCHEDULES.includes(input as RecurringSchedule)) {
+    return input as RecurringSchedule
+  }
+  return 'NONE'
+}
+
+export function calculateNextDeadline(currentDeadline: Date, recurringSchedule: RecurringSchedule): Date {
+  const nextDeadline = new Date(currentDeadline)
+  
+  switch (recurringSchedule) {
+    case 'DAILY':
+      nextDeadline.setDate(nextDeadline.getDate() + 1)
+      break
+    case 'WEEKLY':
+      nextDeadline.setDate(nextDeadline.getDate() + 7)
+      break
+    case 'MONTHLY':
+      nextDeadline.setMonth(nextDeadline.getMonth() + 1)
+      break
+    case 'YEARLY':
+      nextDeadline.setFullYear(nextDeadline.getFullYear() + 1)
+      break
+    case 'NONE':
+    default:
+      return currentDeadline
+  }
+  
+  return nextDeadline
 }

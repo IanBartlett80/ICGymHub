@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authenticateRequest } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import {
+  calculateNextDeadline,
   calculateNextReminderDate,
   getDerivedComplianceStatus,
   normalizeFileLinks,
+  normalizeRecurringSchedule,
   normalizeReminderSchedule,
   parseJsonArray,
 } from '@/lib/compliance'
@@ -96,8 +98,11 @@ export async function PUT(
       description?: string | null
       categoryId?: string | null
       ownerId?: string | null
+      ownerName?: string | null
+      ownerEmail?: string | null
       deadlineDate?: Date
       status?: string
+      recurringSchedule?: string
       reminderSchedule?: string | null
       nextReminderDate?: Date | null
       fileLinks?: string | null
@@ -146,6 +151,20 @@ export async function PUT(
       updateData.ownerId = ownerId
     }
 
+    if (body.ownerName !== undefined) {
+      const ownerName = typeof body.ownerName === 'string' ? body.ownerName.trim() : ''
+      updateData.ownerName = ownerName || null
+    }
+
+    if (body.ownerEmail !== undefined) {
+      const ownerEmail = typeof body.ownerEmail === 'string' ? body.ownerEmail.trim() : ''
+      updateData.ownerEmail = ownerEmail || null
+    }
+
+    if (body.recurringSchedule !== undefined) {
+      updateData.recurringSchedule = normalizeRecurringSchedule(body.recurringSchedule)
+    }
+
     const nextStatus = body.status !== undefined ? body.status : existing.status
     const validStatuses = ['OPEN', 'IN_PROGRESS', 'COMPLETED']
     if (!validStatuses.includes(nextStatus)) {
@@ -177,9 +196,27 @@ export async function PUT(
     }
 
     if (nextStatus === 'COMPLETED') {
-      updateData.completedAt = body.completedAt ? new Date(body.completedAt) : new Date()
-      updateData.completedById = user.id
-      updateData.nextReminderDate = null
+      // Handle recurring items: move deadline forward instead of marking complete
+      const recurringSchedule = body.recurringSchedule !== undefined 
+        ? normalizeRecurringSchedule(body.recurringSchedule)
+        : existing.recurringSchedule || 'NONE'
+      
+      if (recurringSchedule !== 'NONE') {
+        // Recurring item: update deadline and reset to OPEN
+        const newDeadline = calculateNextDeadline(nextDeadlineDate, recurringSchedule)
+        updateData.deadlineDate = newDeadline
+        updateData.status = 'OPEN'
+        updateData.completedAt = null
+        updateData.completedById = null
+        updateData.nextReminderDate = calculateNextReminderDate(newDeadline, reminderSchedule)
+        updateData.lastReminderSent = null
+        updateData.remindersSent = null
+      } else {
+        // Non-recurring item: mark as completed
+        updateData.completedAt = body.completedAt ? new Date(body.completedAt) : new Date()
+        updateData.completedById = user.id
+        updateData.nextReminderDate = null
+      }
     } else {
       updateData.completedAt = null
       updateData.completedById = null

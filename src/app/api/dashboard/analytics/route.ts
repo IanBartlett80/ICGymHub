@@ -476,6 +476,48 @@ export async function GET(req: NextRequest) {
       ? ((totalIncidentsThisMonth - totalIncidentsPreviousMonth) / totalIncidentsPreviousMonth * 100).toFixed(1)
       : '0'
 
+    // COMPLIANCE STATS
+    const overdueCompliance = await prisma.complianceItem.count({
+      where: {
+        clubId: decoded.clubId,
+        status: { not: 'COMPLETED' },
+        deadlineDate: {
+          lt: now
+        }
+      }
+    })
+
+    const thirtyDaysFromNow = new Date(now)
+    thirtyDaysFromNow.setDate(now.getDate() + 30)
+
+    const dueInThirtyDays = await prisma.complianceItem.count({
+      where: {
+        clubId: decoded.clubId,
+        status: { not: 'COMPLETED' },
+        deadlineDate: {
+          gte: now,
+          lte: thirtyDaysFromNow
+        }
+      }
+    })
+
+    const totalComplianceItems = await prisma.complianceItem.count({
+      where: {
+        clubId: decoded.clubId
+      }
+    })
+
+    const completedComplianceItems = await prisma.complianceItem.count({
+      where: {
+        clubId: decoded.clubId,
+        status: 'COMPLETED'
+      }
+    })
+
+    const complianceCompletionRate = totalComplianceItems > 0
+      ? Math.round((completedComplianceItems / totalComplianceItems) * 100)
+      : 0
+
     return NextResponse.json({
       rosters: {
         weeklyClasses,
@@ -510,6 +552,12 @@ export async function GET(req: NextRequest) {
         completionRate: (pendingMaintenanceTasks + completedThisMonth) > 0
           ? Math.round((completedThisMonth / (pendingMaintenanceTasks + completedThisMonth)) * 100)
           : 0
+      },
+      compliance: {
+        overdueItems: overdueCompliance,
+        dueInThirtyDays,
+        completionRate: complianceCompletionRate,
+        totalItems: totalComplianceItems
       },
       charts: {
         weeklyClasses: weeklyClassData,

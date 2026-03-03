@@ -44,6 +44,9 @@ interface ComplianceItem {
   deadlineDate: string
   categoryId: string | null
   ownerId: string | null
+  ownerName: string | null
+  ownerEmail: string | null
+  recurringSchedule: string
   reminderSchedule: number[]
   fileLinks: ComplianceFileLink[]
   category: ComplianceCategory | null
@@ -89,8 +92,11 @@ interface ItemFormState {
   notes: string
   categoryId: string
   ownerId: string
+  ownerName: string
+  ownerEmail: string
   deadlineDate: string
   status: string
+  recurringSchedule: string
   reminderSchedule: number[]
   fileLinks: ComplianceFileLink[]
 }
@@ -104,8 +110,11 @@ function buildDefaultItemForm(): ItemFormState {
     notes: '',
     categoryId: 'none',
     ownerId: 'none',
+    ownerName: '',
+    ownerEmail: '',
     deadlineDate: '',
     status: 'OPEN',
+    recurringSchedule: 'NONE',
     reminderSchedule: [...DEFAULT_REMINDER_SCHEDULE],
     fileLinks: [],
   }
@@ -231,8 +240,11 @@ export default function ComplianceManagerPage() {
       notes: item.notes || '',
       categoryId: item.categoryId || 'none',
       ownerId: item.ownerId || 'none',
+      ownerName: item.ownerName || '',
+      ownerEmail: item.ownerEmail || '',
       deadlineDate: item.deadlineDate.split('T')[0],
       status: item.status,
+      recurringSchedule: item.recurringSchedule || 'NONE',
       reminderSchedule: item.reminderSchedule || [],
       fileLinks: item.fileLinks || [],
     })
@@ -729,10 +741,57 @@ export default function ComplianceManagerPage() {
                   className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
                   <option value="none">Unassigned</option>
+                  <option value="quick-add">➕ Add new owner (quick)</option>
                   {owners.map((owner) => (
                     <option key={owner.id} value={owner.id}>{owner.fullName}</option>
                   ))}
                 </select>
+              </div>
+
+              {itemForm.ownerId === 'quick-add' && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Owner Name</label>
+                    <input
+                      type="text"
+                      value={itemForm.ownerName}
+                      onChange={(event) => setItemForm((prev) => ({ ...prev, ownerName: event.target.value }))}
+                      placeholder="Enter owner name"
+                      className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Owner Email</label>
+                    <input
+                      type="email"
+                      value={itemForm.ownerEmail}
+                      onChange={(event) => setItemForm((prev) => ({ ...prev, ownerEmail: event.target.value }))}
+                      placeholder="owner@example.com"
+                      className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Recurring Schedule</label>
+                <select
+                  value={itemForm.recurringSchedule}
+                  onChange={(event) => setItemForm((prev) => ({ ...prev, recurringSchedule: event.target.value }))}
+                  className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="NONE">None (One-time)</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                  <option value="YEARLY">Yearly</option>
+                </select>
+                {itemForm.recurringSchedule !== 'NONE' && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    When marked complete, deadline will automatically advance by {itemForm.recurringSchedule.toLowerCase()} interval
+                  </p>
+                )}
               </div>
 
               <div>

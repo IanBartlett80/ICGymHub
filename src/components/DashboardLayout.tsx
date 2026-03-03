@@ -69,7 +69,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
     { id: 'safety' as ServiceType, name: 'Safety', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
-    { id: 'compliance' as ServiceType, name: 'Compliance Manager', basePath: '/dashboard/compliance-manager' },
+    { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
   ]
 
@@ -334,7 +334,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               {activeService === 'rosters' && 'Rosters'}
               {activeService === 'safety' && 'Safety'}
               {activeService === 'equipment' && 'Equipment'}
-              {activeService === 'compliance' && 'Compliance Manager'}
+              {activeService === 'compliance' && 'Compliance'}
             </h2>
           )}
           <button
