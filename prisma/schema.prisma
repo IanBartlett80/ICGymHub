@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,345 +10,456 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enum stand-ins for SQLite (use string values)
+// Keep constants in code to validate values consistently.
+
+// Clubs/Tenants
 model Club {
-  id                  String               @id @default(cuid())
-  name                String               @unique
-  slug                String               @unique
-  abn                 String?              @unique
-  domain              String               @unique
-  status              String               @default("PENDING_VERIFICATION")
-  timezone            String               @default("Australia/Sydney")
-  address             String?
-  city                String?
-  state               String?
-  postalCode          String?
-  phone               String?
-  website             String?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  auditLogs           AuditLog[]
-  classSessions       ClassSession[]
-  classTemplates      ClassTemplate[]
-  clubDomains         ClubDomain[]
-  services            ClubService[]
-  coaches             Coach[]
-  coachImportJobs     CoachImportJob[]
-  emailVerifications  EmailVerification[]
-  equipment           Equipment[]
-  equipmentUsage      EquipmentUsage[]
-  gymsports           Gymsport[]
+  id                 String              @id @default(cuid())
+  name               String              @unique
+  slug               String              @unique
+  abn                String?             @unique
+  domain             String              @unique
+  status             String              @default("PENDING_VERIFICATION")
+  timezone           String              @default("Australia/Sydney")
+  address            String?
+  city               String?
+  state              String?
+  postalCode         String?
+  phone              String?
+  website            String?
+
+  // Relations
+  users              User[]
+  clubDomains        ClubDomain[]
+  emailVerifications EmailVerification[]
+  services           ClubService[]
+  auditLogs          AuditLog[]
+  sessions           Session[]
+  zones              Zone[]
+  coaches            Coach[]
+  classTemplates     ClassTemplate[]
+  classSessions      ClassSession[]
+  rosterTemplates    RosterTemplate[]
+  rosters            Roster[]
+  coachImportJobs    CoachImportJob[]
+  rosterExports      RosterExport[]
+  rosterSlots        RosterSlot[]
+  gymsports          Gymsport[]
   injuryFormTemplates InjuryFormTemplate[]
+  injurySubmissions  InjurySubmission[]
   injuryNotifications InjuryNotification[]
-  injurySubmissions   InjurySubmission[]
-  maintenanceLogs     MaintenanceLog[]
-  maintenanceTasks    MaintenanceTask[]
+  equipment          Equipment[]
+  maintenanceLogs    MaintenanceLog[]
+  equipmentUsage     EquipmentUsage[]
+  safetyIssues       SafetyIssue[]
+  maintenanceTasks   MaintenanceTask[]
   repairQuoteRequests RepairQuoteRequest[]
-  safetyIssues        SafetyIssue[]
-  rosters             Roster[]
-  rosterExports       RosterExport[]
-  rosterSlots         RosterSlot[]
-  rosterTemplates     RosterTemplate[]
-  sessions            Session[]
-  users               User[]
-  zones               Zone[]
+  complianceCategories ComplianceCategory[]
+  complianceItems    ComplianceItem[]
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([status])
   @@index([domain])
 }
 
 model ClubDomain {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId            String
   domain            String
-  verified          Boolean  @default(false)
-  verificationToken String?  @unique
-  createdAt         DateTime @default(now())
-  club              Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
+  verified          Boolean   @default(false)
+  verificationToken String?   @unique
+  
+  createdAt         DateTime  @default(now())
+  
   @@unique([clubId, domain])
   @@index([clubId])
 }
 
+// Users
 model User {
-  id                        String                    @id @default(cuid())
-  clubId                    String
-  email                     String
-  username                  String
-  passwordHash              String
-  fullName                  String
-  role                      String                    @default("ADMIN")
-  isActive                  Boolean                   @default(true)
-  lastLogin                 DateTime?
-  loginAttempts             Int                       @default(0)
-  lockedUntil               DateTime?
-  createdAt                 DateTime                  @default(now())
-  updatedAt                 DateTime                  @updatedAt
-  auditLogs                 AuditLog[]
-  generatedSessions         ClassSession[]            @relation("SessionGeneratedBy")
-  emailVerifications        EmailVerification[]
-  injuryNotifications       InjuryNotification[]
-  assignedInjurySubmissions InjurySubmission[]        @relation("AssignedInjurySubmissions")
-  injurySubmissionAudits    InjurySubmissionAudit[]
-  injurySubmissionComments  InjurySubmissionComment[]
-  passwordResets            PasswordReset[]
-  repairQuoteRequests       RepairQuoteRequest[]
-  generatedRosters          Roster[]                  @relation("RosterGeneratedBy")
-  createdRosterTemplates    RosterTemplate[]          @relation("RosterTemplateCreatedBy")
-  sessions                  Session[]
-  club                      Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
+  id                 String             @id @default(cuid())
+  club               Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId             String
+  email              String
+  username           String
+  passwordHash       String
+  fullName           String
+  role               String             @default("ADMIN")
+  isActive           Boolean            @default(true)
+  lastLogin          DateTime?
+  loginAttempts      Int                @default(0)
+  lockedUntil        DateTime?
+  
+  // Relations
+  sessions              Session[]
+  passwordResets        PasswordReset[]
+  auditLogs             AuditLog[]
+  emailVerifications    EmailVerification[]
+  generatedSessions     ClassSession[] @relation("SessionGeneratedBy")
+  createdRosterTemplates RosterTemplate[] @relation("RosterTemplateCreatedBy")
+  generatedRosters      Roster[]       @relation("RosterGeneratedBy")
+  assignedInjurySubmissions InjurySubmission[] @relation("AssignedInjurySubmissions")
+  injurySubmissionComments InjurySubmissionComment[]
+  injurySubmissionAudits InjurySubmissionAudit[]
+  injuryNotifications   InjuryNotification[]
+  repairQuoteRequests   RepairQuoteRequest[]
+  ownedComplianceItems  ComplianceItem[]     @relation("ComplianceItemOwner")
+  createdComplianceItems ComplianceItem[]    @relation("ComplianceItemCreatedBy")
+  completedComplianceItems ComplianceItem[]  @relation("ComplianceItemCompletedBy")
+  
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  
   @@unique([clubId, username])
   @@unique([clubId, email])
   @@index([clubId])
   @@index([email])
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  clubId       String
-  refreshToken String   @unique
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+// Compliance Manager Categories
+model ComplianceCategory {
+  id          String   @id @default(cuid())
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId      String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
 
+  // Relations
+  items       ComplianceItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([clubId, name])
+  @@index([clubId])
+  @@index([isActive])
+}
+
+// Compliance Manager Items
+model ComplianceItem {
+  id              String             @id @default(cuid())
+  club            Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId          String
+  category        ComplianceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId      String?
+  owner           User?              @relation("ComplianceItemOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  ownerId         String?
+  createdBy       User?              @relation("ComplianceItemCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById     String?
+  completedBy     User?              @relation("ComplianceItemCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  completedById   String?
+
+  title           String
+  description     String?
+  deadlineDate    DateTime
+  status          String             @default("OPEN") // OPEN, IN_PROGRESS, COMPLETED
+
+  // Reminders and files are stored as JSON strings
+  reminderSchedule String?           // JSON array of day offsets: [90,30,7,1]
+  nextReminderDate DateTime?
+  lastReminderSent DateTime?
+  remindersSent   String?            // JSON array of sent reminders metadata
+  fileLinks       String?            // JSON array: [{"name":"Policy PDF","url":"https://..."}]
+
+  notes           String?
+  completedAt     DateTime?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([clubId])
+  @@index([categoryId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([deadlineDate])
+  @@index([nextReminderDate])
+}
+
+// Sessions & Auth
+model Session {
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  refreshToken      String    @unique
+  expiresAt         DateTime
+  createdAt         DateTime  @default(now())
+  
   @@index([userId])
   @@index([clubId])
   @@index([expiresAt])
 }
 
 model EmailVerification {
-  id         String    @id @default(cuid())
-  userId     String
-  clubId     String
-  email      String
-  tokenHash  String    @unique
-  expiresAt  DateTime
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
-  club       Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  email             String
+  tokenHash         String    @unique
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  
+  createdAt         DateTime  @default(now())
+  
   @@index([userId])
   @@index([clubId])
   @@index([expiresAt])
 }
 
 model PasswordReset {
-  id         String    @id @default(cuid())
-  userId     String
-  tokenHash  String    @unique
-  expiresAt  DateTime
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  tokenHash         String    @unique
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  
+  createdAt         DateTime  @default(now())
+  
   @@index([userId])
   @@index([expiresAt])
 }
 
+// Services
 model Service {
-  id           String        @id @default(cuid())
-  key          String        @unique
-  name         String
-  description  String?
-  icon         String?
-  createdAt    DateTime      @default(now())
-  clubServices ClubService[]
+  id                String    @id @default(cuid())
+  key               String    @unique
+  name              String
+  description       String?
+  icon              String?
+  
+  // Relations
+  clubServices      ClubService[]
+  
+  createdAt         DateTime  @default(now())
 }
 
 model ClubService {
-  id        String   @id @default(cuid())
-  clubId    String
-  serviceId String
-  enabled   Boolean  @default(true)
-  plan      String   @default("basic")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  service           Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId         String
+  enabled           Boolean   @default(true)
+  plan              String    @default("basic")
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
   @@unique([clubId, serviceId])
   @@index([clubId])
   @@index([serviceId])
 }
 
+// Audit Logging
 model AuditLog {
-  id         String   @id @default(cuid())
-  clubId     String
-  userId     String?
-  action     String
-  entityType String
-  entityId   String?
-  changes    String?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id])
-  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
+  id                String    @id @default(cuid())
+  club              Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?
+  action            String
+  entityType        String
+  entityId          String?
+  changes           String?
+  ipAddress         String?
+  userAgent         String?
+  
+  createdAt         DateTime  @default(now())
+  
   @@index([clubId])
   @@index([userId])
   @@index([createdAt])
 }
 
+// Gym Zones
 model Zone {
-  id               String                @id @default(cuid())
-  clubId           String
-  name             String
-  description      String?
-  allowOverlap     Boolean               @default(false)
-  active           Boolean               @default(true)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  isFirst          Boolean               @default(false)
-  publicId         String?               @unique
-  rosterSlots      RosterSlot[]
-  sessionsAllowed  SessionAllowedZone[]
+  id           String   @id @default(cuid())
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId       String
+  name         String
+  description  String?
+  allowOverlap Boolean  @default(false)
+  active       Boolean  @default(true)
+  isFirst      Boolean  @default(false) // Priority zone - always scheduled first in rotation
+  publicId     String?  @unique // Public ID for QR code access (non-guessable)
+
+  // Relations
   templatesAllowed TemplateAllowedZone[]
+  sessionsAllowed  SessionAllowedZone[]
+  rosterSlots      RosterSlot[]
   equipment        Equipment[]
   injurySubmissions InjurySubmission[]
-  club             Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([clubId, name])
   @@index([clubId])
 }
 
+// Gymsports
 model Gymsport {
-  id             String          @id @default(cuid())
-  clubId         String
-  name           String
-  isPredefined   Boolean         @default(false)
-  active         Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  classTemplates ClassTemplate[]
-  coachGymsports CoachGymsport[]
-  club           Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  club            Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId          String
+  name            String
+  isPredefined    Boolean  @default(false)
+  active          Boolean  @default(true)
+
+  // Relations
+  coachGymsports  CoachGymsport[]
+  classTemplates  ClassTemplate[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([clubId, name])
   @@index([clubId])
 }
 
+// Coaches
 model Coach {
-  id                 String              @id @default(cuid())
-  clubId             String
-  name               String
-  accreditationLevel String?
-  membershipNumber   String?
-  email              String?
-  phone              String?
-  importedFromCsv    Boolean             @default(false)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  club               Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  availability       CoachAvailability[]
-  gymsports          CoachGymsport[]
-  equipmentUsage     EquipmentUsage[]
-  sessionLinks       SessionCoach[]
-  templateLinks      TemplateCoach[]
+  id                  String   @id @default(cuid())
+  club                Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId              String
+  name                String
+  accreditationLevel  String?
+  membershipNumber    String?
+  email               String?
+  phone               String?
+  importedFromCsv     Boolean  @default(false)
 
-  @@unique([clubId, email])
+  // Relations
+  templateLinks    TemplateCoach[]
+  sessionLinks     SessionCoach[]
+  gymsports        CoachGymsport[]
+  availability     CoachAvailability[]
+  equipmentUsage   EquipmentUsage[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   @@index([clubId])
+  @@unique([clubId, email])
 }
 
+// Coach to Gymsport relationship (many-to-many)
 model CoachGymsport {
-  id         String   @id @default(cuid())
-  coachId    String
-  gymsportId String
-  createdAt  DateTime @default(now())
-  gymsport   Gymsport @relation(fields: [gymsportId], references: [id], onDelete: Cascade)
-  coach      Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  coach       Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId     String
+  gymsport    Gymsport  @relation(fields: [gymsportId], references: [id], onDelete: Cascade)
+  gymsportId  String
+
+  createdAt   DateTime  @default(now())
 
   @@unique([coachId, gymsportId])
   @@index([coachId])
   @@index([gymsportId])
 }
 
+// Coach availability (day and time ranges)
 model CoachAvailability {
-  id             String   @id @default(cuid())
-  coachId        String
-  dayOfWeek      String
-  startTimeLocal String
-  endTimeLocal   String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  coach          Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  coach           Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId         String
+  dayOfWeek       String   // MON, TUE, WED, THU, FRI, SAT, SUN
+  startTimeLocal  String   // HH:MM format
+  endTimeLocal    String   // HH:MM format
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([coachId])
   @@index([dayOfWeek])
 }
 
+// Class templates (recurring definitions)
 model ClassTemplate {
-  id                     String                @id @default(cuid())
+  id                     String                  @id @default(cuid())
+  club                   Club                    @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId                 String
   name                   String
+  gymsport               Gymsport?               @relation(fields: [gymsportId], references: [id], onDelete: SetNull)
   gymsportId             String?
-  level                  String
+  level                  String                  // Rec, LEVEL_1..LEVEL_10, SNR, ADULT, SCHOOL, OTHER
   lengthMinutes          Int
   defaultRotationMinutes Int
-  allowOverlap           Boolean               @default(false)
-  activeDays             String
-  startTimeLocal         String
-  endTimeLocal           String
+  allowOverlap           Boolean                 @default(false)
+  activeDays             String                 // comma-separated days e.g. MON,TUE,WED
+  startTimeLocal         String                  // HH:MM in club timezone
+  endTimeLocal           String                  // HH:MM in club timezone
   notes                  String?
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
-  color                  String?
-  sessions               ClassSession[]
-  gymsport               Gymsport?             @relation(fields: [gymsportId], references: [id])
-  club                   Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  allowedZones           TemplateAllowedZone[]
-  defaultCoaches         TemplateCoach[]
+  color                  String?                 // Hex color for calendar display (e.g. #3b82f6)
 
-  @@unique([clubId, name])
+  // Relations
+  allowedZones   TemplateAllowedZone[]
+  defaultCoaches TemplateCoach[]
+  sessions       ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([clubId])
   @@index([gymsportId])
+  @@unique([clubId, name])
 }
 
 model TemplateAllowedZone {
-  id         String        @id @default(cuid())
-  templateId String
-  zoneId     String
-  zone       Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  template   ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  id           String @id @default(cuid())
+  template     ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   String
+  zone         Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId       String
 
   @@unique([templateId, zoneId])
 }
 
 model TemplateCoach {
-  id         String        @id @default(cuid())
-  templateId String
-  coachId    String
-  coach      Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  template   ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  id           String @id @default(cuid())
+  template     ClassTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId   String
+  coach        Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId      String
 
   @@unique([templateId, coachId])
 }
 
+// Specific class occurrences
 model ClassSession {
-  id                   String               @id @default(cuid())
+  id                   String             @id @default(cuid())
+  club                 Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId               String
+  template             ClassTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
   templateId           String?
-  date                 DateTime
-  startTimeLocal       String
-  endTimeLocal         String
+  date                 DateTime           // Local date (00:00 in club timezone)
+  startTimeLocal       String             // HH:MM in club timezone
+  endTimeLocal         String             // HH:MM in club timezone
   rotationMinutes      Int
-  allowOverlap         Boolean              @default(false)
-  assignedZoneSequence String
-  status               String               @default("DRAFT")
-  conflictFlag         Boolean              @default(false)
+  allowOverlap         Boolean            @default(false)
+  assignedZoneSequence String                  // JSON string array of zoneIds in sequence
+  status               String             @default("DRAFT") // DRAFT or PUBLISHED
+  conflictFlag         Boolean            @default(false)
+  generatedBy          User?              @relation("SessionGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
   generatedById        String?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  generatedBy          User?                @relation("SessionGeneratedBy", fields: [generatedById], references: [id])
-  template             ClassTemplate?       @relation(fields: [templateId], references: [id])
-  club                 Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  equipmentUsage       EquipmentUsage[]
-  rosterSlots          RosterSlot[]
-  allowedZones         SessionAllowedZone[]
-  coaches              SessionCoach[]
+
+  // Relations
+  allowedZones SessionAllowedZone[]
+  coaches      SessionCoach[]
+  rosterSlots  RosterSlot[]
+  equipmentUsage EquipmentUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clubId])
   @@index([templateId])
@@ -353,62 +467,70 @@ model ClassSession {
 }
 
 model SessionAllowedZone {
-  id        String       @id @default(cuid())
-  sessionId String
-  zoneId    String
-  zone      Zone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id         String @id @default(cuid())
+  session    ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  zone       Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId     String
 
   @@unique([sessionId, zoneId])
 }
 
 model SessionCoach {
-  id        String       @id @default(cuid())
-  sessionId String
-  coachId   String
-  coach     Coach        @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id         String @id @default(cuid())
+  session    ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  coach      Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId    String
 
   @@unique([sessionId, coachId])
 }
 
+// Roster Templates
 model RosterTemplate {
-  id          String   @id @default(cuid())
-  clubId      String
-  name        String
-  startDate   DateTime
-  endDate     DateTime
-  activeDays  String
-  classConfig String
-  status      String   @default("ACTIVE")
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  rosters     Roster[]
-  createdBy   User?    @relation("RosterTemplateCreatedBy", fields: [createdById], references: [id])
-  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  name          String        // e.g. "Monday Training Program"
+  startDate     DateTime      // Start of date range
+  endDate       DateTime      // End of date range
+  activeDays    String        // Comma-separated days: MON,WED,FRI
+  classConfig   String        // JSON string of class template selections and configurations
+  status        String        @default("ACTIVE") // ACTIVE or ARCHIVED
+  createdBy     User?         @relation("RosterTemplateCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById   String?
+
+  // Relations
+  rosters       Roster[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clubId])
   @@index([status])
 }
 
+// Rosters (individual day instances)
 model Roster {
-  id            String          @id @default(cuid())
+  id            String        @id @default(cuid())
+  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId        String
-  templateId    String?
-  scope         String
-  dayOfWeek     String?
-  startDate     DateTime
-  endDate       DateTime
-  status        String          @default("DRAFT")
-  generatedAt   DateTime?
-  generatedById String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  generatedBy   User?           @relation("RosterGeneratedBy", fields: [generatedById], references: [id])
   template      RosterTemplate? @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  club          Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  slots         RosterSlot[]
+  templateId    String?
+  scope         String        // DAY or WEEK
+  dayOfWeek     String?       // MON, TUE, WED, etc. (for template-based rosters)
+  startDate     DateTime      // The specific date this roster is for
+  endDate       DateTime
+  status        String        @default("DRAFT") // DRAFT or PUBLISHED
+  generatedAt   DateTime?
+  generatedBy   User?         @relation("RosterGeneratedBy", fields: [generatedById], references: [id], onDelete: SetNull)
+  generatedById String?
+
+  // Relations
+  slots RosterSlot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clubId])
   @@index([scope])
@@ -416,22 +538,22 @@ model Roster {
 }
 
 model RosterSlot {
-  id           String       @id @default(cuid())
+  id           String        @id @default(cuid())
+  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId       String
+  roster       Roster        @relation(fields: [rosterId], references: [id], onDelete: Cascade)
   rosterId     String
+  session      ClassSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   sessionId    String
+  zone         Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   zoneId       String
   startsAt     DateTime
   endsAt       DateTime
-  conflictFlag Boolean      @default(false)
-  allowOverlap Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  zoneOrder    Int?
-  conflictType String?
-  zone         Zone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  session      ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  roster       Roster       @relation(fields: [rosterId], references: [id], onDelete: Cascade)
-  club         Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  conflictFlag Boolean       @default(false)
+  conflictType String?       // 'coach', 'zone', or 'both' - describes the type of conflict
+  allowOverlap Boolean       @default(false)
+  zoneOrder    Int?          // Manual zone ordering within session (null = auto-generated)
+  createdAt    DateTime      @default(now())
 
   @@index([clubId])
   @@index([rosterId])
@@ -440,125 +562,175 @@ model RosterSlot {
   @@index([startsAt])
 }
 
+// Coach import jobs
 model CoachImportJob {
-  id           String   @id @default(cuid())
-  clubId       String
-  status       String   @default("PENDING")
-  totalRows    Int?
-  importedRows Int?
-  errorText    String?
-  createdAt    DateTime @default(now())
-  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  totalRows     Int?
+  importedRows  Int?
+  errorText     String?
+  createdAt     DateTime  @default(now())
 
   @@index([clubId])
   @@index([status])
 }
 
+// Roster export logs
 model RosterExport {
-  id           String   @id @default(cuid())
-  clubId       String
-  exportType   String
-  status       String   @default("PENDING")
-  targetEmails String?
-  createdAt    DateTime @default(now())
-  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId        String
+  exportType    String
+  status        String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  targetEmails  String?
+  createdAt     DateTime  @default(now())
 
   @@index([clubId])
   @@index([status])
 }
 
-model InjuryFormTemplate {
-  id              String                 @id @default(cuid())
-  clubId          String
-  name            String
-  description     String?
-  isDefault       Boolean                @default(false)
-  active          Boolean                @default(true)
-  qrCode          String?
-  publicUrl       String                 @unique
-  headerColor     String?                @default("#0078d4")
-  logoUrl         String?
-  thankYouMessage String?                @default("Thank you for your submission. We will review this report shortly.")
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  automations     InjuryFormAutomation[]
-  fields          InjuryFormField[]
-  sections        InjuryFormSection[]
-  club            Club                   @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  submissions     InjurySubmission[]
+// ============================================
+// INJURY / INCIDENT MANAGEMENT
+// ============================================
 
+// Injury Form Templates (like Microsoft Forms)
+model InjuryFormTemplate {
+  id                String                    @id @default(cuid())
+  club              Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  name              String
+  description       String?
+  isDefault         Boolean                   @default(false) // Default template provided to new clubs
+  active            Boolean                   @default(true)
+  qrCode            String?                   // Store QR code data URL or path
+  publicUrl         String                    @unique // Unique URL slug for public access
+  
+  // UI Configuration
+  headerColor       String?                   @default("#0078d4") // Theme color
+  logoUrl           String?
+  thankYouMessage   String?                   @default("Thank you for your submission. We will review this report shortly.")
+  
+  // Relations
+  sections          InjuryFormSection[]
+  fields            InjuryFormField[]
+  submissions       InjurySubmission[]
+  automations       InjuryFormAutomation[]
+  
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  
   @@index([clubId])
   @@index([active])
   @@index([publicUrl])
 }
 
+// Form Sections (organize fields into pages/sections)
 model InjuryFormSection {
-  id          String             @id @default(cuid())
-  templateId  String
-  title       String
-  description String?
-  order       Int                @default(0)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  fields      InjuryFormField[]
-  template    InjuryFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
+  id                String                @id @default(cuid())
+  template          InjuryFormTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId        String
+  title             String
+  description       String?
+  order             Int                   @default(0)
+  
+  // Relations
+  fields            InjuryFormField[]
+  
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  
   @@index([templateId])
   @@index([order])
 }
 
+// Form Fields (questions in the form)
 model InjuryFormField {
-  id               String                 @id @default(cuid())
-  templateId       String
-  sectionId        String?
-  fieldType        String
-  label            String
-  description      String?
-  placeholder      String?
-  required         Boolean                @default(false)
-  order            Int                    @default(0)
-  options          String?
-  validation       String?
-  conditionalLogic String?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  section          InjuryFormSection?     @relation(fields: [sectionId], references: [id])
-  template         InjuryFormTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  submissionData   InjurySubmissionData[]
-
+  id                String                    @id @default(cuid())
+  template          InjuryFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId        String
+  section           InjuryFormSection?        @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId         String?
+  
+  // Field Configuration
+  fieldType         String                    // TEXT_SHORT, TEXT_LONG, NUMBER, DATE, TIME, DATETIME, EMAIL, PHONE, DROPDOWN, MULTIPLE_CHOICE, CHECKBOXES
+  label             String
+  description       String?
+  placeholder       String?
+  required          Boolean                   @default(false)
+  order             Int                       @default(0)
+  
+  // Field Options (JSON for dropdowns, multiple choice, checkboxes)
+  // Format: ["Option 1", "Option 2", "Option 3"]
+  options           String?
+  
+  // Validation Rules (JSON)
+  // Format: { "min": 0, "max": 100, "pattern": "regex", "message": "Error message" }
+  validation        String?
+  
+  // Conditional Logic (JSON) - Complex conditions
+  // Format: { "conditions": [{ "field": "fieldId", "operator": "equals|contains|greaterThan|lessThan", "value": "x" }], "logic": "AND|OR", "action": "show|hide" }
+  conditionalLogic  String?
+  
+  // Relations
+  submissionData    InjurySubmissionData[]
+  
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  
   @@index([templateId])
   @@index([sectionId])
   @@index([order])
 }
 
+// Injury Submissions (actual reports submitted)
 model InjurySubmission {
-  id               String                    @id @default(cuid())
-  templateId       String
-  clubId           String
-  submitterInfo    String?
-  status           String                    @default("NEW")
-  priority         String?
-  assignedToUserId String?
-  assignedAt       DateTime?
-  resolvedAt       DateTime?
-  zoneId           String?
-  equipmentId      String?
-  equipmentMaintenanceSnapshot String?
-  equipmentSafetySnapshot String?
-  retentionDate    DateTime?
-  archived         Boolean                   @default(false)
-  submittedAt      DateTime                  @default(now())
-  updatedAt        DateTime                  @updatedAt
-  notifications    InjuryNotification[]
-  assignedTo       User?                     @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id])
-  zone             Zone?                     @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  equipment        Equipment?                @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
-  club             Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  template         InjuryFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  auditLog         InjurySubmissionAudit[]
-  comments         InjurySubmissionComment[]
-  data             InjurySubmissionData[]
-
+  id                  String                      @id @default(cuid())
+  template            InjuryFormTemplate?         @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId          String?
+  templateName        String?                     // Store template name for historical reference
+  club                Club                        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId              String
+  
+  // Submission Info (JSON - for anonymous submissions)
+  // Format: { "name": "John Doe", "email": "john@example.com", "phone": "0400000000", "ipAddress": "192.168.1.1" }
+  submitterInfo       String?
+  
+  // Status Management
+  status              String                      @default("NEW") // NEW, UNDER_REVIEW, RESOLVED, CLOSED
+  priority            String?                     // CRITICAL, HIGH, MEDIUM, LOW (can be set by automation)
+  
+  // Assignment
+  assignedTo          User?                       @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  assignedToUserId    String?
+  assignedAt          DateTime?
+  
+  // Equipment Integration (capture zone and equipment context)
+  zone                Zone?                       @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  zoneId              String?
+  equipment           Equipment?                  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  equipmentId         String?
+  
+  // Equipment Context Snapshot (captured at time of submission for historical reference)
+  // equipmentMaintenanceSnapshot Format: { "lastMaintenance": "2026-03-01", "nextMaintenance": "2026-04-01", "status": "COMPLETED", "taskType": "INSPECTION", "completedBy": "John Doe" }
+  equipmentMaintenanceSnapshot String?           // JSON - last maintenance record
+  // equipmentSafetySnapshot Format: { "status": "OPEN", "severity": "HIGH", "issue": "Foam padding worn", "reportedDate": "2026-02-28" }
+  equipmentSafetySnapshot      String?           // JSON - last safety issue record
+  
+  // Data Retention (5 years for Australian WHS compliance)
+  retentionDate       DateTime?                   // Auto-calculated as submittedAt + 5 years
+  archived            Boolean                     @default(false)
+  
+  // Relations
+  data                InjurySubmissionData[]
+  comments            InjurySubmissionComment[]
+  auditLog            InjurySubmissionAudit[]
+  notifications       InjuryNotification[]
+  
+  submittedAt         DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  
   @@index([clubId])
   @@index([templateId])
   @@index([status])
@@ -569,232 +741,322 @@ model InjurySubmission {
   @@index([equipmentId])
 }
 
+// Submission Data (actual field values)
 model InjurySubmissionData {
-  id           String           @id @default(cuid())
-  submissionId String
-  fieldId      String
-  value        String
-  createdAt    DateTime         @default(now())
-  field        InjuryFormField  @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-  submission   InjurySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
+  id                String              @id @default(cuid())
+  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String
+  field             InjuryFormField     @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  fieldId           String
+  
+  // Value stored as JSON to accommodate any data type
+  // Format: { "value": "actual value", "displayValue": "human readable" }
+  value             String
+  
+  createdAt         DateTime            @default(now())
+  
   @@index([submissionId])
   @@index([fieldId])
 }
 
+// Admin Comments on Submissions
 model InjurySubmissionComment {
-  id           String           @id @default(cuid())
-  submissionId String
-  userId       String
-  comment      String
-  isInternal   Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  submission   InjurySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
+  id                String              @id @default(cuid())
+  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  comment           String
+  isInternal        Boolean             @default(true) // Internal notes vs. visible to submitter
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
   @@index([submissionId])
   @@index([userId])
   @@index([createdAt])
 }
 
+// Audit Log for Submission Changes
 model InjurySubmissionAudit {
-  id           String           @id @default(cuid())
-  submissionId String
-  userId       String?
-  action       String
-  oldValue     String?
-  newValue     String?
-  metadata     String?
-  createdAt    DateTime         @default(now())
-  user         User?            @relation(fields: [userId], references: [id])
-  submission   InjurySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
+  id                String              @id @default(cuid())
+  submission        InjurySubmission    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String
+  user              User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId            String?
+  
+  action            String              // STATUS_CHANGED, ASSIGNED, PRIORITY_CHANGED, COMMENT_ADDED, etc.
+  oldValue          String?
+  newValue          String?
+  metadata          String?             // Additional JSON data
+  
+  createdAt         DateTime            @default(now())
+  
   @@index([submissionId])
   @@index([userId])
   @@index([createdAt])
 }
 
+// Form Automation Rules (like Power Automate)
 model InjuryFormAutomation {
-  id                String             @id @default(cuid())
+  id                String                @id @default(cuid())
+  template          InjuryFormTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId        String
+  
   name              String
   description       String?
-  active            Boolean            @default(true)
-  order             Int                @default(0)
+  active            Boolean               @default(true)
+  order             Int                   @default(0) // Execution order
+  
+  // Trigger Conditions (JSON) - Complex logic
+  // Format: { "trigger": "ON_SUBMIT|ON_STATUS_CHANGE", "conditions": [{ "field": "fieldId", "operator": "equals", "value": "x" }], "logic": "AND|OR" }
   triggerConditions String
+  
+  // Actions (JSON) - What to do when triggered
+  // Format: { "actions": [{ "type": "SEND_EMAIL|SET_PRIORITY|ASSIGN_USER|CREATE_NOTIFICATION", "config": {...} }] }
   actions           String
-  emailRecipients   String?
+  
+  // Email Configuration (if action includes SEND_EMAIL)
+  emailRecipients   String?              // JSON array of email addresses or field references
   emailSubject      String?
-  emailTemplate     String?
-  escalationEnabled Boolean            @default(false)
-  escalationHours   Int?
-  escalationActions String?
+  emailTemplate     String?              // HTML email template with variable placeholders
+  
+  // Escalation Configuration
+  escalationEnabled Boolean              @default(false)
+  escalationHours   Int?                 // Hours before escalation
+  escalationActions String?              // JSON - actions to take on escalation
+  
+  // Execution tracking
   lastExecuted      DateTime?
-  executionCount    Int                @default(0)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  template          InjuryFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
+  executionCount    Int                  @default(0)
+  
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  
   @@index([templateId])
   @@index([active])
   @@index([order])
 }
 
+// In-App Notifications
 model InjuryNotification {
-  id           String            @id @default(cuid())
-  clubId       String
-  userId       String
-  submissionId String?
-  type         String
-  title        String
-  message      String
-  priority     String            @default("NORMAL")
-  read         Boolean           @default(false)
-  readAt       DateTime?
-  actionUrl    String?
-  createdAt    DateTime          @default(now())
-  submission   InjurySubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  club         Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
+  id                String              @id @default(cuid())
+  club              Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  submission        InjurySubmission?   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submissionId      String?
+  
+  type              String              // NEW_SUBMISSION, ASSIGNMENT, STATUS_CHANGE, ESCALATION, COMMENT_ADDED
+  title             String
+  message           String
+  priority          String              @default("NORMAL") // CRITICAL, HIGH, NORMAL, LOW
+  
+  read              Boolean             @default(false)
+  readAt            DateTime?
+  
+  // Action link (URL to navigate to)
+  actionUrl         String?
+  
+  createdAt         DateTime            @default(now())
+  
   @@index([clubId])
   @@index([userId])
   @@index([read])
   @@index([createdAt])
 }
 
+// Equipment/Apparatus for injury reporting and management
 model Equipment {
-  id               String            @id @default(cuid())
-  clubId           String
-  name             String
-  category         String?
-  active           Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  serialNumber     String?           @unique
-  purchaseDate     DateTime?
-  purchaseCost     String?
-  condition        String?           @default("Good")
-  location         String?
-  zoneId           String?
-  photoUrl         String?
-  lastMaintenance  DateTime?
-  nextMaintenance  DateTime?
-  maintenanceNotes String?
-  inUse            Boolean?          @default(false)
-  currentClass     String?
-  club             Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  zone             Zone?             @relation(fields: [zoneId], references: [id])
-  usageHistory     EquipmentUsage[]
-  maintenanceLogs  MaintenanceLog[]
-  safetyIssues     SafetyIssue[]
-  maintenanceTasks MaintenanceTask[]
-  injurySubmissions InjurySubmission[]
+  id                String   @id @default(cuid())
+  club              Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId            String
+  name              String   // e.g., "Vault", "Beam", "Floor", "Bars", "Trampoline"
+  category          String?  // e.g., "Gymnastics Apparatus", "Training Aid", "Safety Equipment"
+  serialNumber      String?  @unique
+  purchaseDate      DateTime?
+  purchaseCost      String?  // Store as decimal string for SQLite compatibility
+  condition         String   @default("Good") // "Excellent", "Good", "Fair", "Poor", "Out of Service"
+  location          String?  // Storage location or zone name
+  zoneId            String?
+  zone              Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  photoUrl          String?  // Base64 encoded image or URL to photo
+  
+  // Maintenance tracking
+  lastMaintenance   DateTime?
+  nextMaintenance   DateTime?
+  maintenanceNotes  String?  // Stored as text
+  
+  // Usage tracking
+  inUse             Boolean  @default(false)
+  currentClass      String?
+  
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  maintenanceLogs   MaintenanceLog[]
+  usageHistory      EquipmentUsage[]
+  safetyIssues      SafetyIssue[]
+  maintenanceTasks  MaintenanceTask[]
   repairQuoteRequests RepairQuoteRequest[]
-
+  injurySubmissions InjurySubmission[]
+  
   @@index([clubId])
   @@index([active])
-  @@index([zoneId])
-  @@index([condition])
   @@index([category])
+  @@index([condition])
+  @@index([zoneId])
 }
 
-model EquipmentUsage {
-  id          String        @id @default(cuid())
-  clubId      String
-  equipmentId String
-  sessionId   String?
-  coachId     String?
-  usedFrom    DateTime
-  usedUntil   DateTime?
-  notes       String?
-  createdAt   DateTime      @default(now())
-  coach       Coach?        @relation(fields: [coachId], references: [id])
-  session     ClassSession? @relation(fields: [sessionId], references: [id])
-  equipment   Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  club        Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
-  @@index([usedFrom])
-  @@index([sessionId])
-  @@index([equipmentId])
-  @@index([clubId])
-}
-
+// Equipment Maintenance Log
 model MaintenanceLog {
-  id              String    @id @default(cuid())
+  id              String     @id @default(cuid())
+  club            Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId          String
+  equipment       Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   equipmentId     String
-  maintenanceType String
-  description     String
+  
+  maintenanceType String     // "Routine", "Repair", "Inspection", "Replacement"
+  description     String     // Stored as text
   performedBy     String?
-  cost            String?
-  performedAt     DateTime  @default(now())
-  createdAt       DateTime  @default(now())
-  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
-  @@index([performedAt])
-  @@index([equipmentId])
+  cost            String?    // Store as decimal string for SQLite compatibility
+  performedAt     DateTime   @default(now())
+  
+  createdAt       DateTime   @default(now())
+  
   @@index([clubId])
+  @@index([equipmentId])
+  @@index([performedAt])
 }
 
-model SafetyIssue {
-  id              String    @id @default(cuid())
+// Equipment Usage History
+model EquipmentUsage {
+  id              String        @id @default(cuid())
+  club            Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId          String
+  equipment       Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   equipmentId     String
-  issueType       String
+  
+  session         ClassSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  sessionId       String?
+  
+  coach           Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  coachId         String?
+  
+  usedFrom        DateTime
+  usedUntil       DateTime?
+  notes           String?       // Stored as text
+  
+  createdAt       DateTime      @default(now())
+  
+  @@index([clubId])
+  @@index([equipmentId])
+  @@index([sessionId])
+  @@index([usedFrom])
+}
+
+// Safety Issues - Staff-reported equipment safety defects
+model SafetyIssue {
+  id              String     @id @default(cuid())
+  club            Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId          String
+  equipment       Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  equipmentId     String
+  
+  // Issue details
+  issueType       String     // "CRITICAL", "NON_CRITICAL", "NON_CONFORMANCE", "RECOMMENDATION", "INFORMATIONAL"
   title           String
-  description     String
-  reportedBy      String
+  description     String     // Stored as text
+  reportedBy      String     // Staff member name or coach name
   reportedByEmail String?
-  photos          String?
-  priority        String    @default("MEDIUM")
-  status          String    @default("OPEN")
+  
+  // Photos stored as JSON array of file paths
+  photos          String?    // JSON array: ["path/to/photo1.jpg", "path/to/photo2.jpg"]
+  
+  // Status tracking
+  status          String     @default("OPEN") // "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"
+  priority        String     @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "CRITICAL"
   resolvedAt      DateTime?
   resolvedBy      String?
-  resolutionNotes String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  club            Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  resolutionNotes String?    // Stored as text
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
   
   // Relations
   repairQuoteRequests RepairQuoteRequest[]
-
+  
   @@index([clubId])
   @@index([equipmentId])
   @@index([status])
+  @@index([issueType])
   @@index([priority])
   @@index([createdAt])
 }
 
+// Maintenance Tasks - Scheduled and ad-hoc maintenance tracking
 model MaintenanceTask {
-  id            String    @id @default(cuid())
-  clubId        String
-  equipmentId   String
-  taskType      String
-  title         String
-  description   String
-  scheduledDate DateTime?
-  dueDate       DateTime?
-  completedDate DateTime?
-  assignedTo    String?
-  completedBy   String?
-  priority      String    @default("MEDIUM")
-  status        String    @default("PENDING")
-  notes         String?
-  photos        String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  equipment     Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  club          Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
+  id              String     @id @default(cuid())
+  club            Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubId          String
+  equipment       Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  equipmentId     String
+  
+  // Task details
+  taskType        String     // "ROUTINE", "INSPECTION", "REPAIR", "REPLACEMENT", "CLEANING"
+  title           String
+  description     String     // Stored as text
+  
+  // Scheduling
+  scheduledDate   DateTime?
+  dueDate         DateTime?
+  completedDate   DateTime?
+  
+  // Assignment
+  assignedTo      String?
+  assignedToName  String?    // Full name of assigned person
+  assignedToEmail String?    // Email for reminders
+  completedBy     String?
+  
+  // Recurring schedule
+  isRecurring         Boolean   @default(false)
+  recurrencePattern   String?   // "DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM"
+  recurrenceInterval  Int?      // e.g., 2 for "every 2 weeks"
+  recurrenceDay       Int?      // Day of month (1-31) or day of week (0-6 for WEEKLY)
+  recurrenceDayOfWeek String?   // "MONDAY", "TUESDAY", etc. for weekly patterns
+  recurrenceEndDate   DateTime? // When to stop recurring (optional)
+  parentTaskId        String?   // Link to original recurring task
+  
+  // Email reminders
+  reminderDays      String?    // JSON array: "[7, 3, 1]" - days before due date
+  lastReminderSent  DateTime?  // Track when last reminder was sent
+  nextReminderDate  DateTime?  // Next scheduled reminder
+  remindersSent     String?    // JSON array of sent reminders: "[{\"date\":\"2026-03-02\",\"daysBefore\":7}]"
+  
+  // Photos stored as JSON array of file paths
+  photos          String?    // JSON array: ["path/to/photo1.jpg", "path/to/photo2.jpg"]
+  
+  // Status and tracking
+  status          String     @default("PENDING") // "PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"
+  priority        String     @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
+  cost            String?    // Store as decimal string for SQLite compatibility
+  notes           String?    // Stored as text
+  
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  
   @@index([clubId])
   @@index([equipmentId])
   @@index([status])
-  @@index([priority])
+  @@index([taskType])
+  @@index([scheduledDate])
   @@index([dueDate])
+  @@index([isRecurring])
+  @@index([nextReminderDate])
+  @@index([assignedToEmail])
 }
 
 // Repair Quote Requests - Track admin requests for repair quotes

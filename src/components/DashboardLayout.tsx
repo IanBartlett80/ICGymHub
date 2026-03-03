@@ -26,7 +26,7 @@ interface DashboardLayoutProps {
   showClubManagementNav?: boolean
 }
 
-type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment'
+type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance'
 
 export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const router = useRouter()
@@ -51,6 +51,8 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       setActiveService('safety')
     } else if (pathname?.startsWith('/dashboard/equipment')) {
       setActiveService('equipment')
+    } else if (pathname?.startsWith('/dashboard/compliance-manager')) {
+      setActiveService('compliance')
     } else if (pathname === '/dashboard') {
       setActiveService('dashboard')
     }
@@ -67,6 +69,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
     { id: 'safety' as ServiceType, name: 'Safety', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
+    { id: 'compliance' as ServiceType, name: 'Compliance Manager', basePath: '/dashboard/compliance-manager' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
   ]
 
@@ -291,6 +294,25 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
           </ul>
         )
 
+      case 'compliance':
+        return (
+          <ul className="space-y-2">
+            <li>
+              <Link
+                href="/dashboard/compliance-manager"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/compliance-manager')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">✅</span>
+                {!sidebarCollapsed && <span>Compliance Dashboard</span>}
+              </Link>
+            </li>
+          </ul>
+        )
+
       default:
         return null
     }
@@ -312,6 +334,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               {activeService === 'rosters' && 'Rosters'}
               {activeService === 'safety' && 'Safety'}
               {activeService === 'equipment' && 'Equipment'}
+              {activeService === 'compliance' && 'Compliance Manager'}
             </h2>
           )}
           <button

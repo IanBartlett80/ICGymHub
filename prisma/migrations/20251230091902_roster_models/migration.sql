@@ -6,8 +6,8 @@ CREATE TABLE "Zone" (
     "description" TEXT,
     "allowOverlap" BOOLEAN NOT NULL DEFAULT false,
     "active" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL,
     CONSTRAINT "Zone_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -21,8 +21,8 @@ CREATE TABLE "Coach" (
     "email" TEXT,
     "phone" TEXT,
     "importedFromCsv" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL,
     CONSTRAINT "Coach_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -39,8 +39,8 @@ CREATE TABLE "ClassTemplate" (
     "startTimeLocal" TEXT NOT NULL,
     "endTimeLocal" TEXT NOT NULL,
     "notes" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL,
     CONSTRAINT "ClassTemplate_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -67,7 +67,7 @@ CREATE TABLE "ClassSession" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "clubId" TEXT NOT NULL,
     "templateId" TEXT,
-    "date" DATETIME NOT NULL,
+    "date" TIMESTAMP NOT NULL,
     "startTimeLocal" TEXT NOT NULL,
     "endTimeLocal" TEXT NOT NULL,
     "rotationMinutes" INTEGER NOT NULL,
@@ -76,8 +76,8 @@ CREATE TABLE "ClassSession" (
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
     "conflictFlag" BOOLEAN NOT NULL DEFAULT false,
     "generatedById" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL,
     CONSTRAINT "ClassSession_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ClassSession_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "ClassTemplate" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "ClassSession_generatedById_fkey" FOREIGN KEY ("generatedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
@@ -106,13 +106,13 @@ CREATE TABLE "Roster" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "clubId" TEXT NOT NULL,
     "scope" TEXT NOT NULL,
-    "startDate" DATETIME NOT NULL,
-    "endDate" DATETIME NOT NULL,
+    "startDate" TIMESTAMP NOT NULL,
+    "endDate" TIMESTAMP NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
-    "generatedAt" DATETIME,
+    "generatedAt" TIMESTAMP,
     "generatedById" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL,
     CONSTRAINT "Roster_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Roster_generatedById_fkey" FOREIGN KEY ("generatedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -124,11 +124,11 @@ CREATE TABLE "RosterSlot" (
     "rosterId" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
     "zoneId" TEXT NOT NULL,
-    "startsAt" DATETIME NOT NULL,
-    "endsAt" DATETIME NOT NULL,
+    "startsAt" TIMESTAMP NOT NULL,
+    "endsAt" TIMESTAMP NOT NULL,
     "conflictFlag" BOOLEAN NOT NULL DEFAULT false,
     "allowOverlap" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "RosterSlot_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "RosterSlot_rosterId_fkey" FOREIGN KEY ("rosterId") REFERENCES "Roster" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "RosterSlot_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "ClassSession" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -143,7 +143,7 @@ CREATE TABLE "CoachImportJob" (
     "totalRows" INTEGER,
     "importedRows" INTEGER,
     "errorText" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "CoachImportJob_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -154,7 +154,7 @@ CREATE TABLE "RosterExport" (
     "exportType" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'PENDING',
     "targetEmails" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "RosterExport_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "Club" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
