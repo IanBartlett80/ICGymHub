@@ -278,7 +278,8 @@ export default function ComplianceManagerPage() {
       const payload = {
         ...itemForm,
         categoryId: itemForm.categoryId,
-        ownerId: itemForm.ownerId,
+        // When quick-add is selected, send ownerId as 'none' and rely on ownerName/ownerEmail
+        ownerId: itemForm.ownerId === 'quick-add' ? 'none' : itemForm.ownerId,
       }
 
       const url = editingItemId ? `/api/compliance/items/${editingItemId}` : '/api/compliance/items'

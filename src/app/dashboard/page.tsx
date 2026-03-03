@@ -52,6 +52,12 @@ interface DashboardStats {
     recurringTasks: number
     completionRate: number
   }
+  compliance: {
+    overdueItems: number
+    dueInThirtyDays: number
+    completionRate: number
+    totalItems: number
+  }
   charts: {
     weeklyClasses: Array<{ day: string; classes: number; conflicts: number }>
     injuryTrends: Array<{ month: string; incidents: number; critical: number }>
@@ -164,7 +170,7 @@ export default function DashboardPage() {
         )}
 
         {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <Link href="/dashboard/class-rostering" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
             <div className="flex items-center justify-between mb-4">
               <span className="text-4xl">📅</span>
@@ -230,7 +236,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+          <Link href="/dashboard/maintenance" className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
             <div className="flex items-center justify-between mb-4">
               <span className="text-4xl">📊</span>
               <span className="text-green-100 text-sm">Maintenance</span>
@@ -249,7 +255,28 @@ export default function DashboardPage() {
                 <span className="text-xs text-green-100">{stats.maintenance.completionRate}% rate</span>
               )}
             </div>
-          </div>
+          </Link>
+
+          <Link href="/dashboard/compliance-manager" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-4xl">✅</span>
+              <span className="text-purple-100 text-sm">Compliance</span>
+            </div>
+            <p className="text-3xl font-bold mb-1">{stats?.compliance.totalItems || 0}</p>
+            <p className="text-purple-100 text-sm mb-2">Total Items</p>
+            <div className="flex items-center justify-between">
+              {stats && stats.compliance.overdueItems > 0 ? (
+                <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
+                  ⚠️ {stats.compliance.overdueItems} overdue
+                </span>
+              ) : (
+                <span className="text-xs text-purple-100">All current</span>
+              )}
+              {stats && (
+                <span className="text-xs text-purple-100">{stats.compliance.completionRate}% done</span>
+              )}
+            </div>
+          </Link>
         </div>
 
         {/* Charts Section - Row 1 */}
@@ -493,7 +520,7 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
             <Link href="/dashboard/rosters" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
               <span className="text-3xl">📋</span>
               <div>
@@ -518,7 +545,15 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/dashboard/admin-config" className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
+            <Link href="/dashboard/compliance-manager" className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
+              <span className="text-3xl">✅</span>
+              <div>
+                <p className="font-medium text-gray-900">Compliance</p>
+                <p className="text-xs text-gray-600">Manage compliance</p>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/admin-config" className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
               <span className="text-3xl">⚙️</span>
               <div>
                 <p className="font-medium text-gray-900">Settings</p>
