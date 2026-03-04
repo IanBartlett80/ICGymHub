@@ -18,14 +18,13 @@ export async function GET(request: NextRequest) {
       clubId: club.id,
     };
 
-    if (zoneId) {
+    // Handle equipment filtering - can't use both equipmentId and equipment relation filter
+    if (equipmentId) {
+      where.equipmentId = equipmentId;
+    } else if (zoneId) {
       where.equipment = {
         zoneId,
       };
-    }
-
-    if (equipmentId) {
-      where.equipmentId = equipmentId;
     }
 
     if (status) {
@@ -57,8 +56,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ issues });
   } catch (error: any) {
     console.error('Error fetching safety issues:', error);
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch safety issues' },
+      { 
+        error: 'Failed to fetch safety issues',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: error.status || 500 }
     );
   }

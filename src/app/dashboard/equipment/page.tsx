@@ -80,7 +80,8 @@ export default function EquipmentPage() {
 
       if (statusRes.ok) {
         const data = await statusRes.json();
-        statusData = data.zones || [];
+        // API returns array directly, not wrapped in .zones
+        statusData = Array.isArray(data) ? data : [];
         console.log('[equipment-page] Zone status data:', statusData);
       } else {
         const errorData = await statusRes.json().catch(() => ({ error: 'Unknown error' }));

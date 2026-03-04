@@ -111,7 +111,8 @@ export default function ZoneDetailPage() {
 
       if (statusRes.ok) {
         const data = await statusRes.json();
-        const thisZoneStatus = data.zones.find((z: any) => z.zoneId === zoneId);
+        // data is an array of zone statuses, not wrapped in .zones
+        const thisZoneStatus = Array.isArray(data) ? data.find((z: any) => z.zoneId === zoneId) : null;
         setZoneStatus(thisZoneStatus);
       }
     } catch (error) {

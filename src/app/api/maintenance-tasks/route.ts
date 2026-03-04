@@ -21,13 +21,12 @@ export async function GET(request: NextRequest) {
       clubId: club.id,
     };
 
+    // Handle equipment filtering - can't use both equipmentId and equipment relation filter
     if (equipmentId) {
       where.equipmentId = equipmentId;
-    }
-
-    if (zoneId) {
+    } else if (zoneId) {
       where.equipment = {
-        zoneId: zoneId,
+        zoneId,
       };
     }
 
@@ -47,9 +46,12 @@ export async function GET(request: NextRequest) {
       where.dueDate = {
         lt: new Date(),
       };
-      where.status = {
-        in: ['PENDING', 'IN_PROGRESS'],
-      };
+      // Only override status if it wasn't already set
+      if (!status) {
+        where.status = {
+          in: ['PENDING', 'IN_PROGRESS'],
+        };
+      }
     }
 
     const [tasks, total] = await Promise.all([
@@ -87,8 +89,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Maintenance tasks list error:', error);
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to fetch maintenance tasks' },
+      { 
+        error: 'Failed to fetch maintenance tasks',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
