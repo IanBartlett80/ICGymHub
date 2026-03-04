@@ -240,7 +240,7 @@ export default function RepairQuotesPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout hideSidebar={true}>
         <EquipmentManagementSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -250,7 +250,7 @@ export default function RepairQuotesPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideSidebar={true}>
       <EquipmentManagementSubNav />
       <div className="p-6 space-y-6">
         {/* Header */}

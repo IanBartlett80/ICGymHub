@@ -224,7 +224,7 @@ export default function ZoneDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <DashboardLayout hideSidebar={true}>
         <EquipmentManagementSubNav />
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -235,7 +235,7 @@ export default function ZoneDetailPage() {
 
   if (!zone) {
     return (
-      <DashboardLayout>
+      <DashboardLayout hideSidebar={true}>
         <EquipmentManagementSubNav />
         <div className="text-center py-12">
           <p className="text-gray-500">Zone not found</p>
@@ -248,7 +248,7 @@ export default function ZoneDetailPage() {
   const pendingTasks = maintenanceTasks.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS');
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideSidebar={true}>
       <EquipmentManagementSubNav />
       <div className="space-y-6">
         {/* Header */}

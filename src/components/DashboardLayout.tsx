@@ -24,11 +24,12 @@ interface DashboardLayoutProps {
   backTo?: { label: string; href: string }
   showClassRosteringNav?: boolean
   showClubManagementNav?: boolean
+  hideSidebar?: boolean
 }
 
 type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance'
 
-export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false, hideSidebar = false }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<UserData | null>(null)
@@ -334,46 +335,48 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside
-        className={`${
-          sidebarCollapsed ? 'w-16' : 'w-64'
-        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
-      >
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <h2 className="font-semibold text-gray-900 truncate">
-              {activeService === 'dashboard' && 'Dashboard'}
-              {activeService === 'rosters' && 'Rosters'}
-              {activeService === 'safety' && 'Safety'}
-              {activeService === 'equipment' && 'Equipment'}
-              {activeService === 'compliance' && 'Compliance'}
-            </h2>
-          )}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            {sidebarCollapsed ? '→' : '←'}
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
-          {renderSidebarContent()}
-        </nav>
-
-        {/* Club Info */}
-        {!sidebarCollapsed && user && (
-          <div className="p-4 border-t border-gray-200">
-            <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Club</p>
-            <p className="text-sm text-gray-700 truncate">{user.clubName}</p>
+      {!hideSidebar && (
+        <aside
+          className={`${
+            sidebarCollapsed ? 'w-16' : 'w-64'
+          } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
+        >
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            {!sidebarCollapsed && (
+              <h2 className="font-semibold text-gray-900 truncate">
+                {activeService === 'dashboard' && 'Dashboard'}
+                {activeService === 'rosters' && 'Rosters'}
+                {activeService === 'safety' && 'Safety'}
+                {activeService === 'equipment' && 'Equipment'}
+                {activeService === 'compliance' && 'Compliance'}
+              </h2>
+            )}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              {sidebarCollapsed ? '→' : '←'}
+            </button>
           </div>
-        )}
-      </aside>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 overflow-y-auto">
+            {renderSidebarContent()}
+          </nav>
+
+          {/* Club Info */}
+          {!sidebarCollapsed && user && (
+            <div className="p-4 border-t border-gray-200">
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Club</p>
+              <p className="text-sm text-gray-700 truncate">{user.clubName}</p>
+            </div>
+          )}
+        </aside>
+      )}
 
       {/* Main Content */}
-      <div className={`flex-1 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300 print:ml-0`}>
+      <div className={`flex-1 ${hideSidebar ? '' : sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300 print:ml-0`}>
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
           <div className="px-4 py-1.5 flex items-center justify-between">

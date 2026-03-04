@@ -26,7 +26,7 @@ export default function EquipmentManagementSubNav() {
     },
     {
       label: 'Safety Issues',
-      href: '/dashboard/equipment/safety-issues',
+      href: '/dashboard/safety-issues',
       icon: '⚠️',
     },
     {

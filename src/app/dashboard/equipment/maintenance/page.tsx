@@ -337,7 +337,7 @@ export default function MaintenanceDuePage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideSidebar={true}>
       <EquipmentManagementSubNav />
       <div className="p-6 space-y-6">
         <div>
