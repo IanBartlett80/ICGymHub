@@ -120,7 +120,7 @@ export default function InjuryReportsDashboard() {
 
   if (loading && !stats) {
     return (
-      <DashboardLayout title="Injury and Incident Management" hideSidebar={true}>
+      <DashboardLayout hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
@@ -130,13 +130,13 @@ export default function InjuryReportsDashboard() {
   }
 
   return (
-    <DashboardLayout title="Injury and Incident Management" hideSidebar={true}>
+    <DashboardLayout hideSidebar={true}>
       <InjuryReportsSubNav />
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Injury and Incident Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Injury and Incident Management</h1>
           <p className="text-gray-600 mt-1">Manage and review injury reports from your team</p>
         </div>
         <div className="flex gap-3">

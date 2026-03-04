@@ -275,12 +275,28 @@ export default function ComplianceManagerPage() {
 
   const submitItem = async () => {
     try {
-      const payload = {
+      let payload = {
         ...itemForm,
         categoryId: itemForm.categoryId,
-        // When quick-add is selected, send ownerId as 'none' and rely on ownerName/ownerEmail
-        ownerId: itemForm.ownerId === 'quick-add' ? 'none' : itemForm.ownerId,
       }
+
+      // Handle different owner scenarios:
+      // 1. quick-add: New owner being created on the fly
+      // 2. qa-OwnerName: Existing quick-add owner selected from dropdown
+      // 3. Regular user ID: User account selected
+      if (itemForm.ownerId === 'quick-add') {
+        payload.ownerId = 'none'
+      } else if (itemForm.ownerId.startsWith('qa-')) {
+        // Extract the owner name from the ID
+        payload.ownerId = 'none'
+        payload.ownerName = itemForm.ownerId.substring(3) // Remove 'qa-' prefix
+        // Try to find the email from the owners list
+        const quickAddOwner = owners.find(o => o.id === itemForm.ownerId)
+        if (quickAddOwner) {
+          payload.ownerEmail = quickAddOwner.email
+        }
+      }
+      // else: keep the regular ownerId as is
 
       const url = editingItemId ? `/api/compliance/items/${editingItemId}` : '/api/compliance/items'
       const method = editingItemId ? 'PUT' : 'POST'
@@ -398,7 +414,7 @@ export default function ComplianceManagerPage() {
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Compliance Manager</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Compliance Manager</h1>
             <p className="mt-1 text-sm text-gray-600">Track deadlines, ownership, reminders, notes, and linked records for club compliance obligations.</p>
           </div>
           <div className="flex items-center gap-2 print:hidden">

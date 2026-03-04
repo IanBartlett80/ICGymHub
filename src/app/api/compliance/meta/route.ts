@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const { club } = await authenticateRequest(request)
 
-    const [categories, owners] = await Promise.all([
+    const [categories, users, quickAddOwners] = await Promise.all([
       prisma.complianceCategory.findMany({
         where: {
           clubId: club.id,
@@ -27,7 +27,33 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { fullName: 'asc' },
       }),
+      // Get unique quick-add owners from compliance items
+      prisma.complianceItem.findMany({
+        where: {
+          clubId: club.id,
+          ownerName: { not: null },
+          ownerId: null, // Only get quick-add owners (no User relation)
+        },
+        select: {
+          ownerName: true,
+          ownerEmail: true,
+        },
+        distinct: ['ownerName'],
+      }),
     ])
+
+    // Combine users and quick-add owners into a single list
+    // Quick-add owners use their name as ID prefixed with 'qa-'
+    const quickAddOwnersList = quickAddOwners
+      .filter(owner => owner.ownerName)
+      .map(owner => ({
+        id: `qa-${owner.ownerName}`,
+        fullName: owner.ownerName!,
+        email: owner.ownerEmail || '',
+        role: 'QUICK_ADD',
+      }))
+
+    const owners = [...users, ...quickAddOwnersList]
 
     return NextResponse.json({ categories, owners })
   } catch (error) {

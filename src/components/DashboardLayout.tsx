@@ -67,6 +67,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/')
 
   const services = [
+    { id: 'dashboard' as ServiceType, name: 'Home', basePath: '/dashboard' },
     { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
     { id: 'safety' as ServiceType, name: 'Injury & Incidents', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
