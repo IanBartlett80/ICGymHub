@@ -83,7 +83,9 @@ export default function EquipmentPage() {
         statusData = data.zones || [];
         console.log('[equipment-page] Zone status data:', statusData);
       } else {
+        const errorData = await statusRes.json().catch(() => ({ error: 'Unknown error' }));
         console.error('[equipment-page] Zone status fetch failed:', statusRes.status, statusRes.statusText);
+        console.error('[equipment-page] Error details:', errorData);
       }
 
       if (monthlyRes.ok) {

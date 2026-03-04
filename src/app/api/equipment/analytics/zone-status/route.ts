@@ -150,9 +150,17 @@ export async function GET(request: NextRequest) {
       zones: zoneStatuses,
     });
   } catch (error) {
-    console.error('Zone status calculation error:', error);
+    console.error('[zone-status] ERROR:', error);
+    console.error('[zone-status] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
     return NextResponse.json(
-      { error: 'Failed to calculate zone statuses' },
+      { 
+        error: 'Failed to calculate zone statuses',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
