@@ -385,7 +385,7 @@ export default function ComplianceManagerPage() {
 
   if (loadingMeta) {
     return (
-      <DashboardLayout>
+      <DashboardLayout hideSidebar={true}>
         <div className="flex h-64 items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600" />
         </div>
@@ -394,7 +394,7 @@ export default function ComplianceManagerPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideSidebar={true}>
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>

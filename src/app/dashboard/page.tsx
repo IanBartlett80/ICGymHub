@@ -68,11 +68,19 @@ interface DashboardStats {
   }
 }
 
+interface ComplianceTrend {
+  month: string
+  created: number
+  completed: number
+  overdue: number
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [complianceTrend, setComplianceTrend] = useState<ComplianceTrend[]>([])
   const [analyticsError, setAnalyticsError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -89,24 +97,31 @@ export default function DashboardPage() {
   const fetchDashboardStats = async () => {
     try {
       setAnalyticsError(null)
-      const response = await fetch('/api/dashboard/analytics', {
-        credentials: 'include'
-      })
+      const [dashboardResponse, complianceResponse] = await Promise.all([
+        fetch('/api/dashboard/analytics', { credentials: 'include' }),
+        fetch('/api/compliance/analytics', { credentials: 'include' })
+      ])
 
-      if (response.status === 401) {
+      if (dashboardResponse.status === 401) {
         localStorage.removeItem('userData')
         setAnalyticsError('Your session expired. Please sign in again.')
         router.push('/sign-in?sessionExpired=true')
         return
       }
 
-      if (response.ok) {
-        const data = await response.json()
+      if (dashboardResponse.ok) {
+        const data = await dashboardResponse.json()
         console.log('Dashboard analytics:', data)
         setStats(data)
       } else {
-        console.error('Failed to fetch dashboard analytics:', response.statusText)
+        console.error('Failed to fetch dashboard analytics:', dashboardResponse.statusText)
         setAnalyticsError('Unable to load analytics data right now.')
+      }
+
+      // Fetch compliance trend data
+      if (complianceResponse.ok) {
+        const complianceData = await complianceResponse.json()
+        setComplianceTrend(complianceData.trend || [])
       }
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error)
@@ -145,7 +160,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideSidebar={true}>
       <div className="p-6 space-y-6">
         {/* Welcome Section */}
         <div className="mb-2">
@@ -280,7 +295,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Section - Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Weekly Class Schedule */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -340,6 +355,33 @@ export default function DashboardPage() {
                 <Area type="monotone" dataKey="incidents" stroke="#f59e0b" fillOpacity={1} fill="url(#colorIncidents)" name="Total Incidents" strokeWidth={2} />
                 <Area type="monotone" dataKey="critical" stroke="#ef4444" fillOpacity={1} fill="url(#colorCritical)" name="Critical" strokeWidth={2} />
               </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Compliance Trend */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Compliance Trend</h3>
+                <p className="text-sm text-gray-600">Six-month trend</p>
+              </div>
+              <Link href="/dashboard/compliance-manager" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                View Manager →
+              </Link>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={complianceTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" dataKey="completed" stroke="#10b981" name="Completed" strokeWidth={2} />
+                <Line type="monotone" dataKey="created" stroke="#3b82f6" name="Created" strokeWidth={2} />
+                <Line type="monotone" dataKey="overdue" stroke="#ef4444" name="Overdue" strokeWidth={2} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
