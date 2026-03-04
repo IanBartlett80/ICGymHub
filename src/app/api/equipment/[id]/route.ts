@@ -21,6 +21,7 @@ export async function GET(
         clubId: auth.user.clubId,
       },
       include: {
+        zone: true,
         maintenanceLogs: {
           orderBy: { performedAt: 'desc' },
           take: 20,
@@ -35,6 +36,20 @@ export async function GET(
               },
             },
             coach: true,
+          },
+        },
+        safetyIssues: {
+          orderBy: { createdAt: 'desc' },
+        },
+        maintenanceTasks: {
+          orderBy: { createdAt: 'desc' },
+        },
+        _count: {
+          select: {
+            maintenanceLogs: true,
+            usageHistory: true,
+            safetyIssues: true,
+            maintenanceTasks: true,
           },
         },
       },

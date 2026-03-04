@@ -12,8 +12,9 @@ import { showToast, confirmAndDelete } from '@/lib/toast';
 interface EquipmentWithRelations extends Equipment {
   zone?: Zone | null;
   _count?: {
-    MaintenanceLog: number;
-    EquipmentUsage: number;
+    maintenanceLogs: number;
+    usageHistory: number;
+    safetyIssues?: number;
   };
 }
 

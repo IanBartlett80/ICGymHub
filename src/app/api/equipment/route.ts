@@ -40,10 +40,12 @@ export async function GET(request: NextRequest) {
       prisma.equipment.findMany({
         where,
         include: {
+          zone: true,
           _count: {
             select: {
               maintenanceLogs: true,
               usageHistory: true,
+              safetyIssues: true,
             },
           },
         },

@@ -19,7 +19,7 @@ export default function AdminZonesPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showForm, setShowForm] = useState(false)
-
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
 
