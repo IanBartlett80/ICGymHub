@@ -198,6 +198,7 @@ export default function RostersPage() {
       <DashboardLayout 
         title="Class Rosters"
         backTo={{ label: 'Back to Class Rostering', href: '/dashboard/class-rostering' }}
+        hideSidebar={true}
       >
         <div className="p-8">Loading...</div>
       </DashboardLayout>

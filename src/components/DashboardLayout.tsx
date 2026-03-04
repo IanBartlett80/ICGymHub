@@ -340,6 +340,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
           className={`${
             sidebarCollapsed ? 'w-16' : 'w-64'
           } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
+          style={{ display: hideSidebar ? 'none' : undefined }}
         >
           {/* Sidebar Header */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">

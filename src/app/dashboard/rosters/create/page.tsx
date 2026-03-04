@@ -238,6 +238,7 @@ export default function RosterBuilderPage() {
     <DashboardLayout 
       title="Create Roster Template"
       backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+      hideSidebar={true}
     >
       <div className="p-8">Loading...</div>
     </DashboardLayout>
@@ -247,6 +248,7 @@ export default function RosterBuilderPage() {
     <DashboardLayout 
       title="Create Roster Template"
       backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
+      hideSidebar={true}
     >
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
