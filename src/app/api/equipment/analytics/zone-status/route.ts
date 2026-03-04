@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Check safety issues
-        if (equipment.safetyIssues && Array.isArray(equipment.safetyIssues)) {
-          equipment.safetyIssues.forEach(issue => {
+        if ('safetyIssues' in equipment && equipment.safetyIssues && Array.isArray(equipment.safetyIssues)) {
+          equipment.safetyIssues.forEach((issue: any) => {
             // Only count open/in-progress issues
             if (issue.status !== 'OPEN' && issue.status !== 'IN_PROGRESS') {
               return;
@@ -124,36 +124,53 @@ export async function GET(request: NextRequest) {
         }
 
         // Check maintenance tasks
-        if (equipment.maintenanceTasks && Array.isArray(equipment.maintenanceTasks)) {
-          equipment.maintenanceTasks.forEach(task => {
-          // Only count pending/in-progress tasks
-          if (task.status !== 'PENDING' && task.status !== 'IN_PROGRESS') {
-            return;
-          }
-          
-          if (task.dueDate) {
-            if (task.dueDate < now) {
-              // Overdue
-              stats.overdueMaintenance++;
-              if (task.priority === 'HIGH' && statusPriority < 4) {
-                status = 'CRITICAL_DEFECTS';
-                statusPriority = 4;
-              } else if (statusPriority < 3) {
-                status = 'REQUIRES_ATTENTION';
-                statusPriority = 3;
-              }
-            } else if (task.dueDate <= sevenDaysFromNow) {
-              // Due soon
-              stats.upcomingMaintenance++;
-              if (statusPriority < 2) {
-                status = 'NON_CRITICAL_ISSUES';
-                statusPriority = 2;
+        if ('maintenanceTasks' in equipment && equipment.maintenanceTasks && Array.isArray(equipment.maintenanceTasks)) {
+          equipment.maintenanceTasks.forEach((task: any) => {
+            // Only count pending/in-progress tasks
+            if (task.status !== 'PENDING' && task.status !== 'IN_PROGRESS') {
+              return;
+            }
+            
+            if (task.dueDate) {
+              if (task.dueDate < now) {
+                // Overdue
+                stats.overdueMaintenance++;
+                if (task.priority === 'HIGH' && statusPriority < 4) {
+                  status = 'CRITICAL_DEFECTS';
+                  statusPriority = 4;
+                } else if (statusPriority < 3) {
+                  status = 'REQUIRES_ATTENTION';
+                  statusPriority = 3;
+                }
+              } else if (task.dueDate <= sevenDaysFromNow) {
+                // Due soon
+                stats.upcomingMaintenance++;
+                if (statusPriority < 2) {
+                  status = 'NON_CRITICAL_ISSUES';
+                  statusPriority = 2;
+                }
               }
             }
-          }
-        });
+          });
         }
+      });
+
+      return {
+        zoneId: zone.id,
+        zoneName: zone.name,
+        status,
+        ...stats,
+      };
     });
+
+    console.log('[zone-status] Returning zone statuses:', zoneStatuses);
+
+    return NextResponse.json(zoneStatuses);
+  } catch (error) {
+    console.error('[zone-status] ERROR:', error);
+    console.error('[zone-status] Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[zone-status] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     return NextResponse.json(
       { 
         error: 'Failed to calculate zone statuses',
