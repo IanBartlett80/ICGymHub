@@ -598,7 +598,7 @@ export default function ComplianceManagerPage() {
                         {item.description && <div className="text-xs text-gray-500">{item.description}</div>}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{item.category?.name || 'Uncategorised'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{item.owner?.fullName || 'Unassigned'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{item.owner?.fullName || item.ownerName || 'Unassigned'}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{new Date(item.deadlineDate).toLocaleDateString('en-AU')}</td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${formatStatusBadge(item.computedStatus)}`}>

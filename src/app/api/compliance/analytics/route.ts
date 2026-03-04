@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
       if (item.computedStatus === 'COMPLETED') categoryBucket.completed += 1
       byCategoryMap.set(categoryName, categoryBucket)
 
-      const ownerName = item.owner?.fullName || 'Unassigned'
+      const ownerName = item.owner?.fullName || item.ownerName || 'Unassigned'
       const ownerBucket = byOwnerMap.get(ownerName) || { owner: ownerName, total: 0, overdue: 0, dueSoon: 0 }
       ownerBucket.total += 1
       if (item.computedStatus === 'OVERDUE') ownerBucket.overdue += 1
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
         title: item.title,
         deadlineDate: item.deadlineDate,
         computedStatus: item.computedStatus,
-        ownerName: item.owner?.fullName || 'Unassigned',
+        ownerName: item.owner?.fullName || item.ownerName || 'Unassigned',
         categoryName: item.category?.name || 'Uncategorised',
       }))
 
