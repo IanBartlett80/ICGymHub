@@ -102,7 +102,7 @@ export default function SubmissionsReportsPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Injury Reports">
+      <DashboardLayout title="Injury Reports" hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
@@ -112,7 +112,7 @@ export default function SubmissionsReportsPage() {
   }
 
   return (
-    <DashboardLayout title="Injury Reports">
+    <DashboardLayout title="Injury Reports" hideSidebar={true}>
       <InjuryReportsSubNav />
       <div className="space-y-6">
         {/* Header */}

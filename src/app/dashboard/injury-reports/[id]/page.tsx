@@ -169,7 +169,7 @@ export default function SubmissionDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Submission Details">
+      <DashboardLayout title="Submission Details" hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
@@ -180,7 +180,7 @@ export default function SubmissionDetailPage() {
 
   if (!submission) {
     return (
-      <DashboardLayout title="Submission Details">
+      <DashboardLayout title="Submission Details" hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="text-center py-12">
           <div className="text-gray-400 text-lg">Submission not found</div>
@@ -213,7 +213,7 @@ export default function SubmissionDetailPage() {
   };
 
   return (
-    <DashboardLayout title="Submission Details">
+    <DashboardLayout title="Submission Details" hideSidebar={true}>
       <InjuryReportsSubNav />
       <div className="space-y-6">
       {/* Header */}

@@ -278,7 +278,7 @@ export default function AutomationBuilderPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Automations">
+      <DashboardLayout title="Automations" hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
@@ -289,7 +289,7 @@ export default function AutomationBuilderPage() {
 
   if (!template) {
     return (
-      <DashboardLayout title="Automations">
+      <DashboardLayout title="Automations" hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="text-center py-12">
           <div className="text-gray-400 text-lg">Template not found</div>
@@ -301,7 +301,7 @@ export default function AutomationBuilderPage() {
   const allFields = template.sections?.flatMap((s: any) => s.fields) || [];
 
   return (
-    <DashboardLayout title="Automations">
+    <DashboardLayout title="Automations" hideSidebar={true}>
       <InjuryReportsSubNav />
       <div className="space-y-6">
       {/* Header */}

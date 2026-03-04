@@ -211,6 +211,7 @@ export default function RostersPage() {
       title="Class Rosters"
       backTo={{ label: 'Back to Home', href: '/dashboard' }}
       showClassRosteringNav={true}
+      hideSidebar={true}
     >
       <div className="p-8">
         <div className="max-w-6xl mx-auto">

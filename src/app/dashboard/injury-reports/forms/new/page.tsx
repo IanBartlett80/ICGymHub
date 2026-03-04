@@ -210,7 +210,7 @@ export default function FormBuilderPage() {
   };
 
   return (
-    <DashboardLayout title="Form Builder">
+    <DashboardLayout title="Form Builder" hideSidebar={true}>
       <InjuryReportsSubNav />
       <div className="bg-gray-50 -m-6">
         {/* Header */}

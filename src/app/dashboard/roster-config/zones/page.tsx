@@ -96,14 +96,14 @@ export default function ZonesPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+      <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true} hideSidebar={true}>
         <div className="p-8">Loading...</div>
       </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+    <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true} hideSidebar={true}>
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center mb-6">

@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout hideSidebar={true}>
       <InjuryReportsSubNav />
       <div className="p-6">
         <div className="mb-6">

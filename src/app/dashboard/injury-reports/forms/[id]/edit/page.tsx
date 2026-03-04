@@ -195,7 +195,7 @@ export default function EditFormPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Edit Form">
+      <DashboardLayout title="Edit Form" hideSidebar={true}>
         <InjuryReportsSubNav />
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-500">Loading...</div>
@@ -205,7 +205,7 @@ export default function EditFormPage() {
   }
 
   return (
-    <DashboardLayout title="Edit Form">
+    <DashboardLayout title="Edit Form" hideSidebar={true}>
       <InjuryReportsSubNav />
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
