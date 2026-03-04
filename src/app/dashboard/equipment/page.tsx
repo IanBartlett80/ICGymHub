@@ -297,38 +297,37 @@ export default function EquipmentPage() {
                     </div>
 
                     {/* Stats */}
-                    {statusInfo && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Equipment:</span>
-                          <span className="font-medium text-gray-900">{statusInfo.equipmentCount}</span>
-                        </div>
-                        {statusInfo.criticalIssues > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-red-600">Critical Issues:</span>
-                            <span className="font-bold text-red-700">{statusInfo.criticalIssues}</span>
-                          </div>
-                        )}
-                        {statusInfo.nonCriticalIssues > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-orange-600">Non-Critical Issues:</span>
-                            <span className="font-medium text-orange-700">{statusInfo.nonCriticalIssues}</span>
-                          </div>
-                        )}
-                        {statusInfo.overdueMaintenance > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-yellow-600">Overdue Maintenance:</span>
-                            <span className="font-medium text-yellow-700">{statusInfo.overdueMaintenance}</span>
-                          </div>
-                        )}
-                        {statusInfo.outOfServiceEquipment > 0 && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Out of Service:</span>
-                            <span className="font-medium text-gray-700">{statusInfo.outOfServiceEquipment}</span>
-                          </div>
-                        )}
+                    <div className="space-y-2">
+                      {/* Always show equipment count */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Equipment:</span>
+                        <span className="font-medium text-gray-900">{statusInfo?.equipmentCount || 0}</span>
                       </div>
-                    )}
+                      {statusInfo && statusInfo.criticalIssues > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-red-600">Critical Issues:</span>
+                          <span className="font-bold text-red-700">{statusInfo.criticalIssues}</span>
+                        </div>
+                      )}
+                      {statusInfo && statusInfo.nonCriticalIssues > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-orange-600">Non-Critical Issues:</span>
+                          <span className="font-medium text-orange-700">{statusInfo.nonCriticalIssues}</span>
+                        </div>
+                      )}
+                      {statusInfo && statusInfo.overdueMaintenance > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-yellow-600">Overdue Maintenance:</span>
+                          <span className="font-medium text-yellow-700">{statusInfo.overdueMaintenance}</span>
+                        </div>
+                      )}
+                      {statusInfo && statusInfo.outOfServiceEquipment > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Out of Service:</span>
+                          <span className="font-medium text-gray-700">{statusInfo.outOfServiceEquipment}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Quick Actions */}

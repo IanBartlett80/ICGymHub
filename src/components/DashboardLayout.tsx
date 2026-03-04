@@ -49,7 +49,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       setActiveService('rosters')
     } else if (pathname?.startsWith('/dashboard/injury-reports') || pathname?.startsWith('/injury-report')) {
       setActiveService('safety')
-    } else if (pathname?.startsWith('/dashboard/equipment')) {
+    } else if (pathname?.startsWith('/dashboard/equipment') || pathname?.startsWith('/dashboard/safety-issues')) {
       setActiveService('equipment')
     } else if (pathname?.startsWith('/dashboard/compliance-manager')) {
       setActiveService('compliance')
@@ -263,6 +263,19 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
               >
                 <span className="text-xl">🔧</span>
                 {!sidebarCollapsed && <span>All Equipment</span>}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/dashboard/safety-issues"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                  isActive('/dashboard/safety-issues')
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">⚠️</span>
+                {!sidebarCollapsed && <span>Safety Issues</span>}
               </Link>
             </li>
             <li>
