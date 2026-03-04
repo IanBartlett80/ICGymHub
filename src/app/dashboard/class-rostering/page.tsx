@@ -247,12 +247,12 @@ export default function ClassRosteringPage() {
   }
 
   const uniqueClasses = Array.from(
-    new Set(rosterSlots.map(slot => slot.session.template.name))
+    new Set(rosterSlots.map(slot => slot.session.template?.name).filter(Boolean))
   )
 
   const filteredSlots = selectedClass === 'all'
-    ? rosterSlots
-    : rosterSlots.filter(slot => slot.session.template.name === selectedClass)
+    ? rosterSlots.filter(slot => slot.session.template !== null)
+    : rosterSlots.filter(slot => slot.session.template?.name === selectedClass)
 
   console.log('Filtering:', {
     selectedTemplates,
@@ -261,13 +261,15 @@ export default function ClassRosteringPage() {
     filteredSlotsCount: filteredSlots.length
   })
 
-  const calendarEvents: CalendarEvent[] = filteredSlots.map(slot => ({
-    id: slot.id,
-    title: `${slot.session.template.name} - ${slot.zoneName}`,
-    start: new Date(slot.startsAt),
-    end: new Date(slot.endsAt),
-    resource: slot,
-  }))
+  const calendarEvents: CalendarEvent[] = filteredSlots
+    .filter(slot => slot.session.template !== null)
+    .map(slot => ({
+      id: slot.id,
+      title: `${slot.session.template!.name} - ${slot.zoneName}`,
+      start: new Date(slot.startsAt),
+      end: new Date(slot.endsAt),
+      resource: slot,
+    }))
 
   console.log('Calendar state:', { 
     calendarView, 
@@ -520,7 +522,7 @@ export default function ClassRosteringPage() {
                             {format(new Date(slot.rosterDate), 'MMM dd, yyyy')}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            {slot.session.template.name}
+                            {slot.session.template?.name || 'Unknown Class'}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">{slot.zoneName}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">
@@ -606,7 +608,7 @@ export default function ClassRosteringPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-                      <div className="text-lg font-semibold">{selectedSlot.session.template.name}</div>
+                      <div className="text-lg font-semibold">{selectedSlot.session.template?.name || 'Unknown Class'}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -665,7 +667,7 @@ export default function ClassRosteringPage() {
               ) : (
                 <>
                   <p className="text-sm text-gray-600 mb-4">
-                    <strong>Class:</strong> {selectedSlot.session.template.name}<br />
+                    <strong>Class:</strong> {selectedSlot.session.template?.name || 'Unknown Class'}<br />
                     <strong>Zone:</strong> {selectedSlot.zoneName}<br />
                     <strong>Time:</strong> {format(new Date(selectedSlot.startsAt), 'h:mm a')} - {format(new Date(selectedSlot.endsAt), 'h:mm a')}
                   </p>

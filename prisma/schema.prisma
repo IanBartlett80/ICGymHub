@@ -442,7 +442,7 @@ model ClassSession {
   id                   String             @id @default(cuid())
   club                 Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId               String
-  template             ClassTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template             ClassTemplate?     @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId           String?
   date                 DateTime           // Local date (00:00 in club timezone)
   startTimeLocal       String             // HH:MM in club timezone
