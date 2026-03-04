@@ -21,20 +21,8 @@ export async function GET(request: NextRequest) {
             active: true,
           },
           include: {
-            safetyIssues: {
-              where: {
-                status: {
-                  in: ['OPEN', 'IN_PROGRESS'],
-                },
-              },
-            },
-            maintenanceTasks: {
-              where: {
-                status: {
-                  in: ['PENDING', 'IN_PROGRESS'],
-                },
-              },
-            },
+            safetyIssues: true,
+            maintenanceTasks: true,
           },
         },
       },
@@ -86,6 +74,11 @@ export async function GET(request: NextRequest) {
 
         // Check safety issues
         equipment.safetyIssues.forEach(issue => {
+          // Only count open/in-progress issues
+          if (issue.status !== 'OPEN' && issue.status !== 'IN_PROGRESS') {
+            return;
+          }
+          
           if (issue.issueType === 'CRITICAL') {
             stats.criticalIssues++;
             if (statusPriority < 4) {
@@ -109,6 +102,11 @@ export async function GET(request: NextRequest) {
 
         // Check maintenance tasks
         equipment.maintenanceTasks.forEach(task => {
+          // Only count pending/in-progress tasks
+          if (task.status !== 'PENDING' && task.status !== 'IN_PROGRESS') {
+            return;
+          }
+          
           if (task.dueDate) {
             if (task.dueDate < now) {
               // Overdue
