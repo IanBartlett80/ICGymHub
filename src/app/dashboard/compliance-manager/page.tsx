@@ -138,9 +138,11 @@ export default function ComplianceManagerPage() {
 
   const [showItemModal, setShowItemModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [showCategoryForm, setShowCategoryForm] = useState(false)
   const [itemForm, setItemForm] = useState<ItemFormState>(buildDefaultItemForm)
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' })
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
   const loadMeta = useCallback(async () => {
@@ -251,26 +253,62 @@ export default function ComplianceManagerPage() {
     setShowItemModal(true)
   }
 
+  const openAddCategoryForm = () => {
+    setEditingCategoryId(null)
+    setCategoryForm({ name: '', description: '' })
+    setShowCategoryForm(true)
+  }
+
+  const openEditCategoryForm = (category: ComplianceCategory) => {
+    setEditingCategoryId(category.id)
+    setCategoryForm({
+      name: category.name,
+      description: category.description || '',
+    })
+    setShowCategoryForm(true)
+  }
+
   const submitCategory = async () => {
     try {
-      const response = await fetch('/api/compliance/categories', {
-        method: 'POST',
+      const url = editingCategoryId
+        ? `/api/compliance/categories/${editingCategoryId}`
+        : '/api/compliance/categories'
+      const method = editingCategoryId ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(categoryForm),
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to create category')
+        throw new Error(error.error || 'Failed to save category')
       }
 
       showToast.saveSuccess('Compliance category')
-      setShowCategoryModal(false)
+      setShowCategoryForm(false)
+      setEditingCategoryId(null)
       setCategoryForm({ name: '', description: '' })
       await loadMeta()
     } catch (error) {
-      showToast.error(error instanceof Error ? error.message : 'Failed to create category')
+      showToast.error(error instanceof Error ? error.message : 'Failed to save category')
     }
+  }
+
+  const deleteCategory = async (category: ComplianceCategory) => {
+    await confirmAndDelete(category.name, async () => {
+      const response = await fetch(`/api/compliance/categories/${category.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete category')
+      }
+
+      await loadMeta()
+    })
   }
 
   const submitItem = async () => {
@@ -430,7 +468,7 @@ export default function ComplianceManagerPage() {
                   onClick={() => setShowCategoryModal(true)}
                   className="rounded-lg border border-blue-300 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50"
                 >
-                  Add Category
+                  Categories
                 </button>
                 <button
                   onClick={openCreateItemModal}
@@ -684,27 +722,121 @@ export default function ComplianceManagerPage() {
 
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-4xl rounded-lg bg-white p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Compliance Categories</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={openAddCategoryForm}
+                  className="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
+                >
+                  Add Category
+                </button>
+                <button
+                  onClick={() => setShowCategoryModal(false)}
+                  className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Description</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Items</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
+                        No categories created yet. Click "Add Category" to create one.
+                      </td>
+                    </tr>
+                  ) : (
+                    categories.map((category) => (
+                      <tr key={category.id}>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{category.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{category.description || '-'}</td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-700">
+                          {(category as any)._count?.items || 0}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => openEditCategoryForm(category)}
+                              className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => void deleteCategory(category)}
+                              className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCategoryForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-lg bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Add Compliance Category</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {editingCategoryId ? 'Edit Category' : 'Add Category'}
+            </h3>
             <div className="mt-4 space-y-3">
-              <input
-                type="text"
-                placeholder="Category name"
-                value={categoryForm.name}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))}
-                className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-              <textarea
-                placeholder="Description (optional)"
-                value={categoryForm.description}
-                onChange={(event) => setCategoryForm((prev) => ({ ...prev, description: event.target.value }))}
-                rows={3}
-                className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Category Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Insurance, Safety, Training"
+                  value={categoryForm.name}
+                  onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))}
+                  className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Description (Optional)</label>
+                <textarea
+                  placeholder="Brief description of this category"
+                  value={categoryForm.description}
+                  onChange={(event) => setCategoryForm((prev) => ({ ...prev, description: event.target.value }))}
+                  rows={3}
+                  className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowCategoryModal(false)} className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={() => void submitCategory()} className="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700">Save Category</button>
+              <button
+                onClick={() => {
+                  setShowCategoryForm(false)
+                  setEditingCategoryId(null)
+                  setCategoryForm({ name: '', description: '' })
+                }}
+                className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void submitCategory()}
+                className="rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
+              >
+                {editingCategoryId ? 'Update' : 'Create'} Category
+              </button>
             </div>
           </div>
         </div>

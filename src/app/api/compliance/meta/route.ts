@@ -12,6 +12,13 @@ export async function GET(request: NextRequest) {
           clubId: club.id,
           isActive: true,
         },
+        include: {
+          _count: {
+            select: {
+              items: true,
+            },
+          },
+        },
         orderBy: { name: 'asc' },
       }),
       prisma.user.findMany({
