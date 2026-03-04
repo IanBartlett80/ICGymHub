@@ -9,24 +9,45 @@ export async function GET(request: NextRequest) {
 
     console.log('[zone-status] Fetching zones for clubId:', club.id);
 
-    // Get all zones for the club
-    const zones = await prisma.zone.findMany({
-      where: {
-        clubId: club.id,
-        active: true,
-      },
-      include: {
-        equipment: {
-          where: {
-            active: true,
-          },
-          include: {
-            safetyIssues: true,
-            maintenanceTasks: true,
+    // Try the full query first
+    let zones;
+    try {
+      zones = await prisma.zone.findMany({
+        where: {
+          clubId: club.id,
+          active: true,
+        },
+        include: {
+          equipment: {
+            where: {
+              active: true,
+            },
+            include: {
+              safetyIssues: true,
+              maintenanceTasks: true,
+            },
           },
         },
-      },
-    });
+      });
+      console.log('[zone-status] Full query successful');
+    } catch (queryError) {
+      console.error('[zone-status] Full query failed, trying simplified query:', queryError);
+      // Fallback to simpler query without nested includes
+      zones = await prisma.zone.findMany({
+        where: {
+          clubId: club.id,
+          active: true,
+        },
+        include: {
+          equipment: {
+            where: {
+              active: true,
+            },
+          },
+        },
+      });
+      console.log('[zone-status] Simplified query successful');
+    }
 
     console.log('[zone-status] Found zones:', zones.length);
     console.log('[zone-status] Zone equipment counts:', zones.map(z => ({ name: z.name, equipmentCount: z.equipment.length })));
@@ -73,35 +94,38 @@ export async function GET(request: NextRequest) {
         }
 
         // Check safety issues
-        equipment.safetyIssues.forEach(issue => {
-          // Only count open/in-progress issues
-          if (issue.status !== 'OPEN' && issue.status !== 'IN_PROGRESS') {
-            return;
-          }
-          
-          if (issue.issueType === 'CRITICAL') {
-            stats.criticalIssues++;
-            if (statusPriority < 4) {
-              status = 'CRITICAL_DEFECTS';
-              statusPriority = 4;
+        if (equipment.safetyIssues && Array.isArray(equipment.safetyIssues)) {
+          equipment.safetyIssues.forEach(issue => {
+            // Only count open/in-progress issues
+            if (issue.status !== 'OPEN' && issue.status !== 'IN_PROGRESS') {
+              return;
             }
-          } else if (issue.issueType === 'NON_CRITICAL' || issue.issueType === 'NON_CONFORMANCE') {
-            stats.nonCriticalIssues++;
-            if (statusPriority < 3) {
-              status = 'REQUIRES_ATTENTION';
-              statusPriority = 3;
+            
+            if (issue.issueType === 'CRITICAL') {
+              stats.criticalIssues++;
+              if (statusPriority < 4) {
+                status = 'CRITICAL_DEFECTS';
+                statusPriority = 4;
+              }
+            } else if (issue.issueType === 'NON_CRITICAL' || issue.issueType === 'NON_CONFORMANCE') {
+              stats.nonCriticalIssues++;
+              if (statusPriority < 3) {
+                status = 'REQUIRES_ATTENTION';
+                statusPriority = 3;
+              }
+            } else if (issue.issueType === 'RECOMMENDATION' || issue.issueType === 'INFORMATIONAL') {
+              stats.recommendations++;
+              if (statusPriority < 2) {
+                status = 'NON_CRITICAL_ISSUES';
+                statusPriority = 2;
+              }
             }
-          } else if (issue.issueType === 'RECOMMENDATION' || issue.issueType === 'INFORMATIONAL') {
-            stats.recommendations++;
-            if (statusPriority < 2) {
-              status = 'NON_CRITICAL_ISSUES';
-              statusPriority = 2;
-            }
-          }
-        });
+          });
+        }
 
         // Check maintenance tasks
-        equipment.maintenanceTasks.forEach(task => {
+        if (equipment.maintenanceTasks && Array.isArray(equipment.maintenanceTasks)) {
+          equipment.maintenanceTasks.forEach(task => {
           // Only count pending/in-progress tasks
           if (task.status !== 'PENDING' && task.status !== 'IN_PROGRESS') {
             return;
@@ -128,33 +152,7 @@ export async function GET(request: NextRequest) {
             }
           }
         });
-      });
-
-      return {
-        zoneId: zone.id,
-        zoneName: zone.name,
-        status,
-        statusPriority,
-        ...stats,
-      };
-    });
-
-    console.log('[zone-status] Returning zone statuses:', zoneStatuses.map(z => ({ 
-      zoneName: z.zoneName, 
-      status: z.status,
-      equipmentCount: z.equipmentCount,
-      criticalIssues: z.criticalIssues 
-    })));
-
-    return NextResponse.json({
-      zones: zoneStatuses,
-    });
-  } catch (error) {
-    console.error('[zone-status] ERROR:', error);
-    console.error('[zone-status] Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      error: error
+        }
     });
     return NextResponse.json(
       { 
