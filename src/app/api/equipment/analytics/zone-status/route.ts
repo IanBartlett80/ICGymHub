@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
   try {
     const { club } = await authenticateRequest(request);
 
+    console.log('[zone-status] Fetching zones for clubId:', club.id);
+
     // Get all zones for the club
     const zones = await prisma.zone.findMany({
       where: {
@@ -37,6 +39,9 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
+    console.log('[zone-status] Found zones:', zones.length);
+    console.log('[zone-status] Zone equipment counts:', zones.map(z => ({ name: z.name, equipmentCount: z.equipment.length })));
 
     // Calculate status for each zone
     const zoneStatuses = zones.map(zone => {
@@ -135,6 +140,13 @@ export async function GET(request: NextRequest) {
         ...stats,
       };
     });
+
+    console.log('[zone-status] Returning zone statuses:', zoneStatuses.map(z => ({ 
+      zoneName: z.zoneName, 
+      status: z.status,
+      equipmentCount: z.equipmentCount,
+      criticalIssues: z.criticalIssues 
+    })));
 
     return NextResponse.json({
       zones: zoneStatuses,

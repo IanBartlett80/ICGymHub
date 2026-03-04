@@ -81,6 +81,9 @@ export default function EquipmentPage() {
       if (statusRes.ok) {
         const data = await statusRes.json();
         statusData = data.zones || [];
+        console.log('[equipment-page] Zone status data:', statusData);
+      } else {
+        console.error('[equipment-page] Zone status fetch failed:', statusRes.status, statusRes.statusText);
       }
 
       if (monthlyRes.ok) {
@@ -94,6 +97,12 @@ export default function EquipmentPage() {
         ...zone,
         statusInfo: statusData.find(s => s.zoneId === zone.id),
       }));
+
+      console.log('[equipment-page] Zones with status:', zonesWithStatus.map(z => ({ 
+        name: z.name, 
+        hasStatusInfo: !!z.statusInfo,
+        equipmentCount: z.statusInfo?.equipmentCount 
+      })));
 
       setZones(zonesWithStatus);
     } catch (error) {
