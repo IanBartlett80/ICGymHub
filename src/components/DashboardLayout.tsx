@@ -68,7 +68,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
 
   const services = [
     { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
-    { id: 'safety' as ServiceType, name: 'Safety', basePath: '/dashboard/injury-reports' },
+    { id: 'safety' as ServiceType, name: 'Injury & Incidents', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
     { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },

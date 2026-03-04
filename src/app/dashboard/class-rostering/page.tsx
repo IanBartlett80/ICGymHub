@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
@@ -278,39 +277,6 @@ export default function ClassRosteringPage() {
     calendarEventsCount: calendarEvents.length 
   })
 
-  const configSteps = [
-    {
-      title: 'Gymsports',
-      description: 'Configure gymsports',
-      icon: '🤸',
-      href: '/dashboard/roster-config/gymsports',
-    },
-    {
-      title: 'Gym Zones',
-      description: 'Define training areas',
-      icon: '🏛️',
-      href: '/dashboard/roster-config/zones',
-    },
-    {
-      title: 'Coaches',
-      description: 'Add coach profiles',
-      icon: '👨‍🏫',
-      href: '/dashboard/roster-config/coaches',
-    },
-    {
-      title: 'Class Templates',
-      description: 'Create class templates',
-      icon: '📚',
-      href: '/dashboard/roster-config/classes',
-    },
-    {
-      title: 'Create Rosters',
-      description: 'Generate new rosters',
-      icon: '📅',
-      href: '/dashboard/rosters',
-    },
-  ]
-
   if (loading) {
     return (
       <DashboardLayout title="Class Rostering">
@@ -324,24 +290,6 @@ export default function ClassRosteringPage() {
   return (
     <DashboardLayout title="Class Rostering" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true} hideSidebar={true}>
       <div className="p-6">
-        {/* Configuration Cards - Top of Page */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Configuration</h2>
-          <div className="grid grid-cols-5 gap-4">
-            {configSteps.map((step, index) => (
-              <Link
-                key={index}
-                href={step.href}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition"
-              >
-                <div className="text-3xl mb-2">{step.icon}</div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">{step.title}</h3>
-                <p className="text-xs text-gray-600">{step.description}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-
         {/* Roster Calendar View */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           {/* Header with Filter */}
