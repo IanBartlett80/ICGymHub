@@ -1100,12 +1100,32 @@ model RepairQuoteRequest {
   quoteReceivedAt     DateTime?
   quoteReceivedFrom   String?    // Company/person who provided quote
   quoteNotes          String?
+  quoteDocuments      String?    // JSON array of base64 encoded documents: [{"name":"Quote.pdf","data":"base64...","type":"application/pdf"}]
+  
+  // Approval tracking
+  approvedBy          String?    // User ID who approved
+  approvedByName      String?    // Name of approver
+  approvedAt          DateTime?
+  approvalNotes       String?
+  rejectedBy          String?    // User ID who rejected
+  rejectedByName      String?    // Name of rejector
+  rejectedAt          DateTime?
+  rejectionReason     String?
+  
+  // Repair scheduling and tracking
+  scheduledRepairDate DateTime?  // When repair is scheduled to occur
+  repairCompanyName   String?    // Name of repair company
+  repairContactPerson String?    // Contact at repair company
+  repairContactPhone  String?
+  repairContactEmail  String?
   
   // Completion tracking
   repairCompletedAt   DateTime?
   repairCompletedBy   String?
   finalCost           String?
   completionNotes     String?
+  invoiceDocuments    String?    // JSON array of base64 encoded invoices: [{"name":"Invoice.pdf","data":"base64...","type":"application/pdf"}]
+  warrantyInfo        String?    // Warranty information for the repair
   
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt

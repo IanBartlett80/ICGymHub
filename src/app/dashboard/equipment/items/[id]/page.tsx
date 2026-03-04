@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import { 
@@ -213,6 +214,7 @@ export default function EquipmentDetailPage() {
   if (loading) {
     return (
       <DashboardLayout>
+        <EquipmentManagementSubNav />
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
@@ -223,6 +225,7 @@ export default function EquipmentDetailPage() {
   if (!equipment) {
     return (
       <DashboardLayout>
+        <EquipmentManagementSubNav />
         <div className="text-center py-12">
           <p className="text-gray-500">Equipment not found</p>
         </div>
@@ -235,6 +238,7 @@ export default function EquipmentDetailPage() {
 
   return (
     <DashboardLayout>
+      <EquipmentManagementSubNav />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

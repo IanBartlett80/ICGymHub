@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Equipment, Zone } from '@prisma/client';
 import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
+import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
 import { showToast, confirmAndDelete } from '@/lib/toast';
@@ -181,6 +182,7 @@ export default function AllEquipmentPage() {
 
   return (
     <DashboardLayout>
+      <EquipmentManagementSubNav />
       <div className="p-6">
         {/* Header */}
         <div className="mb-6">

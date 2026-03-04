@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import { showToast } from '@/lib/toast';
 
@@ -337,6 +338,7 @@ export default function MaintenanceDuePage() {
 
   return (
     <DashboardLayout>
+      <EquipmentManagementSubNav />
       <div className="p-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Maintenance Due</h1>

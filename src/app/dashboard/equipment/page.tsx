@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Zone } from '@prisma/client';
 import { QrCodeIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
+import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ZoneStatus {
@@ -167,6 +168,7 @@ export default function EquipmentPage() {
 
   return (
     <DashboardLayout>
+      <EquipmentManagementSubNav />
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="mb-6">

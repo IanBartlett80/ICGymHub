@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import Link from 'next/link';
 import { 
   ArrowLeftIcon,
@@ -224,6 +225,7 @@ export default function ZoneDetailPage() {
   if (loading) {
     return (
       <DashboardLayout>
+        <EquipmentManagementSubNav />
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
@@ -234,6 +236,7 @@ export default function ZoneDetailPage() {
   if (!zone) {
     return (
       <DashboardLayout>
+        <EquipmentManagementSubNav />
         <div className="text-center py-12">
           <p className="text-gray-500">Zone not found</p>
         </div>
@@ -246,6 +249,7 @@ export default function ZoneDetailPage() {
 
   return (
     <DashboardLayout>
+      <EquipmentManagementSubNav />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
