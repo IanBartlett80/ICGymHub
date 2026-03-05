@@ -81,6 +81,10 @@ export default function RosterBuilderPage() {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    console.log('Selected venue changed:', selectedVenue)
+  }, [selectedVenue])
+
   const fetchData = async () => {
     try {
       const [classesRes, coachesRes, zonesRes] = await Promise.all([
@@ -162,6 +166,11 @@ export default function RosterBuilderPage() {
       return
     }
 
+    if (!selectedVenue) {
+      setError('Please select a venue')
+      return
+    }
+
     if (selectedDays.size === 0) {
       setError('Please select at least one day of the week')
       return
@@ -202,6 +211,7 @@ export default function RosterBuilderPage() {
         }
       })
 
+      console.log('Creating roster template with venue:', selectedVenue)
       const res = await fetch('/api/rosters/generate-from-template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

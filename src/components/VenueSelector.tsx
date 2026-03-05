@@ -38,10 +38,18 @@ export default function VenueSelector({
         setVenues(data.venues || [])
         
         // If no value is set and there's a default venue, select it
-        if (value === undefined && data.venues?.length > 0) {
-          const defaultVenue = data.venues.find((v: Venue) => v.isDefault)
-          if (defaultVenue) {
-            onChange(defaultVenue.id)
+        // Also auto-select if showAllOption is false (venue is required)
+        if ((value === undefined || value === null) && data.venues?.length > 0) {
+          if (!showAllOption && data.venues.length > 0) {
+            // When venue is required, auto-select default or first venue
+            const defaultVenue = data.venues.find((v: Venue) => v.isDefault)
+            onChange(defaultVenue ? defaultVenue.id : data.venues[0].id)
+          } else if (value === undefined) {
+            // When "All Venues" option exists, only auto-select on undefined (not null)
+            const defaultVenue = data.venues.find((v: Venue) => v.isDefault)
+            if (defaultVenue) {
+              onChange(defaultVenue.id)
+            }
           }
         }
       } catch (err) {
@@ -83,11 +91,16 @@ export default function VenueSelector({
       </label>
       <select
         id="venue-selector"
-        value={value || 'all'}
-        onChange={(e) => onChange(e.target.value === 'all' ? null : e.target.value)}
+        value={value || (showAllOption ? 'all' : '')}
+        onChange={(e) => {
+          const val = e.target.value
+          onChange(val  === 'all' || val === '' ? null : val)
+        }}
         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+        required={!showAllOption}
       >
         {showAllOption && <option value="all">All Venues</option>}
+        {!showAllOption && <option value="">-- Select Venue --</option>}
         {venues.map((venue) => (
           <option key={venue.id} value={venue.id}>
             {venue.name} {venue.isDefault ? '(Default)' : ''}
