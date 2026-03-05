@@ -384,16 +384,14 @@ export default function ClassesPage() {
                     </p>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Venue</label>
-                <VenueSelector
-                  selectedVenue={formData.venueId}
-                  onVenueChange={(venueId) => setFormData({ ...formData, venueId })}
-                  showAllOption={false}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Venue</label>
+                  <VenueSelector
+                    selectedVenue={formData.venueId}
+                    onVenueChange={(venueId) => setFormData({ ...formData, venueId })}
+                    showAllOption={false}
+                  />
+                </div>
 
               <div className="col-span-2">
                 <label className="block text-sm font-medium mb-2">Levels *</label>
