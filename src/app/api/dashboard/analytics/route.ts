@@ -255,12 +255,12 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // WEEKLY CLASS CHART DATA (last 7 days)
+    // WEEKLY CLASS CHART DATA (next 7 days)
     const weeklyClassData = []
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 0; i < 7; i++) {
       const date = new Date(now)
-      date.setDate(now.getDate() - i)
+      date.setDate(now.getDate() + i)
       date.setHours(0, 0, 0, 0)
       const nextDay = new Date(date)
       nextDay.setDate(date.getDate() + 1)

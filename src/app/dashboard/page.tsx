@@ -301,7 +301,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Weekly Class Schedule</h3>
-                <p className="text-sm text-gray-600">Last 7 days - Classes vs Conflicts</p>
+                <p className="text-sm text-gray-600">Next 7 days - Classes vs Conflicts</p>
               </div>
               <Link href="/dashboard/rosters" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                 View All →
