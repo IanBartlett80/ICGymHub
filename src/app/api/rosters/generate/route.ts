@@ -8,6 +8,7 @@ const timePattern = /^\d{2}:\d{2}$/
 
 const generateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  venueId: z.string().optional(),
   templates: z
     .array(
       z.object({
@@ -55,10 +56,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { date, templates } = parsed.data
+    const { date, venueId, templates } = parsed.data
 
     const result = await generateDailyRoster(prisma, {
       clubId: user.clubId,
+      venueId: venueId || null,
       date,
       selections: templates,
       generatedById: user.id,

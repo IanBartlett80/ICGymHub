@@ -13,6 +13,7 @@ export type TemplateSelection = {
 
 export type GenerateDailyRosterInput = {
   clubId: string
+  venueId?: string | null // Optional venue filter
   date: string // YYYY-MM-DD in club local calendar
   selections: TemplateSelection[]
   generatedById: string
@@ -93,7 +94,7 @@ export async function generateDailyRoster(
   prisma: PrismaClient,
   input: GenerateDailyRosterInput
 ): Promise<GenerateDailyRosterResult> {
-  const { clubId, date, selections, generatedById, timezone } = input
+  const { clubId, venueId, date, selections, generatedById, timezone } = input
 
   const dayRegex = /^\d{4}-\d{2}-\d{2}$/
   if (!dayRegex.test(date)) {
@@ -105,7 +106,11 @@ export async function generateDailyRoster(
   }
 
   const clubZones = await prisma.zone.findMany({ 
-    where: { clubId, active: true },
+    where: { 
+      clubId, 
+      active: true,
+      ...(venueId && { venueId }), // Filter by venue if provided
+    },
     orderBy: [
       { isFirst: 'desc' }, // Priority zones first
       { name: 'asc' }      // Then alphabetically
@@ -147,6 +152,7 @@ export async function generateDailyRoster(
   const roster = await prisma.roster.create({
     data: {
       clubId,
+      venueId: venueId || null,
       scope: 'DAY',
       startDate: dayStart,
       endDate: dayEnd,
@@ -325,6 +331,7 @@ export async function generateDailyRoster(
     const session = await prisma.classSession.create({
       data: {
         clubId,
+        venueId: venueId || null,
         templateId: template.id,
         date: dayStart,
         startTimeLocal,
@@ -364,6 +371,7 @@ export async function generateDailyRoster(
       await prisma.rosterSlot.create({
         data: {
           clubId,
+          venueId: venueId || null,
           rosterId: roster.id,
           sessionId: session.id,
           zoneId: segment.zoneId,
@@ -407,18 +415,19 @@ export async function recalculateRosterConflicts(
   })
 
   // Build schedules for zones and coaches
-  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean; zoneAllowsOverlap: boolean }>>()
+  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean; zoneAllowsOverlap: boolean; venueId: string | null }>>()
   const coachSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date }>>()
 
   for (const slot of slots) {
-    // Track zone usage
+    // Track zone usage with venue awareness
     const zoneEntries = zoneSchedule.get(slot.zoneId) || []
     zoneEntries.push({ 
       slotId: slot.id, 
       start: slot.startsAt, 
       end: slot.endsAt,
       allowOverlap: slot.allowOverlap,
-      zoneAllowsOverlap: slot.zone.allowOverlap
+      zoneAllowsOverlap: slot.zone.allowOverlap,
+      venueId: slot.venueId, // Track venue for zone conflicts
     })
     zoneSchedule.set(slot.zoneId, zoneEntries)
 
@@ -439,11 +448,15 @@ export async function recalculateRosterConflicts(
     let hasZoneConflict = false
     let hasCoachConflict = false
 
-    // Check for zone conflicts
+    // Check for zone conflicts - ONLY within same venue
     const zoneEntries = zoneSchedule.get(slot.zoneId) || []
     for (const entry of zoneEntries) {
       // Skip self
       if (entry.slotId === slot.id) continue
+      
+      // CRITICAL: Only check for zone conflict if SAME VENUE
+      // Different venues can have same zone name without conflict
+      if (entry.venueId !== slot.venueId) continue
       
       // Check if there's an overlap and overlap is not allowed by ANY of:
       // - The current slot's allowOverlap flag
@@ -459,14 +472,15 @@ export async function recalculateRosterConflicts(
       }
     }
 
-    // Check for coach conflicts
+    // Check for coach conflicts - ACROSS ALL VENUES
+    // A coach can't be in two places at once, even at different venues
     for (const sessionCoach of slot.session.coaches) {
       const coachEntries = coachSchedule.get(sessionCoach.coachId) || []
       for (const entry of coachEntries) {
         // Skip self
         if (entry.slotId === slot.id) continue
         
-        // Check if there's an overlap
+        // Check if there's an overlap (no venue filter for coaches)
         if (overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
           hasCoachConflict = true
           break

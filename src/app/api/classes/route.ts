@@ -34,8 +34,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const venueId = searchParams.get('venueId')
+
+    const where: any = { clubId: user.clubId }
+    if (venueId) where.venueId = venueId
+
     const classes = await prisma.classTemplate.findMany({
-      where: { clubId: user.clubId },
+      where,
       include: {
         gymsport: true,
         allowedZones: { include: { zone: true } },
@@ -53,6 +59,7 @@ export async function GET(req: NextRequest) {
 
 const classSchema = z.object({
   name: z.string().min(1).max(200),
+  venueId: z.string().optional(),
   gymsportId: z.string().optional(),
   level: z.string().min(1),
   lengthMinutes: z.number().int().positive(),
@@ -83,6 +90,7 @@ export async function POST(req: NextRequest) {
 
     const {
       name,
+      venueId,
       gymsportId,
       level,
       lengthMinutes,
@@ -109,6 +117,7 @@ export async function POST(req: NextRequest) {
     const classTemplate = await prisma.classTemplate.create({
       data: {
         clubId: user.clubId,
+        venueId: venueId || null,
         name,
         gymsportId: gymsportId || null,
         level,

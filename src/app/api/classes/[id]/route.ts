@@ -96,6 +96,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const {
       name,
+      venueId,
       gymsportId,
       level,
       lengthMinutes,
@@ -125,6 +126,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data: {
         name,
+        venueId: venueId || null,
         gymsportId: gymsportId || null,
         level,
         lengthMinutes,

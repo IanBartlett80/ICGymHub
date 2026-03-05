@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -77,6 +78,7 @@ interface CalendarEvent {
 export default function ClassRosteringPage() {
   const router = useRouter()
   const [, setUser] = useState<UserData | null>(null)
+  const [selectedVenue, setSelectedVenue] = useState<string | null>(null)
   const [templates, setTemplates] = useState<RosterTemplate[]>([])
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
   const [rosterSlots, setRosterSlots] = useState<RosterSlot[]>([])
@@ -110,7 +112,7 @@ export default function ClassRosteringPage() {
   useEffect(() => {
     if (selectedTemplates.length > 0) {
       fetchRosterSlots()
-    }
+    }, selectedVenue]) // Add selectedVenue dependency
   }, [selectedTemplates, currentDate])
 
   // Update selected slot when roster slots change (after save)
@@ -147,10 +149,11 @@ export default function ClassRosteringPage() {
       const weekStart = format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd')
       const weekEnd = format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'yyyy-MM-dd')
       
-      console.log('Fetching slots for templates:', selectedTemplates, 'Date range:', weekStart, 'to', weekEnd)
+      console.log('Fetching slots for templates:', selectedTemplates, 'Date range:', weekStart, 'to', weekEnd, 'Venue:', selectedVenue)
       
+      const venueParam = selectedVenue ? `&venueId=${selectedVenue}` : ''
       const response = await fetch(
-        `/api/rosters/combined?templateIds=${selectedTemplates.join(',')}&startDate=${weekStart}&endDate=${weekEnd}`
+        `/api/rosters/combined?templateIds=${selectedTemplates.join(',')}&startDate=${weekStart}&endDate=${weekEnd}${venueParam}`
       )
       if (response.ok) {
         const data = await response.json()
@@ -301,6 +304,15 @@ export default function ClassRosteringPage() {
               
               {/* Template and Class Filter Dropdowns */}
               <div className="flex items-center gap-4">
+                {/* Venue Selector */}
+                <div className="flex items-center gap-2">
+                  <VenueSelector 
+                    value={selectedVenue} 
+                    onChange={setSelectedVenue}
+                    showAllOption={true}
+                  />
+                </div>
+
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-medium text-gray-700">View Template:</label>
                   <select

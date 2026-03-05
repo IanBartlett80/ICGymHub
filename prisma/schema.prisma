@@ -103,6 +103,7 @@ model Venue {
   // Relations
   zones                Zone[]
   equipment            Equipment[]
+  classTemplates       ClassTemplate[]
   rosters              Roster[]
   rosterTemplates      RosterTemplate[]
   rosterSlots          RosterSlot[]
@@ -446,6 +447,8 @@ model ClassTemplate {
   id                     String    @id @default(cuid())
   club                   Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   clubId                 String
+  venue                  Venue?    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venueId                String?
   name                   String
   gymsport               Gymsport? @relation(fields: [gymsportId], references: [id], onDelete: SetNull)
   gymsportId             String?
@@ -469,6 +472,7 @@ model ClassTemplate {
 
   @@unique([clubId, name])
   @@index([clubId])
+  @@index([venueId])
   @@index([gymsportId])
 }
 

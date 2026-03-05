@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const templateIds = searchParams.get('templateIds')?.split(',') || [];
+    const venueId = searchParams.get('venueId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
     const rosters = await prisma.roster.findMany({
       where: {
         clubId: payload.clubId,
+        ...(venueId && { venueId }), // Filter by venue if provided
         templateId: templateIds.length > 0 ? { in: templateIds } : undefined,
         OR: [
           {
