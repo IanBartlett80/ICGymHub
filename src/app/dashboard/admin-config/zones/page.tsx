@@ -12,6 +12,12 @@ interface Zone {
   allowOverlap: boolean
   active: boolean
   isFirst: boolean
+  venueId: string | null
+  venue?: {
+    id: string
+    name: string
+    slug: string
+  } | null
 }
 
 export default function AdminZonesPage() {
@@ -22,6 +28,7 @@ export default function AdminZonesPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [filterVenueId, setFilterVenueId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '', venueId: null as string | null, allowOverlap: false, active: true, isFirst: false })
 
   useEffect(() => {
@@ -73,13 +80,17 @@ export default function AdminZonesPage() {
     setFormData({
       name: zone.name,
       description: zone.description || '',
-      venueId: (zone as any).venueId || null,
+      venueId: zone.venueId || null,
       allowOverlap: zone.allowOverlap,
       active: zone.active,
       isFirst: zone.isFirst,
     })
     setShowForm(true)
   }
+
+  const filteredZones = filterVenueId
+    ? zones.filter(zone => zone.venueId === filterVenueId)
+    : zones
 
   const handleDelete = async (id: string) => {
     const zone = zones.find(z => z.id === id)
@@ -111,18 +122,30 @@ export default function AdminZonesPage() {
     <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Manage Gym Zones</h2>
-            <button
-              onClick={() => {
-                setShowForm(!showForm)
-                setEditingId(null)
-                setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              {showForm ? 'Cancel' : 'Add Zone'}
-            </button>
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Manage Gym Zones</h2>
+              <button
+                onClick={() => {
+                  setShowForm(!showForm)
+                  setEditingId(null)
+                  setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                {showForm ? 'Cancel' : 'Add Zone'}
+              </button>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <div className="max-w-xs">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Venue</label>
+                <VenueSelector
+                  value={filterVenueId}
+                  onChange={setFilterVenueId}
+                  showAllOption={true}
+                />
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -218,6 +241,7 @@ export default function AdminZonesPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Venue</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Settings</th>
@@ -225,9 +249,14 @@ export default function AdminZonesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {zones.map((zone) => (
-                  <tr key={zone.id}>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">{zone.name}</td>
+                {filteredZones.map((zone) => (
+                  <tr key={zone.id}>                    <td className="px-6 py-4 whitespace-nowrap">
+                      {zone.venue ? (
+                        <span className="text-sm font-medium text-gray-900">{zone.venue.name}</span>
+                      ) : (
+                        <span className="text-sm text-gray-400 italic">No venue</span>
+                      )}
+                    </td>                    <td className="px-6 py-4 whitespace-nowrap font-medium">{zone.name}</td>
                     <td className="px-6 py-4">{zone.description || '-'}</td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2 flex-wrap">
@@ -272,6 +301,9 @@ export default function AdminZonesPage() {
             </table>
             {zones.length === 0 && (
               <div className="text-center py-8 text-gray-500">No zones configured yet.</div>
+            )}
+            {zones.length > 0 && filteredZones.length === 0 && (
+              <div className="text-center py-8 text-gray-500">No zones found for the selected venue.</div>
             )}
           </div>
         </div>

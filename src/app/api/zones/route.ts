@@ -42,6 +42,15 @@ export async function GET(req: NextRequest) {
 
     const zones = await prisma.zone.findMany({
       where,
+      include: {
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     })
 
