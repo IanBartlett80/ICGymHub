@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const template = await prisma.rosterTemplate.create({
       data: {
         name,
-        venueId: venueId || null,
+        venueId: venueId && venueId !== '' ? venueId : null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         activeDays: activeDays.join(','),
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         // Use the roster generator to create a proper roster with sessions
         const result = await generateDailyRoster(prisma, {
           clubId: payload.clubId,
-          venueId: template.venueId,
+          venueId: template.venueId || null,
           date: format(currentDate, 'yyyy-MM-dd'),
           selections: classTemplates,
           generatedById: payload.userId,
@@ -118,8 +118,13 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error generating rosters from template:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to generate rosters from template' },
+      { 
+        error: 'Failed to generate rosters from template',
+        details: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
