@@ -69,6 +69,13 @@ export async function GET(request: NextRequest) {
       include: {
         slots: {
           include: {
+            venue: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
             session: {
               include: {
                 template: {

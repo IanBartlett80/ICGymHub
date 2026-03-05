@@ -58,8 +58,22 @@ export async function GET(req: NextRequest) {
     const rosters = await prisma.roster.findMany({
       where,
       include: {
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
         slots: {
           include: {
+            venue: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
             zone: true,
             session: {
               include: {

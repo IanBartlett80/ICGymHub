@@ -29,6 +29,11 @@ type ReportSlot = {
   endsAt: string
   rosterDate: string
   dayOfWeek: string | null
+  venue?: {
+    id: string
+    name: string
+    slug: string
+  } | null
   zone: {
     id: string
     name: string
@@ -48,6 +53,7 @@ type CoachAllocation = {
   coachEmail: string | null
   className: string
   classColor: string | null
+  venueName: string | null
   date: string
   dayOfWeek: string
   startTime: string
@@ -71,6 +77,7 @@ export default function RosterReportsPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedCoachId, setSelectedCoachId] = useState<string>('all')
   const [selectedClassId, setSelectedClassId] = useState<string>('all')
+  const [selectedVenueId, setSelectedVenueId] = useState<string>('all')
   const [emailingAll, setEmailingAll] = useState(false)
   const [emailingCoach, setEmailingCoach] = useState<string | null>(null)
 
@@ -79,6 +86,20 @@ export default function RosterReportsPage() {
     fetchCoaches()
     fetchClassTemplates()
   }, [currentDate, viewMode, selectedCoachId, selectedClassId])
+
+  // Filter slots by selected venue (client-side filtering)
+  const filteredSlots = selectedVenueId === 'all' 
+    ? slots 
+    : slots.filter(slot => slot.venue?.id === selectedVenueId)
+
+  // Get unique venues from all slots
+  const uniqueVenues = Array.from(
+    new Set(
+      slots
+        .filter(slot => slot.venue)
+        .map(slot => JSON.stringify({ id: slot.venue!.id, name: slot.venue!.name }))
+    )
+  ).map(str => JSON.parse(str))
 
   const fetchCoaches = async () => {
     try {
@@ -272,12 +293,13 @@ export default function RosterReportsPage() {
       coachEmail: string | null
       className: string
       classColor: string | null
+      venueName: string | null
       date: string
       sessionId: string
       slots: { startsAt: Date; endsAt: Date }[]
     }>()
 
-    slots.forEach(slot => {
+    filteredSlots.forEach(slot => {
       slot.session.coaches.forEach(coachAssignment => {
         const key = `${coachAssignment.coach.id}-${slot.session.id}-${format(new Date(slot.startsAt), 'yyyy-MM-dd')}`
         
@@ -288,6 +310,7 @@ export default function RosterReportsPage() {
             coachEmail: coachAssignment.coach.email,
             className: slot.session.template?.name || 'Unknown Class',
             classColor: slot.session.template?.color || null,
+            venueName: slot.venue?.name || null,
             date: format(new Date(slot.startsAt), 'yyyy-MM-dd'),
             sessionId: slot.session.id,
             slots: []
@@ -314,6 +337,7 @@ export default function RosterReportsPage() {
         coachEmail: session.coachEmail,
         className: session.className,
         classColor: session.classColor,
+        venueName: session.venueName,
         date: session.date,
         dayOfWeek: format(new Date(session.date), 'EEEE'),
         startTime: format(earliestStart, 'h:mm a'),
@@ -334,9 +358,12 @@ export default function RosterReportsPage() {
 
   // Group slots by day for the schedule report
   const groupSlotsByDay = () => {
+    // Use filtered slots
+    const slotsToGroup = filteredSlots
+    
     const grouped: { [key: string]: ReportSlot[] } = {}
     
-    slots.forEach(slot => {
+    slotsToGroup.forEach(slot => {
       const date = format(new Date(slot.startsAt), 'yyyy-MM-dd')
       if (!grouped[date]) {
         grouped[date] = []
@@ -580,11 +607,32 @@ export default function RosterReportsPage() {
                   ))}
                 </select>
               </div>
+
+              {/* Venue Filter (for Daily Class Schedule only) */}
+              {reportType === 'schedule' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Filter by Venue
+                  </label>
+                  <select
+                    value={selectedVenueId}
+                    onChange={(e) => setSelectedVenueId(e.target.value)}
+                    className="border rounded px-3 py-2"
+                  >
+                    <option value="all">All Venues</option>
+                    {uniqueVenues.map((venue: { id: string; name: string }) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Report Content */}
-          {slots.length === 0 ? (
+          {filteredSlots.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
               No published rosters found for this period.
             </div>
@@ -655,6 +703,9 @@ function StaffAllocationsReport({
                 Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Venue
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Class
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -685,6 +736,13 @@ function StaffAllocationsReport({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                     <div>{format(new Date(allocation.date), 'EEE, MMM dd, yyyy')}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {allocation.venueName ? (
+                      <span className="text-gray-900">{allocation.venueName}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">No venue</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span

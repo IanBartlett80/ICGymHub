@@ -34,6 +34,11 @@ interface RosterSlot {
   endsAt: string
   conflictFlag: boolean
   conflictType: string | null
+  venue?: {
+    id: string
+    name: string
+    slug: string
+  } | null
   zone: {
     id: string
     name: string
@@ -519,6 +524,7 @@ export default function ClassRosteringPage() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Venue</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zone</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
@@ -532,6 +538,13 @@ export default function ClassRosteringPage() {
                         <tr key={slot.id} className={slot.conflictFlag ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {format(new Date(slot.rosterDate), 'MMM dd, yyyy')}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {slot.venue ? (
+                              <span className="text-gray-900">{slot.venue.name}</span>
+                            ) : (
+                              <span className="text-gray-400 italic">No venue</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
                             {slot.session.template?.name || 'Unknown Class'}
