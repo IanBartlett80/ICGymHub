@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('Created template:', { id: template.id, name: template.name, venueId: template.venueId });
+
     // Generate rosters for each matching day
     const createdRosters = [];
     let currentDate = new Date(startDate);
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
       
       if (activeDays.includes(dayOfWeek)) {
         // Use the roster generator to create a proper roster with sessions
+        console.log('Generating roster for date:', format(currentDate, 'yyyy-MM-dd'), 'with venueId:', template.venueId);
         const result = await generateDailyRoster(prisma, {
           clubId: payload.clubId,
           venueId: template.venueId || null,
@@ -73,6 +76,8 @@ export async function POST(request: NextRequest) {
           generatedById: payload.userId,
           timezone: user.club.timezone,
         });
+
+        console.log('Generated roster:', { rosterId: result.rosterId, slotCount: result.slotCount });
 
         // Update the roster to link it to the template
         await prisma.roster.update({

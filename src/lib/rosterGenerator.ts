@@ -149,6 +149,7 @@ export async function generateDailyRoster(
   const dayStart = zonedDate(date, '00:00', timezone)
   const dayEnd = addMinutes(dayStart, 24 * 60)
 
+  console.log('Creating roster with clubId:', clubId, 'venueId:', venueId, 'date:', date);
   const roster = await prisma.roster.create({
     data: {
       clubId,
@@ -161,6 +162,7 @@ export async function generateDailyRoster(
       generatedById,
     },
   })
+  console.log('Created roster:', { id: roster.id, venueId: roster.venueId });
 
   const zoneSchedule = new Map<string, Array<{ start: Date; end: Date; sessionKey: string }>>()
   const coachSchedule = new Map<string, Array<{ start: Date; end: Date; sessionKey: string }>>()

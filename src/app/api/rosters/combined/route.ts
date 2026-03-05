@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     
     console.log('Fetching rosters for:', { 
       templateIds, 
+      venueId,
       startDate: startDateObj.toISOString(), 
       endDate: endDateObj.toISOString(), 
       clubId: payload.clubId 
@@ -115,7 +116,8 @@ export async function GET(request: NextRequest) {
     console.log('Found rosters:', rosters.length, 'Total slots:', allSlots.length);
     console.log('Rosters by template:', rosters.map(r => ({ 
       id: r.id, 
-      templateId: r.templateId, 
+      templateId: r.templateId,
+      venueId: r.venueId,
       dayOfWeek: r.dayOfWeek,
       startDate: r.startDate,
       endDate: r.endDate,
