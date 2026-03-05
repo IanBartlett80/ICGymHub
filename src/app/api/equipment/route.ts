@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const condition = searchParams.get('condition');
     const zoneId = searchParams.get('zoneId');
+    const venueId = searchParams.get('venueId');
     const inUseParam = searchParams.get('inUse');
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
     if (category) where.category = category;
     if (condition) where.condition = condition;
     if (zoneId) where.zoneId = zoneId;
+    if (venueId) where.venueId = venueId;
     if (inUseParam !== null) where.inUse = inUseParam === 'true';
     if (search) {
       where.OR = [
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest) {
       condition,
       location,
       zoneId,
+      venueId,
       lastMaintenance,
       nextMaintenance,
       maintenanceNotes,
@@ -164,6 +167,7 @@ export async function POST(request: NextRequest) {
         condition: condition || 'Good',
         location: location || null,
         zoneId: zoneId || null,
+        venueId: venueId || null,
         lastMaintenance: lastMaintenance ? new Date(lastMaintenance) : null,
         nextMaintenance: nextMaintenance ? new Date(nextMaintenance) : null,
         maintenanceNotes: maintenanceNotes || null,

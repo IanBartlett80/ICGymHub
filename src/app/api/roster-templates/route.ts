@@ -11,10 +11,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url)
+    const venueId = searchParams.get('venueId')
+
+    const where: any = { clubId: payload.clubId }
+    if (venueId) where.venueId = venueId
+
     const templates = await prisma.rosterTemplate.findMany({
-      where: {
-        clubId: payload.clubId,
-      },
+      where,
       include: {
         createdBy: {
           select: {
@@ -59,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, startDate, endDate, activeDays, classConfig } = body;
+    const { name, startDate, endDate, activeDays, classConfig, venueId } = body;
 
     // Validation
     if (!name || !startDate || !endDate || !activeDays || activeDays.length === 0) {
@@ -78,6 +82,7 @@ export async function POST(request: NextRequest) {
         classConfig: classConfig || '[]', // Required field
         clubId: payload.clubId,
         createdById: payload.userId,
+        venueId: venueId || null,
       },
       include: {
         createdBy: {

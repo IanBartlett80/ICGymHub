@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     const templateId = searchParams.get('templateId');
     const assignedToMe = searchParams.get('assignedToMe') === 'true';
     const priority = searchParams.get('priority');
+    const venueId = searchParams.get('venueId');
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest) {
     if (templateId) where.templateId = templateId;
     if (assignedToMe) where.assignedToUserId = authResult.user.id;
     if (priority) where.priority = priority;
+    if (venueId) where.venueId = venueId;
     if (from || to) {
       where.submittedAt = {};
       if (from) where.submittedAt.gte = new Date(from);

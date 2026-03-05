@@ -13,12 +13,16 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const activeOnly = searchParams.get('active') === 'true';
+    const venueId = searchParams.get('venueId');
+
+    const where: any = {
+      clubId: authResult.user.clubId,
+    }
+    if (activeOnly) where.active = true
+    if (venueId) where.venueId = venueId
 
     const templates = await prisma.injuryFormTemplate.findMany({
-      where: {
-        clubId: authResult.user.clubId,
-        ...(activeOnly && { active: true }),
-      },
+      where,
       include: {
         sections: {
           include: {

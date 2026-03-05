@@ -33,8 +33,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const venueId = searchParams.get('venueId')
+
+    const where: any = { clubId: user.clubId }
+    if (venueId) where.venueId = venueId
+
     const rosters = await prisma.roster.findMany({
-      where: { clubId: user.clubId },
+      where,
       include: {
         template: {
           select: {

@@ -34,8 +34,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const venueId = searchParams.get('venueId')
+
+    const where: any = { clubId: user.clubId }
+    if (venueId) where.venueId = venueId
+
     const zones = await prisma.zone.findMany({
-      where: { clubId: user.clubId },
+      where,
       orderBy: { name: 'asc' },
     })
 
@@ -52,6 +58,7 @@ const zoneSchema = z.object({
   allowOverlap: z.boolean().optional(),
   active: z.boolean().optional(),
   isFirst: z.boolean().optional(),
+  venueId: z.string().optional(),
 })
 
 // POST /api/zones - Create a new zone
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, allowOverlap, active, isFirst } = parsed.data
+    const { name, description, allowOverlap, active, isFirst, venueId } = parsed.data
 
     // Check for duplicate name
     const existing = await prisma.zone.findUnique({
@@ -87,6 +94,7 @@ export async function POST(req: NextRequest) {
         allowOverlap: allowOverlap ?? false,
         active: active ?? true,
         isFirst: isFirst ?? false,
+        venueId: venueId || null,
       },
     })
 

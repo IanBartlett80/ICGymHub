@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const dueWithin = searchParams.get('dueWithin')
+    const venueId = searchParams.get('venueId')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
       clubId: string
       categoryId?: string
       ownerId?: string | null
+      venueId?: string
       status?: string
       deadlineDate?: { gte?: Date; lte?: Date }
       OR?: Array<{ title?: { contains: string }; description?: { contains: string }; notes?: { contains: string } }>
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
     if (ownerId && ownerId !== 'all') {
       where.ownerId = ownerId === 'none' ? null : ownerId
     }
+    if (venueId && venueId !== 'all') where.venueId = venueId
 
     if (status && !['all', 'OVERDUE'].includes(status)) {
       where.status = status

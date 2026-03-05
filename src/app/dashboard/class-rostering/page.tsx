@@ -262,10 +262,10 @@ export default function ClassRosteringPage() {
   })
 
   const calendarEvents: CalendarEvent[] = filteredSlots
-    .filter(slot => slot.session.template !== null)
+    .filter(slot => slot.session.template !== null && slot.session.template !== undefined)
     .map(slot => ({
       id: slot.id,
-      title: `${slot.session.template!.name} - ${slot.zoneName}`,
+      title: `${slot.session.template?.name || 'Unknown Class'} - ${slot.zoneName}`,
       start: new Date(slot.startsAt),
       end: new Date(slot.endsAt),
       resource: slot,

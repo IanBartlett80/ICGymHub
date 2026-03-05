@@ -10,8 +10,14 @@ export async function GET(request: NextRequest) {
   try {
     const { club } = await authenticateRequest(request)
 
+    const { searchParams } = new URL(request.url)
+    const venueId = searchParams.get('venueId')
+
+    const where: any = { clubId: club.id }
+    if (venueId && venueId !== 'all') where.venueId = venueId
+
     const categories = await prisma.complianceCategory.findMany({
-      where: { clubId: club.id },
+      where,
       include: {
         _count: {
           select: {

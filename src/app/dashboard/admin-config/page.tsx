@@ -14,6 +14,22 @@ export default function AdminConfigPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Venues Card */}
+          <Link href="/dashboard/admin-config/venues">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition cursor-pointer">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">🏢</span>
+                <h2 className="text-xl font-bold text-gray-900">Venues</h2>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Manage physical locations and facilities for your club.
+              </p>
+              <div className="mt-4 text-blue-600 text-sm font-medium">
+                Configure →
+              </div>
+            </div>
+          </Link>
+
           {/* GymSports Card */}
           <Link href="/dashboard/admin-config/gymsports">
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition cursor-pointer">
