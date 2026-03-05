@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import VenueSelector from '@/components/VenueSelector'
 import { showToast, confirmAndDelete } from '@/lib/toast'
 
 type Zone = {
@@ -56,6 +57,7 @@ export default function ClassesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
+    venueId: null as string | null,
     gymsportId: '',
     level: 'REC',
     lengthMinutes: 60,
@@ -136,6 +138,7 @@ export default function ClassesPage() {
         setEditingId(null)
         setFormData({
           name: '',
+          venueId: null,
           gymsportId: '',
           level: 'REC',
           lengthMinutes: 60,
@@ -161,6 +164,7 @@ export default function ClassesPage() {
   const handleEdit = (classTemplate: ClassTemplate) => {
     setFormData({
       name: classTemplate.name,
+      venueId: (classTemplate as any).venueId || null,
       gymsportId: classTemplate.gymsportId || '',
       level: classTemplate.level,
       lengthMinutes: classTemplate.lengthMinutes,
@@ -266,6 +270,7 @@ export default function ClassesPage() {
               setCoaches(allCoaches)
               setFormData({
                 name: '',
+                venueId: null,
                 gymsportId: '',
                 level: 'REC',
                 lengthMinutes: 60,
@@ -332,6 +337,18 @@ export default function ClassesPage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Venue</label>
+                <VenueSelector
+                  selectedVenue={formData.venueId}
+                  onVenueChange={(venueId) => setFormData({ ...formData, venueId })}
+                  showAllOption={false}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Level *</label>
                   <select

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
 
 type Zone = {
   id: string
@@ -72,6 +73,7 @@ export default function ClassesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
+    venueId: null as string | null,
     gymsportId: '',
     level: 'REC',
     levels: [] as string[],
@@ -83,7 +85,7 @@ export default function ClassesPage() {
     endTimeLocal: '17:00',
     notes: '',
     color: '#3b82f6',
-    allowedZoneIds: [] as string[],
+    allowedZoneIds: []as string[],
     defaultCoachIds: [] as string[],
   })
 
@@ -170,6 +172,7 @@ export default function ClassesPage() {
         setEditingId(null)
         setFormData({
           name: '',
+          venueId: null,
           gymsportId: '',
           level: 'REC',
           levels: [],
@@ -200,6 +203,7 @@ export default function ClassesPage() {
     
     setFormData({
       name: classTemplate.name,
+      venueId: (classTemplate as any).venueId || null,
       gymsportId: classTemplate.gymsportId || '',
       level: classTemplate.level,
       levels: levels,
@@ -311,6 +315,7 @@ export default function ClassesPage() {
               setCoaches(allCoaches)
               setFormData({
                 name: '',
+                venueId: null,
                 gymsportId: '',
                 level: 'REC',
                 levels: [],
@@ -379,8 +384,19 @@ export default function ClassesPage() {
                     </p>
                   )}
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-2">Levels *</label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Venue</label>
+                <VenueSelector
+                  selectedVenue={formData.venueId}
+                  onVenueChange={(venueId) => setFormData({ ...formData, venueId })}
+                  showAllOption={false}
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-2">Levels *</label>
                   <div className="relative level-dropdown-container">
                     <button
                       type="button"

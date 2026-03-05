@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
 
 type ClassTemplate = {
   id: string
@@ -59,6 +60,7 @@ export default function RosterBuilderPage() {
 
   // Template mode fields
   const [templateName, setTemplateName] = useState('')
+  const [selectedVenue, setSelectedVenue] = useState<string | null>(null)
   const [startDate, setStartDate] = useState(() => {
     const today = new Date()
     return today.toISOString().split('T')[0]
@@ -205,6 +207,7 @@ export default function RosterBuilderPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: templateName,
+          venueId: selectedVenue,
           startDate,
           endDate,
           activeDays: Array.from(selectedDays),
@@ -282,6 +285,15 @@ export default function RosterBuilderPage() {
                 onChange={(e) => setTemplateName(e.target.value)}
                 placeholder="e.g., Monday Training, Weekend Classes"
                 className="w-full border rounded px-3 py-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Venue</label>
+              <VenueSelector
+                selectedVenue={selectedVenue}
+                onVenueChange={setSelectedVenue}
+                showAllOption={false}
               />
             </div>
 

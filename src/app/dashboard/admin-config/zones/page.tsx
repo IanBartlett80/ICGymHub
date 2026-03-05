@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
 import { showToast, confirmAndDelete } from '@/lib/toast'
 
 interface Zone {
@@ -21,7 +22,7 @@ export default function AdminZonesPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
+  const [formData, setFormData] = useState({ name: '', description: '', venueId: null as string | null, allowOverlap: false, active: true, isFirst: false })
 
   useEffect(() => {
     fetchZones()
@@ -55,7 +56,7 @@ export default function AdminZonesPage() {
 
       if (res.ok) {
         await fetchZones()
-        setFormData({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
+        setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
         setEditingId(null)
         setShowForm(false)
         setSuccess('Zone saved successfully')
@@ -72,6 +73,7 @@ export default function AdminZonesPage() {
     setFormData({
       name: zone.name,
       description: zone.description || '',
+      venueId: (zone as any).venueId || null,
       allowOverlap: zone.allowOverlap,
       active: zone.active,
       isFirst: zone.isFirst,
@@ -115,7 +117,7 @@ export default function AdminZonesPage() {
               onClick={() => {
                 setShowForm(!showForm)
                 setEditingId(null)
-                setFormData({ name: '', description: '', allowOverlap: false, active: true, isFirst: false })
+                setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
               }}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
@@ -162,6 +164,15 @@ export default function AdminZonesPage() {
                       className="w-full border rounded px-3 py-2"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Venue</label>
+                  <VenueSelector
+                    selectedVenue={formData.venueId}
+                    onVenueChange={(venueId) => setFormData({ ...formData, venueId })}
+                    showAllOption={false}
+                  />
                 </div>
 
                 <div className="flex gap-4">
