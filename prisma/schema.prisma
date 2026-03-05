@@ -606,6 +606,7 @@ model Roster {
   @@index([venueId])
   @@index([scope])
   @@index([startDate])
+  @@index([clubId, startDate, endDate])
 }
 
 model RosterSlot {

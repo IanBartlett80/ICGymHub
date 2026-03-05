@@ -164,11 +164,64 @@ export async function generateDailyRoster(
   })
   console.log('Created roster:', { id: roster.id, venueId: roster.venueId });
 
-  const zoneSchedule = new Map<string, Array<{ start: Date; end: Date; sessionKey: string }>>()
+  // Fetch existing rosters for the same date to detect cross-roster conflicts
+  const existingRosters = await prisma.roster.findMany({
+    where: {
+      clubId,
+      startDate: { lte: dayEnd },
+      endDate: { gte: dayStart },
+      status: { in: ['DRAFT', 'PUBLISHED'] },
+      id: { not: roster.id }, // Exclude the roster we just created
+    },
+    include: {
+      slots: {
+        include: {
+          session: {
+            include: {
+              coaches: true,
+            },
+          },
+          zone: true,
+        },
+      },
+    },
+  })
+  console.log(`Cross-roster conflict check: Found ${existingRosters.length} existing rosters for this date`)
+
+  const zoneSchedule = new Map<string, Array<{ start: Date; end: Date; sessionKey: string; venueId: string | null }>>()
   const coachSchedule = new Map<string, Array<{ start: Date; end: Date; sessionKey: string }>>()
   const conflicts: { sessionId: string; reason: string }[] = []
   const sessionIds: string[] = []
   let slotCount = 0
+
+  // Pre-populate schedules with existing roster slots
+  for (const existingRoster of existingRosters) {
+    for (const slot of existingRoster.slots) {
+      // Add to zone schedule
+      const zoneEntries = zoneSchedule.get(slot.zoneId) || []
+      zoneEntries.push({
+        start: slot.startsAt,
+        end: slot.endsAt,
+        sessionKey: `existing-${slot.id}`,
+        venueId: slot.venueId,
+      })
+      zoneSchedule.set(slot.zoneId, zoneEntries)
+
+      // Add to coach schedule
+      if (slot.session.coaches && slot.session.coaches.length > 0) {
+        for (const coach of slot.session.coaches) {
+          const coachEntries = coachSchedule.get(coach.id) || []
+          coachEntries.push({
+            start: slot.startsAt,
+            end: slot.endsAt,
+            sessionKey: `existing-${slot.id}`,
+          })
+          coachSchedule.set(coach.id, coachEntries)
+        }
+      }
+    }
+  }
+  console.log(`Pre-populated schedules: ${zoneSchedule.size} zones, ${coachSchedule.size} coaches`)
 
   for (const selection of selections) {
     const template = templates.find((t: any) => t.id === selection.templateId)
@@ -271,7 +324,12 @@ export async function generateDailyRoster(
         const zoneIndex = (zoneRotationIndex + checkedZones) % sortedResolvedZones.length
         const zoneId = sortedResolvedZones[zoneIndex]
         const entries = zoneSchedule.get(zoneId) || []
-        const conflict = entries.some((e) => !allowOverlap && overlaps(cursor, segmentEnd, e.start, e.end))
+        // Zone conflicts only matter within same venue (zones are venue-specific)
+        const conflict = entries.some((e) => {
+          // Skip entries from different venues
+          if (e.venueId !== (venueId || null)) return false
+          return !allowOverlap && overlaps(cursor, segmentEnd, e.start, e.end)
+        })
         
         if (!conflict) {
           assignedZone = zoneId
@@ -316,7 +374,7 @@ export async function generateDailyRoster(
 
       // update schedules
       const zoneEntries = zoneSchedule.get(assignedZone!) || []
-      zoneEntries.push({ start: cursor, end: segmentEnd, sessionKey })
+      zoneEntries.push({ start: cursor, end: segmentEnd, sessionKey, venueId: venueId || null })
       zoneSchedule.set(assignedZone!, zoneEntries)
 
       for (const coachId of finalCoachIds) {
@@ -396,15 +454,48 @@ export async function generateDailyRoster(
 }
 
 /**
- * Recalculate conflicts for all slots in a roster
+ * Recalculate conflicts for all slots in a roster and ALL OTHER rosters on the same date
  */
 export async function recalculateRosterConflicts(
   prisma: PrismaClient,
   rosterId: string
 ): Promise<void> {
-  // Get all slots for this roster with their sessions and coaches
+  // First, get the roster to find its date range and club
+  const roster = await prisma.roster.findUnique({
+    where: { id: rosterId },
+    select: { 
+      id: true,
+      clubId: true, 
+      startDate: true, 
+      endDate: true 
+    },
+  })
+
+  if (!roster) {
+    console.error(`Roster ${rosterId} not found for conflict recalculation`)
+    return
+  }
+
+  console.log(`Recalculating conflicts for roster ${rosterId} (${roster.startDate.toISOString()})`)
+
+  // Get ALL rosters for this date (not just the current one)
+  const allRostersForDate = await prisma.roster.findMany({
+    where: {
+      clubId: roster.clubId,
+      startDate: { lte: roster.endDate },
+      endDate: { gte: roster.startDate },
+      status: { in: ['DRAFT', 'PUBLISHED'] },
+    },
+    select: { id: true },
+  })
+
+  console.log(`Found ${allRostersForDate.length} rosters for this date (including current)`)
+
+  // Get ALL slots for ALL rosters on this date
   const slots = await prisma.rosterSlot.findMany({
-    where: { rosterId },
+    where: {
+      rosterId: { in: allRostersForDate.map((r: { id: string }) => r.id) },
+    },
     include: {
       session: {
         include: {
@@ -416,9 +507,11 @@ export async function recalculateRosterConflicts(
     orderBy: { startsAt: 'asc' },
   })
 
-  // Build schedules for zones and coaches
-  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean; zoneAllowsOverlap: boolean; venueId: string | null }>>()
-  const coachSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date }>>()
+  console.log(`Analyzing ${slots.length} total slots across all rosters for conflicts`)
+
+  // Build schedules for zones and coaches from ALL rosters
+  const zoneSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; allowOverlap: boolean; zoneAllowsOverlap: boolean; venueId: string | null; rosterId: string }>>()
+  const coachSchedule = new Map<string, Array<{ slotId: string; start: Date; end: Date; rosterId: string }>>()
 
   for (const slot of slots) {
     // Track zone usage with venue awareness
@@ -430,6 +523,7 @@ export async function recalculateRosterConflicts(
       allowOverlap: slot.allowOverlap,
       zoneAllowsOverlap: slot.zone.allowOverlap,
       venueId: slot.venueId, // Track venue for zone conflicts
+      rosterId: slot.rosterId, // Track which roster this slot belongs to
     })
     zoneSchedule.set(slot.zoneId, zoneEntries)
 
@@ -439,13 +533,16 @@ export async function recalculateRosterConflicts(
       coachEntries.push({ 
         slotId: slot.id, 
         start: slot.startsAt, 
-        end: slot.endsAt 
+        end: slot.endsAt,
+        rosterId: slot.rosterId, // Track which roster this slot belongs to
       })
       coachSchedule.set(sessionCoach.coachId, coachEntries)
     }
   }
 
-  // Now check each slot for conflicts
+  // Detect conflicts across ALL slots
+  const slotConflicts = new Map<string, { hasZoneConflict: boolean; hasCoachConflict: boolean }>()
+
   for (const slot of slots) {
     let hasZoneConflict = false
     let hasCoachConflict = false
@@ -470,62 +567,74 @@ export async function recalculateRosterConflicts(
       
       if (!currentAllowsOverlap && !entryAllowsOverlap && overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
         hasZoneConflict = true
+        console.log(`Zone conflict detected: Slot ${slot.id} conflicts with ${entry.slotId} in zone ${slot.zoneId}`)
         break
       }
     }
 
-    // Check for coach conflicts - ACROSS ALL VENUES
-    // A coach can't be in two places at once, even at different venues
+    // Check for coach conflicts - ACROSS ALL VENUES (coach can't be in two places)
     for (const sessionCoach of slot.session.coaches) {
       const coachEntries = coachSchedule.get(sessionCoach.coachId) || []
       for (const entry of coachEntries) {
         // Skip self
         if (entry.slotId === slot.id) continue
         
-        // Check if there's an overlap (no venue filter for coaches)
+        // Check if there's an overlap (no venue filter for coaches - this is cross-roster detection)
         if (overlaps(slot.startsAt, slot.endsAt, entry.start, entry.end)) {
           hasCoachConflict = true
+          console.log(`Coach conflict detected: Slot ${slot.id} (roster ${slot.rosterId}) conflicts with ${entry.slotId} (roster ${entry.rosterId}) for coach ${sessionCoach.coachId}`)
           break
         }
       }
       if (hasCoachConflict) break
     }
 
-    // Determine conflict type
+    slotConflicts.set(slot.id, { hasZoneConflict, hasCoachConflict })
+  }
+
+  // Update all slots with their conflict status
+  const updatePromises: Promise<any>[] = []
+  for (const slot of slots) {
+    const conflict = slotConflicts.get(slot.id)
+    if (!conflict) continue
+
+    const hasConflict = conflict.hasZoneConflict || conflict.hasCoachConflict
     let conflictType: string | null = null
-    const hasConflict = hasZoneConflict || hasCoachConflict
-    
-    if (hasZoneConflict && hasCoachConflict) {
+    if (conflict.hasZoneConflict && conflict.hasCoachConflict) {
       conflictType = 'both'
-    } else if (hasZoneConflict) {
+    } else if (conflict.hasZoneConflict) {
       conflictType = 'zone'
-    } else if (hasCoachConflict) {
+    } else if (conflict.hasCoachConflict) {
       conflictType = 'coach'
     }
 
-    // Update the slot if conflict status changed
+    // Only update if the conflict status changed
     if (slot.conflictFlag !== hasConflict || slot.conflictType !== conflictType) {
-      await prisma.rosterSlot.update({
-        where: { id: slot.id },
-        data: {
-          conflictFlag: hasConflict,
-          conflictType,
-        },
-      })
+      updatePromises.push(
+        prisma.rosterSlot.update({
+          where: { id: slot.id },
+          data: { conflictFlag: hasConflict, conflictType },
+        })
+      )
     }
   }
 
-  // Update session conflict flags
+  if (updatePromises.length > 0) {
+    await Promise.all(updatePromises)
+    console.log(`Updated conflict status for ${updatePromises.length} slots across ${allRostersForDate.length} rosters`)
+  } else {
+    console.log('No conflict status changes needed')
+  }
+
+  // Update session conflict flags for all affected rosters
   const sessions = await prisma.classSession.findMany({
     where: {
       rosterSlots: {
-        some: { rosterId },
+        some: { rosterId: { in: allRostersForDate.map((r: { id: string }) => r.id) } },
       },
     },
     include: {
-      rosterSlots: {
-        where: { rosterId },
-      },
+      rosterSlots: true,
     },
   })
 
