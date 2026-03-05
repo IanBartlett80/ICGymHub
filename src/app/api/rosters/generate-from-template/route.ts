@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, startDate, endDate, activeDays, classTemplates } = body;
+    const { name, startDate, endDate, activeDays, classTemplates, venueId } = body;
 
     // Validation
     if (!name || !startDate || !endDate || !activeDays || activeDays.length === 0) {
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     const template = await prisma.rosterTemplate.create({
       data: {
         name,
+        venueId: venueId || null,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         activeDays: activeDays.join(','),
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
         // Use the roster generator to create a proper roster with sessions
         const result = await generateDailyRoster(prisma, {
           clubId: payload.clubId,
+          venueId: template.venueId,
           date: format(currentDate, 'yyyy-MM-dd'),
           selections: classTemplates,
           generatedById: payload.userId,
