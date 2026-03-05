@@ -155,6 +155,9 @@ export default function ScheduledMaintenanceForm({
             <p className="text-sm text-blue-900">
               <span className="font-medium">Equipment:</span> {equipmentName}
             </p>
+            <p className="text-xs text-blue-700 mt-1">
+              Venue will be auto-assigned from the selected equipment
+            </p>
           </div>
 
           {/* Task Type */}

@@ -194,6 +194,9 @@ export default function RepairQuoteRequestForm({
                 </div>
               )}
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Venue will be auto-assigned from the selected equipment
+            </p>
           </div>
 
           {/* Issue Description */}

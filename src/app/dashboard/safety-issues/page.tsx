@@ -346,6 +346,9 @@ export default function SafetyIssuesPage() {
                       </option>
                     ))}
                   </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Venue will be auto-assigned from the selected equipment
+                  </p>
                 </div>
 
                 <div>

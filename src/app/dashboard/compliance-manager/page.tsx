@@ -92,6 +92,7 @@ interface ItemFormState {
   description: string
   notes: string
   categoryId: string
+  venueId: string
   ownerId: string
   ownerName: string
   ownerEmail: string
@@ -110,6 +111,7 @@ function buildDefaultItemForm(): ItemFormState {
     description: '',
     notes: '',
     categoryId: 'none',
+    venueId: '',
     ownerId: 'none',
     ownerName: '',
     ownerEmail: '',
@@ -245,6 +247,7 @@ export default function ComplianceManagerPage() {
       description: item.description || '',
       notes: item.notes || '',
       categoryId: item.categoryId || 'none',
+      venueId: item.venueId || '',
       ownerId: item.ownerId || 'none',
       ownerName: item.ownerName || '',
       ownerEmail: item.ownerEmail || '',
@@ -889,6 +892,15 @@ export default function ComplianceManagerPage() {
                     <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Venue</label>
+                <VenueSelector
+                  value={itemForm.venueId || null}
+                  onChange={(venue) => setItemForm((prev) => ({ ...prev, venueId: venue || '' }))}
+                  required={false}
+                />
               </div>
 
               <div>

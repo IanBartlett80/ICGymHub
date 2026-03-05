@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import VenueSelector from '@/components/VenueSelector';
 
 interface FormField {
   id: string;
@@ -44,6 +45,7 @@ export default function FormBuilderPage() {
   const router = useRouter();
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [venueId, setVenueId] = useState<string | null>(null);
   const [headerColor, setHeaderColor] = useState('#0078d4');
   const [thankYouMessage, setThankYouMessage] = useState('Thank you for your submission. We will review this report shortly.');
   const [sections, setSections] = useState<FormSection[]>([]);
@@ -167,6 +169,7 @@ export default function FormBuilderPage() {
       const payload = {
         name: formName,
         description: formDescription,
+        venueId: venueId || undefined,
         headerColor,
         thankYouMessage,
         sections: sections.map(s => ({
@@ -292,6 +295,20 @@ export default function FormBuilderPage() {
                     rows={3}
                     placeholder="Brief description of this form"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Venue
+                  </label>
+                  <VenueSelector
+                    value={venueId}
+                    onChange={setVenueId}
+                    required={false}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Assign this form to a specific venue (optional)
+                  </p>
                 </div>
 
                 <div>

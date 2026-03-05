@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import VenueSelector from '@/components/VenueSelector';
 import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface FormField {
@@ -31,6 +32,7 @@ interface FormTemplate {
   id: string;
   name: string;
   description: string;
+  venueId?: string | null;
   headerColor: string;
   logoUrl?: string;
   thankYouMessage: string;
@@ -259,6 +261,20 @@ export default function EditFormPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Brief description of this form"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Venue
+              </label>
+              <VenueSelector
+                value={template.venueId || null}
+                onChange={(venue) => setTemplate({ ...template, venueId: venue || null })}
+                required={false}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Assign this form to a specific venue (optional)
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

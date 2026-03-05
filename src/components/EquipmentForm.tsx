@@ -1,8 +1,9 @@
 'use client';
 
 import { Equipment, Zone } from '@prisma/client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import VenueSelector from './VenueSelector';
 
 interface EquipmentFormData {
   name: string;
@@ -12,6 +13,7 @@ interface EquipmentFormData {
   purchaseCost?: string;
   condition: string;
   location?: string;
+  venueId?: string;
   zoneId?: string;
   lastMaintenance?: string;
   nextMaintenance?: string;
@@ -50,6 +52,7 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
     purchaseCost: equipment?.purchaseCost || '',
     condition: equipment?.condition || 'Good',
     location: equipment?.location || '',
+    venueId: (equipment as any)?.venueId || '',
     zoneId: equipment?.zoneId || '',
     lastMaintenance: equipment?.lastMaintenance ? new Date(equipment.lastMaintenance).toISOString().split('T')[0] : '',
     nextMaintenance: equipment?.nextMaintenance ? new Date(equipment.nextMaintenance).toISOString().split('T')[0] : '',
@@ -223,6 +226,23 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Venue
+                </label>
+                <VenueSelector
+                  value={formData.venueId || null}
+                  onChange={(venue) => {
+                    handleChange('venueId', venue || '');
+                    // Clear zone when venue changes
+                    if (formData.zoneId) {
+                      handleChange('zoneId', '');
+                    }
+                  }}
+                  required={false}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Zone
                 </label>
                 <select
@@ -231,9 +251,11 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">No zone assigned</option>
-                  {zones.map(zone => (
-                    <option key={zone.id} value={zone.id}>{zone.name}</option>
-                  ))}
+                  {zones
+                    .filter(zone => !formData.venueId || (zone as any).venueId === formData.venueId)
+                    .map(zone => (
+                      <option key={zone.id} value={zone.id}>{zone.name}</option>
+                    ))}
                 </select>
               </div>
 
