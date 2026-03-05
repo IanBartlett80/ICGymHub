@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
+import VenueSelector from '@/components/VenueSelector';
 import { showToast } from '@/lib/toast';
 
 interface EquipmentItem {
@@ -55,6 +56,7 @@ export default function MaintenanceDuePage() {
   const [taskTypeFilter, setTaskTypeFilter] = useState('');
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [equipmentFilter, setEquipmentFilter] = useState('');
+  const [venueId, setVenueId] = useState<string | null>(null);
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentItem | null>(null);
   const [editingTask, setEditingTask] = useState<MaintenanceTask | null>(null);
@@ -65,6 +67,7 @@ export default function MaintenanceDuePage() {
       setLoading(true);
 
       const params = new URLSearchParams();
+      if (venueId && venueId !== 'all') params.set('venueId', venueId);
       if (statusFilter) params.set('status', statusFilter);
       if (priorityFilter) params.set('priority', priorityFilter);
       if (taskTypeFilter) params.set('taskType', taskTypeFilter);
@@ -74,7 +77,7 @@ export default function MaintenanceDuePage() {
 
       const [tasksRes, equipmentRes] = await Promise.all([
         fetch(`/api/maintenance-tasks?${params.toString()}`),
-        fetch('/api/equipment'),
+        fetch(`/api/equipment?${venueId && venueId !== 'all' ? `venueId=${venueId}` : ''}`),
       ]);
 
       if (!tasksRes.ok) {
@@ -95,7 +98,7 @@ export default function MaintenanceDuePage() {
     } finally {
       setLoading(false);
     }
-  }, [equipmentFilter, overdueOnly, priorityFilter, statusFilter, taskTypeFilter]);
+  }, [equipmentFilter, overdueOnly, priorityFilter, statusFilter, taskTypeFilter, venueId]);
 
   useEffect(() => {
     loadData();
@@ -372,6 +375,12 @@ export default function MaintenanceDuePage() {
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
+
             <input
               type="text"
               placeholder="Search tasks, equipment, assignee"

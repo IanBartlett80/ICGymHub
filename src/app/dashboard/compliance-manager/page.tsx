@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
 import { confirmAndDelete, showToast } from '@/lib/toast'
 import {
   Bar,
@@ -129,6 +130,7 @@ export default function ComplianceManagerPage() {
   const [loadingMeta, setLoadingMeta] = useState(true)
 
   const [search, setSearch] = useState('')
+  const [venueId, setVenueId] = useState<string | null>(null)
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [ownerFilter, setOwnerFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -163,6 +165,7 @@ export default function ComplianceManagerPage() {
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams()
+    if (venueId && venueId !== 'all') params.append('venueId', venueId)
     if (search.trim()) params.append('search', search.trim())
     if (categoryFilter !== 'all') params.append('categoryId', categoryFilter)
     if (ownerFilter !== 'all') params.append('ownerId', ownerFilter)
@@ -171,7 +174,7 @@ export default function ComplianceManagerPage() {
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
     return params
-  }, [search, categoryFilter, ownerFilter, statusFilter, dueWithinFilter, startDate, endDate])
+  }, [search, venueId, categoryFilter, ownerFilter, statusFilter, dueWithinFilter, startDate, endDate])
 
   const loadData = useCallback(async () => {
     try {
@@ -220,6 +223,7 @@ export default function ComplianceManagerPage() {
 
   const clearFilters = () => {
     setSearch('')
+    setVenueId(null)
     setCategoryFilter('all')
     setOwnerFilter('all')
     setStatusFilter('all')
@@ -549,7 +553,12 @@ export default function ComplianceManagerPage() {
         )}
 
         <div className="rounded-lg border border-gray-200 bg-white p-4 print:hidden">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-7">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-8">
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
             <input
               type="text"
               placeholder="Search item title, description, notes"

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
+import VenueSelector from '@/components/VenueSelector';
 import { showToast } from '@/lib/toast';
 import {
   MagnifyingGlassIcon,
@@ -105,17 +106,19 @@ export default function RepairQuotesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [urgencyFilter, setUrgencyFilter] = useState('');
+  const [venueId, setVenueId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<RepairQuoteRequest | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     loadRequests();
-  }, [statusFilter, urgencyFilter]);
+  }, [statusFilter, urgencyFilter, venueId]);
 
   const loadRequests = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (venueId && venueId !== 'all') params.set('venueId', venueId);
       if (statusFilter) params.set('status', statusFilter);
       if (urgencyFilter) params.set('urgency', urgencyFilter);
       params.set('limit', '200');
@@ -277,6 +280,15 @@ export default function RepairQuotesPage() {
         {/* Filters and View Toggle */}
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex flex-wrap items-center gap-4">
+            {/* Venue Selector */}
+            <div className="min-w-[200px]">
+              <VenueSelector
+                value={venueId}
+                onChange={setVenueId}
+                showAllOption={true}
+              />
+            </div>
+
             {/* Search */}
             <div className="flex-1 min-w-[250px]">
               <div className="relative">

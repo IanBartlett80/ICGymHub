@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const zoneId = searchParams.get('zoneId');
     const equipmentId = searchParams.get('equipmentId');
+    const venueId = searchParams.get('venueId');
     const status = searchParams.get('status');
     const issueType = searchParams.get('issueType');
     const priority = searchParams.get('priority');
@@ -17,6 +18,11 @@ export async function GET(request: NextRequest) {
     const where: any = {
       clubId: club.id,
     };
+
+    // Venue filtering
+    if (venueId && venueId !== 'all') {
+      where.venueId = venueId;
+    }
 
     // Handle equipment filtering - can't use both equipmentId and equipment relation filter
     if (equipmentId) {
@@ -111,6 +117,7 @@ export async function POST(request: NextRequest) {
     const issue = await prisma.safetyIssue.create({
       data: {
         clubId: club.id,
+        venueId: equipment.venueId,
         equipmentId,
         issueType,
         title,

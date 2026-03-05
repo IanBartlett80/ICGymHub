@@ -15,10 +15,20 @@ export async function GET(req: NextRequest) {
 
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; clubId: string }
 
+    const { searchParams } = new URL(req.url);
+    const venueId = searchParams.get('venueId');
+
+    const where: any = {
+      clubId: decoded.clubId,
+    };
+
+    // Venue filtering
+    if (venueId && venueId !== 'all') {
+      where.venueId = venueId;
+    }
+
     const requests = await prisma.repairQuoteRequest.findMany({
-      where: {
-        clubId: decoded.clubId,
-      },
+      where,
       include: {
         equipment: {
           select: {
@@ -140,6 +150,7 @@ export async function POST(req: NextRequest) {
     const request = await prisma.repairQuoteRequest.create({
       data: {
         clubId: decoded.clubId,
+        venueId: equipment.venueId,
         equipmentId,
         safetyIssueId: safetyIssueId || null,
         requestedById: decoded.userId,

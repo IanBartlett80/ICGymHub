@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
+import VenueSelector from '@/components/VenueSelector';
 import { 
   PlusIcon,
   PencilIcon,
@@ -49,6 +50,7 @@ export default function SafetyIssuesPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [filterIssueType, setFilterIssueType] = useState<string>('all');
+  const [venueId, setVenueId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     equipmentId: '',
@@ -63,7 +65,7 @@ export default function SafetyIssuesPage() {
 
   useEffect(() => {
     loadData();
-  }, [filterStatus, filterPriority, filterIssueType]);
+  }, [filterStatus, filterPriority, filterIssueType, venueId]);
 
   const loadData = async () => {
     try {
@@ -71,13 +73,14 @@ export default function SafetyIssuesPage() {
       
       // Build query params
       const params = new URLSearchParams();
+      if (venueId && venueId !== 'all') params.append('venueId', venueId);
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterPriority !== 'all') params.append('priority', filterPriority);
       if (filterIssueType !== 'all') params.append('issueType', filterIssueType);
 
       const [issuesRes, equipmentRes] = await Promise.all([
         fetch(`/api/safety-issues?${params.toString()}`),
-        fetch('/api/equipment'),
+        fetch(`/api/equipment?${venueId && venueId !== 'all' ? `venueId=${venueId}` : ''}`),
       ]);
 
       if (issuesRes.ok) {
@@ -264,7 +267,14 @@ export default function SafetyIssuesPage() {
             <FunnelIcon className="h-5 w-5 text-gray-600" />
             <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <VenueSelector
+                value={venueId}
+                onChange={setVenueId}
+                showAllOption={true}
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <select

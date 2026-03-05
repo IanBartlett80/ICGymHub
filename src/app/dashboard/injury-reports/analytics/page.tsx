@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import VenueSelector from '@/components/VenueSelector';
 
 interface AnalyticsData {
   totalSubmissions: number;
@@ -38,6 +39,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   
   // Filter states
+  const [venueId, setVenueId] = useState<string | null>(null);
   const [gymsportFilter, setGymsportFilter] = useState<string>('all');
   const [classFilter, setClassFilter] = useState<string>('all');
   const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
@@ -54,7 +56,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     loadFilters();
     loadAnalytics();
-  }, [gymsportFilter, classFilter, equipmentFilter, statusFilter, priorityFilter, startDate, endDate]);
+  }, [venueId, gymsportFilter, classFilter, equipmentFilter, statusFilter, priorityFilter, startDate, endDate]);
 
   const loadFilters = async () => {
     try {
@@ -85,6 +87,7 @@ export default function AnalyticsPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (venueId && venueId !== 'all') params.append('venueId', venueId);
       if (gymsportFilter !== 'all') params.append('gymsport', gymsportFilter);
       if (classFilter !== 'all') params.append('class', classFilter);
       if (equipmentFilter !== 'all') params.append('equipment', equipmentFilter);
@@ -106,6 +109,7 @@ export default function AnalyticsPage() {
   };
 
   const clearFilters = () => {
+    setVenueId(null);
     setGymsportFilter('all');
     setClassFilter('all');
     setEquipmentFilter('all');
@@ -173,7 +177,16 @@ export default function AnalyticsPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {/* Venue Filter */}
+            <div>
+              <VenueSelector
+                value={venueId}
+                onChange={setVenueId}
+                showAllOption={true}
+              />
+            </div>
+
             {/* Gymsport Filter */}
             <div>
               <label className="block text-sm font-medium mb-1">Gymsport</label>

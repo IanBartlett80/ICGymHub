@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import VenueSelector from '@/components/VenueSelector';
 
 interface Submission {
   id: string;
@@ -32,6 +33,7 @@ export default function SubmissionsReportsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [programFilter, setProgramFilter] = useState<string>('all');
   const [coachFilter, setCoachFilter] = useState<string>('all');
@@ -39,16 +41,18 @@ export default function SubmissionsReportsPage() {
 
   useEffect(() => {
     loadSubmissions();
-  }, [statusFilter]);
+  }, [statusFilter, venueId]);
 
   const loadSubmissions = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const submissionsUrl = statusFilter === 'all' 
-        ? '/api/injury-submissions'
-        : `/api/injury-submissions?status=${statusFilter}`;
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (venueId && venueId !== 'all') params.set('venueId', venueId);
+      
+      const submissionsUrl = `/api/injury-submissions${params.toString() ? '?' + params.toString() : ''}`;
       
       const submissionsRes = await fetch(submissionsUrl);
       if (submissionsRes.ok) {
@@ -164,6 +168,13 @@ export default function SubmissionsReportsPage() {
 
             {/* Filters */}
             <div className="flex gap-3">
+              <div className="flex-1">
+                <VenueSelector
+                  value={venueId}
+                  onChange={setVenueId}
+                  showAllOption={true}
+                />
+              </div>
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1">Program</label>
                 <select

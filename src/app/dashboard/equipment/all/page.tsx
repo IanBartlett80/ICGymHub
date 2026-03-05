@@ -8,6 +8,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
+import VenueSelector from '@/components/VenueSelector';
 import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface EquipmentWithRelations extends Equipment {
@@ -29,17 +30,23 @@ export default function AllEquipmentPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
+  const [venueId, setVenueId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [venueId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      const params = new URLSearchParams();
+      if (venueId && venueId !== 'all') {
+        params.set('venueId', venueId);
+      }
+      
       const [equipmentRes, zonesRes] = await Promise.all([
-        fetch('/api/equipment'),
-        fetch('/api/zones'),
+        fetch(`/api/equipment?${params.toString()}`),
+        fetch(`/api/zones?${params.toString()}`),
       ]);
 
       if (equipmentRes.ok) {
@@ -206,7 +213,16 @@ export default function AllEquipmentPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Venue Selector */}
+            <div>
+              <VenueSelector
+                value={venueId}
+                onChange={setVenueId}
+                showAllOption={true}
+              />
+            </div>
+
             {/* Search */}
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
