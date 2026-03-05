@@ -112,8 +112,8 @@ export default function ClassRosteringPage() {
   useEffect(() => {
     if (selectedTemplates.length > 0) {
       fetchRosterSlots()
-    }, selectedVenue]) // Add selectedVenue dependency
-  }, [selectedTemplates, currentDate])
+    }
+  }, [selectedTemplates, currentDate, selectedVenue])
 
   // Update selected slot when roster slots change (after save)
   useEffect(() => {

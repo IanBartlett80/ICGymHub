@@ -295,7 +295,7 @@ async function executeCreateNotification(
       },
       select: { id: true },
     });
-    userIds.push(...admins.map((u) => u.id));
+    userIds.push(...admins.map((u: any) => u.id));
   }
 
   // Create notifications
@@ -366,6 +366,11 @@ export async function triggerAutomations(
 
     if (!submission) {
       console.error('❌ Submission not found:', submissionId);
+      return;
+    }
+
+    if (!submission.template) {
+      console.error('❌ Submission template not found for submission:', submissionId);
       return;
     }
 

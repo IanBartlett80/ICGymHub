@@ -28,6 +28,7 @@ async function getAuthenticatedUser(req: NextRequest) {
 
 const classSchema = z.object({
   name: z.string().min(1).max(200),
+  venueId: z.string().optional(),
   gymsportId: z.string().optional(),
   level: z.string().min(1),
   lengthMinutes: z.number().int().positive(),

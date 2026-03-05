@@ -169,7 +169,7 @@ export async function generateDailyRoster(
   let slotCount = 0
 
   for (const selection of selections) {
-    const template = templates.find((t) => t.id === selection.templateId)
+    const template = templates.find((t: any) => t.id === selection.templateId)
     if (!template) {
       continue
     }
@@ -182,15 +182,15 @@ export async function generateDailyRoster(
 
     const allowedZoneIds = (selection.allowedZoneIds && selection.allowedZoneIds.length
       ? selection.allowedZoneIds
-      : template.allowedZones.map((z) => z.zoneId))
-      .filter((id) => clubZones.some((cz) => cz.id === id))
+      : template.allowedZones.map((z: any) => z.zoneId))
+      .filter((id: string) => clubZones.some((cz: any) => cz.id === id))
 
-    const resolvedAllowedZones = allowedZoneIds.length ? allowedZoneIds : clubZones.map((z) => z.id)
+    const resolvedAllowedZones = allowedZoneIds.length ? allowedZoneIds : clubZones.map((z: any) => z.id)
 
     // Sort zones to ensure isFirst zones appear first in rotation
-    const sortedResolvedZones = resolvedAllowedZones.sort((a, b) => {
-      const zoneA = clubZones.find(z => z.id === a)
-      const zoneB = clubZones.find(z => z.id === b)
+    const sortedResolvedZones = resolvedAllowedZones.sort((a: string, b: string) => {
+      const zoneA = clubZones.find((z: any) => z.id === a)
+      const zoneB = clubZones.find((z: any) => z.id === b)
       if (!zoneA || !zoneB) return 0
       // isFirst zones come first (true > false when cast to number)
       if (zoneA.isFirst && !zoneB.isFirst) return -1
@@ -200,7 +200,7 @@ export async function generateDailyRoster(
 
     const coachIds = (selection.coachIds && selection.coachIds.length
       ? selection.coachIds
-      : template.defaultCoaches.map((c) => c.coachId))
+      : template.defaultCoaches.map((c: any) => c.coachId))
 
     // Get the day of week for availability checking
     const dayOfWeek = getDayOfWeek(date)
@@ -210,7 +210,7 @@ export async function generateDailyRoster(
     const invalidCoaches: string[] = []
 
     for (const coachId of coachIds) {
-      const coachLink = template.defaultCoaches.find((c) => c.coachId === coachId)
+      const coachLink = template.defaultCoaches.find((c: any) => c.coachId === coachId)
       if (!coachLink) continue
 
       const coach = coachLink.coach
@@ -287,7 +287,7 @@ export async function generateDailyRoster(
         zoneConflict = !allowOverlap
       }
 
-      const coachConflicts = finalCoachIds.some((coachId) => {
+      const coachConflicts = finalCoachIds.some((coachId: string) => {
         const entries = coachSchedule.get(coachId) || []
         return entries.some((e) => overlaps(cursor, segmentEnd, e.start, e.end))
       })
@@ -307,15 +307,15 @@ export async function generateDailyRoster(
       segments.push({ 
         start: cursor, 
         end: segmentEnd, 
-        zoneId: assignedZone, 
+        zoneId: assignedZone!, 
         conflict: segmentConflict,
         conflictType
       })
 
       // update schedules
-      const zoneEntries = zoneSchedule.get(assignedZone) || []
+      const zoneEntries = zoneSchedule.get(assignedZone!) || []
       zoneEntries.push({ start: cursor, end: segmentEnd, sessionKey })
-      zoneSchedule.set(assignedZone, zoneEntries)
+      zoneSchedule.set(assignedZone!, zoneEntries)
 
       for (const coachId of finalCoachIds) {
         const list = coachSchedule.get(coachId) || []
@@ -528,7 +528,7 @@ export async function recalculateRosterConflicts(
   })
 
   for (const session of sessions) {
-    const hasConflict = session.rosterSlots.some((s) => s.conflictFlag)
+    const hasConflict = session.rosterSlots.some((s: any) => s.conflictFlag)
     if (session.conflictFlag !== hasConflict) {
       await prisma.classSession.update({
         where: { id: session.id },

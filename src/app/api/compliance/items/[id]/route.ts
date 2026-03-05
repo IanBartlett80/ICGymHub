@@ -197,9 +197,11 @@ export async function PUT(
 
     if (nextStatus === 'COMPLETED') {
       // Handle recurring items: move deadline forward instead of marking complete
-      const recurringSchedule = body.recurringSchedule !== undefined 
-        ? normalizeRecurringSchedule(body.recurringSchedule)
-        : existing.recurringSchedule || 'NONE'
+      const recurringSchedule = normalizeRecurringSchedule(
+        body.recurringSchedule !== undefined 
+          ? body.recurringSchedule
+          : existing.recurringSchedule || 'NONE'
+      )
       
       if (recurringSchedule !== 'NONE') {
         // Recurring item: update deadline and reset to OPEN
