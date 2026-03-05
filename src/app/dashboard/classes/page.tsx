@@ -342,8 +342,8 @@ export default function ClassesPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Venue</label>
                 <VenueSelector
-                  selectedVenue={formData.venueId}
-                  onVenueChange={(venueId) => setFormData({ ...formData, venueId })}
+                  value={formData.venueId}
+                  onChange={(venueId) => setFormData({ ...formData, venueId })}
                   showAllOption={false}
                 />
               </div>

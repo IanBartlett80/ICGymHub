@@ -291,8 +291,8 @@ export default function RosterBuilderPage() {
             <div>
               <label className="block text-sm font-medium mb-1">Venue</label>
               <VenueSelector
-                selectedVenue={selectedVenue}
-                onVenueChange={setSelectedVenue}
+                value={selectedVenue}
+                onChange={setSelectedVenue}
                 showAllOption={false}
               />
             </div>
