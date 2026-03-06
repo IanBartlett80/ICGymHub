@@ -57,6 +57,12 @@ interface Submission {
  };
 }
 
+interface MonthlyData {
+ month: string;
+ total: number;
+ [key: string]: number | string;
+}
+
 export default function InjuryReportsDashboard() {
  const [stats, setStats] = useState<Stats | null>(null);
  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -69,6 +75,12 @@ export default function InjuryReportsDashboard() {
  const [classFilter, setClassFilter] = useState<string>('all');
  const [venueId, setVenueId] = useState<string | null>(null);
  const [showAnalytics, setShowAnalytics] = useState(true);
+ const [monthlyDataByZone, setMonthlyDataByZone] = useState<MonthlyData[]>([]);
+ const [monthlyDataByVenue, setMonthlyDataByVenue] = useState<MonthlyData[]>([]);
+ const [monthlyDataByProgram, setMonthlyDataByProgram] = useState<MonthlyData[]>([]);
+ const [zoneNames, setZoneNames] = useState<string[]>([]);
+ const [venueNames, setVenueNames] = useState<string[]>([]);
+ const [programNames, setProgramNames] = useState<string[]>([]);
 
  useEffect(() => {
   loadData();
@@ -76,6 +88,7 @@ export default function InjuryReportsDashboard() {
 
  useEffect(() => {
   loadAnalytics();
+  loadMonthlyTrends();
  }, [venueId]);
 
  const loadData = async () => {
@@ -124,6 +137,36 @@ export default function InjuryReportsDashboard() {
    }
   } catch (error) {
    console.error('Error loading analytics:', error);
+  }
+ };
+
+ const loadMonthlyTrends = async () => {
+  try {
+   const [zoneRes, venueRes, programRes] = await Promise.all([
+    fetch('/api/injury-submissions/analytics/monthly-by-zone?months=6'),
+    fetch('/api/injury-submissions/analytics/monthly-by-venue?months=6'),
+    fetch('/api/injury-submissions/analytics/monthly-by-program?months=6'),
+   ]);
+
+   if (zoneRes.ok) {
+    const data = await zoneRes.json();
+    setMonthlyDataByZone(data.data || []);
+    setZoneNames(data.zones || []);
+   }
+
+   if (venueRes.ok) {
+    const data = await venueRes.json();
+    setMonthlyDataByVenue(data.data || []);
+    setVenueNames(data.venues || []);
+   }
+
+   if (programRes.ok) {
+    const data = await programRes.json();
+    setMonthlyDataByProgram(data.data || []);
+    setProgramNames(data.programs || []);
+   }
+  } catch (error) {
+   console.error('Error loading monthly trends:', error);
   }
  };
 
@@ -470,20 +513,171 @@ export default function InjuryReportsDashboard() {
      </>
     )}
 
-    {/* Status Breakdown */}
-    {stats && (
-     <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Breakdown</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-       {stats.statusCounts.map((status) => (
-        <div key={status.status} className="text-center">
-         <div className={`inline-block px-3 py-1 rounded text-sm font-medium ${getStatusColor(status.status)}`}>
-          {status.status.replace('_', ' ')}
-         </div>
-         <div className="text-2xl font-bold text-gray-900 mt-2">{status.count}</div>
-        </div>
-       ))}
+    {/* Monthly Incident Trends - Row 1 */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+     {/* Incident Trends by Zone */}
+     {monthlyDataByZone.length > 0 && (
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+       <div className="mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Zone</h2>
+        <p className="text-sm text-gray-600">Month-over-month incidents reported per zone (Last 6 months)</p>
+       </div>
+       <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={monthlyDataByZone}>
+         <CartesianGrid strokeDasharray="3 3" />
+         <XAxis 
+          dataKey="month" 
+          tick={{ fontSize: 12 }}
+          angle={-15}
+          textAnchor="end"
+          height={60}
+         />
+         <YAxis 
+          tick={{ fontSize: 12 }}
+          label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+         />
+         <Tooltip 
+          contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+          labelStyle={{ fontWeight: 'bold' }}
+         />
+         <Legend wrapperStyle={{ paddingTop: '20px' }} />
+         {zoneNames.map((zoneName, index) => {
+          const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+          return (
+           <Line
+            key={zoneName}
+            type="monotone"
+            dataKey={zoneName}
+            stroke={colors[index % colors.length]}
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+           />
+          );
+         })}
+         <Line
+          type="monotone"
+          dataKey="total"
+          stroke="#1f2937"
+          strokeWidth={3}
+          strokeDasharray="5 5"
+          dot={{ r: 5 }}
+          activeDot={{ r: 7 }}
+          name="Total (All Zones)"
+         />
+        </LineChart>
+       </ResponsiveContainer>
       </div>
+     )}
+
+     {/* Incident Trends by Venue */}
+     {monthlyDataByVenue.length > 0 && (
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+       <div className="mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Venue</h2>
+        <p className="text-sm text-gray-600">Month-over-month incidents reported per venue (Last 6 months)</p>
+       </div>
+       <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={monthlyDataByVenue}>
+         <CartesianGrid strokeDasharray="3 3" />
+         <XAxis 
+          dataKey="month" 
+          tick={{ fontSize: 12 }}
+          angle={-15}
+          textAnchor="end"
+          height={60}
+         />
+         <YAxis 
+          tick={{ fontSize: 12 }}
+          label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+         />
+         <Tooltip 
+          contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+          labelStyle={{ fontWeight: 'bold' }}
+         />
+         <Legend wrapperStyle={{ paddingTop: '20px' }} />
+         {venueNames.map((venueName, index) => {
+          const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+          return (
+           <Line
+            key={venueName}
+            type="monotone"
+            dataKey={venueName}
+            stroke={colors[index % colors.length]}
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+           />
+          );
+         })}
+         <Line
+          type="monotone"
+          dataKey="total"
+          stroke="#1f2937"
+          strokeWidth={3}
+          strokeDasharray="5 5"
+          dot={{ r: 5 }}
+          activeDot={{ r: 7 }}
+          name="Total (All Venues)"
+         />
+        </LineChart>
+       </ResponsiveContainer>
+      </div>
+     )}
+    </div>
+
+    {/* Monthly Incident Trends - Row 2 */}
+    {monthlyDataByProgram.length > 0 && (
+     <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="mb-4">
+       <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
+       <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
+      </div>
+      <ResponsiveContainer width="100%" height={350}>
+       <LineChart data={monthlyDataByProgram}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis 
+         dataKey="month" 
+         tick={{ fontSize: 12 }}
+         angle={-15}
+         textAnchor="end"
+         height={60}
+        />
+        <YAxis 
+         tick={{ fontSize: 12 }}
+         label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+        />
+        <Tooltip 
+         contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+         labelStyle={{ fontWeight: 'bold' }}
+        />
+        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+        {programNames.map((programName, index) => {
+         const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+         return (
+          <Line
+           key={programName}
+           type="monotone"
+           dataKey={programName}
+           stroke={colors[index % colors.length]}
+           strokeWidth={2}
+           dot={{ r: 4 }}
+           activeDot={{ r: 6 }}
+          />
+         );
+        })}
+        <Line
+         type="monotone"
+         dataKey="total"
+         stroke="#1f2937"
+         strokeWidth={3}
+         strokeDasharray="5 5"
+         dot={{ r: 5 }}
+         activeDot={{ r: 7 }}
+         name="Total (All Programs)"
+        />
+       </LineChart>
+      </ResponsiveContainer>
      </div>
     )}
 
