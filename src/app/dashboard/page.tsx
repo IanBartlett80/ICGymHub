@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
+import axiosInstance from '@/lib/axios'
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -98,34 +99,26 @@ export default function DashboardPage() {
     try {
       setAnalyticsError(null)
       const [dashboardResponse, complianceResponse] = await Promise.all([
-        fetch('/api/dashboard/analytics', { credentials: 'include' }),
-        fetch('/api/compliance/analytics', { credentials: 'include' })
+        axiosInstance.get('/api/dashboard/analytics'),
+        axiosInstance.get('/api/compliance/analytics')
       ])
 
-      if (dashboardResponse.status === 401) {
-        localStorage.removeItem('userData')
-        setAnalyticsError('Your session expired. Please sign in again.')
-        router.push('/sign-in?sessionExpired=true')
-        return
+      if (dashboardResponse.data) {
+        console.log('Dashboard analytics:', dashboardResponse.data)
+        setStats(dashboardResponse.data)
       }
 
-      if (dashboardResponse.ok) {
-        const data = await dashboardResponse.json()
-        console.log('Dashboard analytics:', data)
-        setStats(data)
-      } else {
-        console.error('Failed to fetch dashboard analytics:', dashboardResponse.statusText)
+      // Set compliance trend data
+      if (complianceResponse.data) {
+        setComplianceTrend(complianceResponse.data.trend || [])
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch dashboard stats:', error)
+      // The axios interceptor will handle 401 errors automatically
+      // Only set error for other types of failures
+      if (error.response?.status !== 401) {
         setAnalyticsError('Unable to load analytics data right now.')
       }
-
-      // Fetch compliance trend data
-      if (complianceResponse.ok) {
-        const complianceData = await complianceResponse.json()
-        setComplianceTrend(complianceData.trend || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error)
-      setAnalyticsError('Unable to load analytics data right now.')
     }
   }
 
@@ -183,6 +176,52 @@ export default function DashboardPage() {
             No analytics data yet for your club. Add classes, injury reports, equipment, or maintenance tasks to populate the dashboard graphs.
           </div>
         )}
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+            <Link href="/dashboard/rosters" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+              <span className="text-3xl">📋</span>
+              <div>
+                <p className="font-medium text-gray-900">View Rosters</p>
+                <p className="text-xs text-gray-600">Manage class schedules</p>
+              </div>
+            </Link>
+
+            <Link href="/injury-report" className="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition">
+              <span className="text-3xl">📝</span>
+              <div>
+                <p className="font-medium text-gray-900">Report Incident</p>
+                <p className="text-xs text-gray-600">Submit injury report</p>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/equipment" className="flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition">
+              <span className="text-3xl">🔧</span>
+              <div>
+                <p className="font-medium text-gray-900">Equipment</p>
+                <p className="text-xs text-gray-600">Manage equipment</p>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/compliance-manager" className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
+              <span className="text-3xl">✅</span>
+              <div>
+                <p className="font-medium text-gray-900">Compliance</p>
+                <p className="text-xs text-gray-600">Manage compliance</p>
+              </div>
+            </Link>
+
+            <Link href="/dashboard/admin-config" className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+              <span className="text-3xl">⚙️</span>
+              <div>
+                <p className="font-medium text-gray-900">Settings</p>
+                <p className="text-xs text-gray-600">Configure club</p>
+              </div>
+            </Link>
+          </div>
+        </div>
 
         {/* Key Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -556,52 +595,6 @@ export default function DashboardPage() {
                 <Area type="monotone" dataKey="critical" stroke="#dc2626" fillOpacity={1} fill="url(#colorSafetyCritical)" name="Critical" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-            <Link href="/dashboard/rosters" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
-              <span className="text-3xl">📋</span>
-              <div>
-                <p className="font-medium text-gray-900">View Rosters</p>
-                <p className="text-xs text-gray-600">Manage class schedules</p>
-              </div>
-            </Link>
-
-            <Link href="/injury-report" className="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition">
-              <span className="text-3xl">📝</span>
-              <div>
-                <p className="font-medium text-gray-900">Report Incident</p>
-                <p className="text-xs text-gray-600">Submit injury report</p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/equipment" className="flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition">
-              <span className="text-3xl">🔧</span>
-              <div>
-                <p className="font-medium text-gray-900">Equipment</p>
-                <p className="text-xs text-gray-600">Manage equipment</p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/compliance-manager" className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
-              <span className="text-3xl">✅</span>
-              <div>
-                <p className="font-medium text-gray-900">Compliance</p>
-                <p className="text-xs text-gray-600">Manage compliance</p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/admin-config" className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
-              <span className="text-3xl">⚙️</span>
-              <div>
-                <p className="font-medium text-gray-900">Settings</p>
-                <p className="text-xs text-gray-600">Configure club</p>
-              </div>
-            </Link>
           </div>
         </div>
       </div>

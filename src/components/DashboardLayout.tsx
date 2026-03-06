@@ -2,8 +2,9 @@
 
 import { useState, useEffect, ReactNode } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import { useAuth } from './AuthProvider'
 import ClassRosteringSubNav from './ClassRosteringSubNav'
 import ClubManagementSubNav from './ClubManagementSubNav'
 import NotificationBell from './NotificationBell'
@@ -30,19 +31,24 @@ interface DashboardLayoutProps {
 type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance'
 
 export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false, hideSidebar = false }: DashboardLayoutProps) {
-  const router = useRouter()
   const pathname = usePathname()
+  const { user: authUser, logout } = useAuth()
   const [user, setUser] = useState<UserData | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeService, setActiveService] = useState<ServiceType>('dashboard')
 
   useEffect(() => {
-    const userData = localStorage.getItem('userData')
-    if (userData) {
-      setUser(JSON.parse(userData))
+    // Use auth context user or fallback to localStorage
+    if (authUser) {
+      setUser(authUser)
+    } else {
+      const userData = localStorage.getItem('userData')
+      if (userData) {
+        setUser(JSON.parse(userData))
+      }
     }
-  }, [])
+  }, [authUser])
 
   // Determine active service based on current pathname
   useEffect(() => {
@@ -60,8 +66,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   }, [pathname])
 
   const handleLogout = () => {
-    localStorage.removeItem('userData')
-    router.push('/sign-in')
+    logout()
   }
 
   const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/')

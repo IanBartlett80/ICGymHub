@@ -22,6 +22,8 @@ function SignInForm() {
   const [error, setError] = useState('')
   const registered = searchParams.get('registered') === 'true'
   const verified = searchParams.get('verified') === 'true'
+  const sessionExpired = searchParams.get('sessionExpired') === 'true'
+  const inactivity = searchParams.get('inactivity') === 'true'
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -78,6 +80,18 @@ function SignInForm() {
         {verified && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
             ✅ Email verified! Your club is now active. You can sign in below.
+          </div>
+        )}
+
+        {sessionExpired && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800">
+            ⏰ Your session has expired. Please sign in again to continue.
+          </div>
+        )}
+
+        {inactivity && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
+            💤 You were logged out due to inactivity. Please sign in again.
           </div>
         )}
 
