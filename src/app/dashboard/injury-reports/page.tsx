@@ -371,21 +371,22 @@ export default function InjuryReportsDashboard() {
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
      {/* Incident Trends by Zone */}
      {monthlyDataByZone.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 relative group hover-legend-chart">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
        <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Zone</h2>
         <p className="text-sm text-gray-600">Month-over-month incidents reported per zone (Last 6 months)</p>
        </div>
-       <style jsx>{`
-        .hover-legend-chart :global(.recharts-legend-wrapper) {
-         opacity: 0;
-         transition: opacity 0.3s ease;
-        }
-        .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-         opacity: 1;
-        }
-       `}</style>
-       <ResponsiveContainer width="100%" height={350}>
+       <div className="group hover-legend-chart">
+        <style jsx>{`
+         .hover-legend-chart :global(.recharts-legend-wrapper) {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+         }
+         .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+          opacity: 1;
+         }
+        `}</style>
+        <ResponsiveContainer width="100%" height={350}>
         <LineChart data={monthlyDataByZone}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -430,26 +431,28 @@ export default function InjuryReportsDashboard() {
          />
         </LineChart>
        </ResponsiveContainer>
+       </div>
       </div>
      )}
 
      {/* Incident Trends by Venue */}
      {monthlyDataByVenue.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 relative group hover-legend-chart">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
        <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Venue</h2>
         <p className="text-sm text-gray-600">Month-over-month incidents reported per venue (Last 6 months)</p>
        </div>
-       <style jsx>{`
-        .hover-legend-chart :global(.recharts-legend-wrapper) {
-         opacity: 0;
-         transition: opacity 0.3s ease;
-        }
-        .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-         opacity: 1;
-        }
-       `}</style>
-       <ResponsiveContainer width="100%" height={350}>
+       <div className="group hover-legend-chart">
+        <style jsx>{`
+         .hover-legend-chart :global(.recharts-legend-wrapper) {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+         }
+         .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+          opacity: 1;
+         }
+        `}</style>
+        <ResponsiveContainer width="100%" height={350}>
         <LineChart data={monthlyDataByVenue}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -494,26 +497,28 @@ export default function InjuryReportsDashboard() {
          />
         </LineChart>
        </ResponsiveContainer>
+       </div>
       </div>
      )}
 
      {/* Incident Trends by Program */}
      {monthlyDataByProgram.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 relative group hover-legend-chart">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
        <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
         <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
        </div>
-       <style jsx>{`
-        .hover-legend-chart :global(.recharts-legend-wrapper) {
-         opacity: 0;
-         transition: opacity 0.3s ease;
-        }
-        .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-         opacity: 1;
-        }
-       `}</style>
-       <ResponsiveContainer width="100%" height={350}>
+       <div className="group hover-legend-chart">
+        <style jsx>{`
+         .hover-legend-chart :global(.recharts-legend-wrapper) {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+         }
+         .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+          opacity: 1;
+         }
+        `}</style>
+        <ResponsiveContainer width="100%" height={350}>
         <LineChart data={monthlyDataByProgram}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -558,6 +563,7 @@ export default function InjuryReportsDashboard() {
          />
         </LineChart>
        </ResponsiveContainer>
+       </div>
       </div>
      )}
     </div>

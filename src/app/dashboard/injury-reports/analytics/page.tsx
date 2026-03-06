@@ -45,6 +45,11 @@ interface Equipment {
  name: string;
 }
 
+interface MonthlyData {
+ month: string;
+ [key: string]: string | number;
+}
+
 export default function AnalyticsPage() {
  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
  const [loading, setLoading] = useState(true);
@@ -59,6 +64,14 @@ export default function AnalyticsPage() {
  const [startDate, setStartDate] = useState<string>('');
  const [endDate, setEndDate] = useState<string>('');
  
+ // Monthly trend data
+ const [monthlyDataByZone, setMonthlyDataByZone] = useState<MonthlyData[]>([]);
+ const [monthlyDataByVenue, setMonthlyDataByVenue] = useState<MonthlyData[]>([]);
+ const [monthlyDataByProgram, setMonthlyDataByProgram] = useState<MonthlyData[]>([]);
+ const [zoneNames, setZoneNames] = useState<string[]>([]);
+ const [venueNames, setVenueNames] = useState<string[]>([]);
+ const [programNames, setProgramNames] = useState<string[]>([]);
+ 
  // Dropdown options
  const [gymsports, setGymsports] = useState<Gymsport[]>([]);
  const [classes, setClasses] = useState<Class[]>([]);
@@ -67,6 +80,7 @@ export default function AnalyticsPage() {
  useEffect(() => {
   loadFilters();
   loadAnalytics();
+  loadMonthlyTrends();
  }, [venueId, gymsportFilter, classFilter, equipmentFilter, statusFilter, priorityFilter, startDate, endDate]);
 
  const loadFilters = async () => {
@@ -116,6 +130,36 @@ export default function AnalyticsPage() {
    console.error('Error loading analytics:', error);
   } finally {
    setLoading(false);
+  }
+ };
+
+ const loadMonthlyTrends = async () => {
+  try {
+   const [zoneRes, venueRes, programRes] = await Promise.all([
+    fetch('/api/injury-submissions/analytics/monthly-by-zone?months=6'),
+    fetch('/api/injury-submissions/analytics/monthly-by-venue?months=6'),
+    fetch('/api/injury-submissions/analytics/monthly-by-program?months=6'),
+   ]);
+
+   if (zoneRes.ok) {
+    const data = await zoneRes.json();
+    setMonthlyDataByZone(data.data || []);
+    setZoneNames(data.zones || []);
+   }
+
+   if (venueRes.ok) {
+    const data = await venueRes.json();
+    setMonthlyDataByVenue(data.data || []);
+    setVenueNames(data.venues || []);
+   }
+
+   if (programRes.ok) {
+    const data = await programRes.json();
+    setMonthlyDataByProgram(data.data || []);
+    setProgramNames(data.programs || []);
+   }
+  } catch (error) {
+   console.error('Error loading monthly trends:', error);
   }
  };
 
@@ -486,7 +530,17 @@ export default function AnalyticsPage() {
       {analytics.trendData && analytics.trendData.length > 0 && analytics.trendData[0].month && (
        <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Injury Trends (Last 6 Months)</h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="group hover-legend-chart">
+         <style jsx>{`
+          .hover-legend-chart :global(.recharts-legend-wrapper) {
+           opacity: 0;
+           transition: opacity 0.3s ease;
+          }
+          .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+           opacity: 1;
+          }
+         `}</style>
+         <ResponsiveContainer width="100%" height={300}>
          <LineChart data={analytics.trendData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -525,6 +579,7 @@ export default function AnalyticsPage() {
           />
          </LineChart>
         </ResponsiveContainer>
+        </div>
        </div>
       )}
 
@@ -560,7 +615,17 @@ export default function AnalyticsPage() {
        {analytics.venueBreakdown && analytics.venueBreakdown.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
          <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Venue</h3>
-         <ResponsiveContainer width="100%" height={300}>
+         <div className="group hover-legend-chart">
+          <style jsx>{`
+           .hover-legend-chart :global(.recharts-legend-wrapper) {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+           }
+           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+            opacity: 1;
+           }
+          `}</style>
+          <ResponsiveContainer width="100%" height={300}>
           <BarChart data={analytics.venueBreakdown}>
            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
            <XAxis dataKey="venueName" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -577,6 +642,7 @@ export default function AnalyticsPage() {
            <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
           </BarChart>
          </ResponsiveContainer>
+         </div>
         </div>
        )}
 
@@ -616,7 +682,17 @@ export default function AnalyticsPage() {
            </span>
           )}
          </h3>
-         <ResponsiveContainer width="100%" height={300}>
+         <div className="group hover-legend-chart">
+          <style jsx>{`
+           .hover-legend-chart :global(.recharts-legend-wrapper) {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+           }
+           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+            opacity: 1;
+           }
+          `}</style>
+          <ResponsiveContainer width="100%" height={300}>
           <BarChart data={analytics.equipmentInjuryBreakdown.slice(0, 10)}>
            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
            <XAxis dataKey="equipmentName" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -633,6 +709,7 @@ export default function AnalyticsPage() {
            <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
           </BarChart>
          </ResponsiveContainer>
+         </div>
         </div>
        )}
 
@@ -642,7 +719,17 @@ export default function AnalyticsPage() {
          <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Equipment Injuries by Zone
          </h3>
-         <ResponsiveContainer width="100%" height={300}>
+         <div className="group hover-legend-chart">
+          <style jsx>{`
+           .hover-legend-chart :global(.recharts-legend-wrapper) {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+           }
+           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+            opacity: 1;
+           }
+          `}</style>
+          <ResponsiveContainer width="100%" height={300}>
           <BarChart data={analytics.equipmentInjuryByZone}>
            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
            <XAxis dataKey="zoneName" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -659,6 +746,7 @@ export default function AnalyticsPage() {
            <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
           </BarChart>
          </ResponsiveContainer>
+         </div>
         </div>
        )}
       </div>
@@ -677,6 +765,207 @@ export default function AnalyticsPage() {
         </div>
        </div>
       )}
+
+      {/* Monthly Incident Trends */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+       {/* Incident Trends by Zone */}
+       {monthlyDataByZone.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Zone</h2>
+          <p className="text-sm text-gray-600">Month-over-month incidents reported per zone (Last 6 months)</p>
+         </div>
+         <div className="group hover-legend-chart">
+          <style jsx>{`
+           .hover-legend-chart :global(.recharts-legend-wrapper) {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+           }
+           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+            opacity: 1;
+           }
+          `}</style>
+          <ResponsiveContainer width="100%" height={350}>
+           <LineChart data={monthlyDataByZone}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+             dataKey="month" 
+             tick={{ fontSize: 12 }}
+             angle={-15}
+             textAnchor="end"
+             height={60}
+            />
+            <YAxis 
+             tick={{ fontSize: 12 }}
+             label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+            />
+            <Tooltip 
+             contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+             labelStyle={{ fontWeight: 'bold' }}
+            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+            {zoneNames.map((zoneName, index) => {
+             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+             return (
+              <Line
+               key={zoneName}
+               type="monotone"
+               dataKey={zoneName}
+               stroke={colors[index % colors.length]}
+               strokeWidth={2}
+               dot={{ r: 4 }}
+               activeDot={{ r: 6 }}
+              />
+             );
+            })}
+            <Line
+             type="monotone"
+             dataKey="total"
+             stroke="#1f2937"
+             strokeWidth={3}
+             strokeDasharray="5 5"
+             dot={{ r: 5 }}
+             activeDot={{ r: 7 }}
+             name="Total (All Zones)"
+            />
+           </LineChart>
+          </ResponsiveContainer>
+         </div>
+        </div>
+       )}
+
+       {/* Incident Trends by Venue */}
+       {monthlyDataByVenue.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Venue</h2>
+          <p className="text-sm text-gray-600">Month-over-month incidents reported per venue (Last 6 months)</p>
+         </div>
+         <div className="group hover-legend-chart">
+          <style jsx>{`
+           .hover-legend-chart :global(.recharts-legend-wrapper) {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+           }
+           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+            opacity: 1;
+           }
+          `}</style>
+          <ResponsiveContainer width="100%" height={350}>
+           <LineChart data={monthlyDataByVenue}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+             dataKey="month" 
+             tick={{ fontSize: 12 }}
+             angle={-15}
+             textAnchor="end"
+             height={60}
+            />
+            <YAxis 
+             tick={{ fontSize: 12 }}
+             label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+            />
+            <Tooltip 
+             contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+             labelStyle={{ fontWeight: 'bold' }}
+            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+            {venueNames.map((venueName, index) => {
+             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+             return (
+              <Line
+               key={venueName}
+               type="monotone"
+               dataKey={venueName}
+               stroke={colors[index % colors.length]}
+               strokeWidth={2}
+               dot={{ r: 4 }}
+               activeDot={{ r: 6 }}
+              />
+             );
+            })}
+            <Line
+             type="monotone"
+             dataKey="total"
+             stroke="#1f2937"
+             strokeWidth={3}
+             strokeDasharray="5 5"
+             dot={{ r: 5 }}
+             activeDot={{ r: 7 }}
+             name="Total (All Venues)"
+            />
+           </LineChart>
+          </ResponsiveContainer>
+         </div>
+        </div>
+       )}
+
+       {/* Incident Trends by Program */}
+       {monthlyDataByProgram.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
+          <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
+         </div>
+         <div className="group hover-legend-chart">
+          <style jsx>{`
+           .hover-legend-chart :global(.recharts-legend-wrapper) {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+           }
+           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+            opacity: 1;
+           }
+          `}</style>
+          <ResponsiveContainer width="100%" height={350}>
+           <LineChart data={monthlyDataByProgram}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+             dataKey="month" 
+             tick={{ fontSize: 12 }}
+             angle={-15}
+             textAnchor="end"
+             height={60}
+            />
+            <YAxis 
+             tick={{ fontSize: 12 }}
+             label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+            />
+            <Tooltip 
+             contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+             labelStyle={{ fontWeight: 'bold' }}
+            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+            {programNames.map((programName, index) => {
+             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+             return (
+              <Line
+               key={programName}
+               type="monotone"
+               dataKey={programName}
+               stroke={colors[index % colors.length]}
+               strokeWidth={2}
+               dot={{ r: 4 }}
+               activeDot={{ r: 6 }}
+              />
+             );
+            })}
+            <Line
+             type="monotone"
+             dataKey="total"
+             stroke="#1f2937"
+             strokeWidth={3}
+             strokeDasharray="5 5"
+             dot={{ r: 5 }}
+             activeDot={{ r: 7 }}
+             name="Total (All Programs)"
+            />
+           </LineChart>
+          </ResponsiveContainer>
+         </div>
+        </div>
+       )}
+      </div>
      </div>
     ) : (
      <div className="text-center py-12">

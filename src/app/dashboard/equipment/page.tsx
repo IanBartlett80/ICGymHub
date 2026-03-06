@@ -263,13 +263,23 @@ export default function EquipmentPage() {
     {/* Monthly Safety Issues Charts */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
      {/* By Zone Chart */}
-     {monthlyData.length> 0 && (
+     {monthlyData.length > 0 && (
       <div className="bg-white border border-gray-200 rounded-lg p-6">
        <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Zone</h2>
         <p className="text-sm text-gray-600">Month-over-month safety issues reported per zone (Last 6 months)</p>
        </div>
-       <ResponsiveContainer width="100%" height={350}>
+       <div className="group hover-legend-chart">
+        <style jsx>{`
+         .hover-legend-chart :global(.recharts-legend-wrapper) {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+         }
+         .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+          opacity: 1;
+         }
+        `}</style>
+        <ResponsiveContainer width="100%" height={350}>
         <LineChart data={monthlyData}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -314,17 +324,28 @@ export default function EquipmentPage() {
          />
         </LineChart>
        </ResponsiveContainer>
+       </div>
       </div>
      )}
 
      {/* By Venue Chart */}
-     {monthlyDataByVenue.length> 0 && (
+     {monthlyDataByVenue.length > 0 && (
       <div className="bg-white border border-gray-200 rounded-lg p-6">
        <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Venue</h2>
         <p className="text-sm text-gray-600">Month-over-month safety issues reported per venue (Last 6 months)</p>
        </div>
-       <ResponsiveContainer width="100%" height={350}>
+       <div className="group hover-legend-chart">
+        <style jsx>{`
+         .hover-legend-chart :global(.recharts-legend-wrapper) {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+         }
+         .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+          opacity: 1;
+         }
+        `}</style>
+        <ResponsiveContainer width="100%" height={350}>
         <LineChart data={monthlyDataByVenue}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -369,6 +390,7 @@ export default function EquipmentPage() {
          />
         </LineChart>
        </ResponsiveContainer>
+       </div>
       </div>
      )}
     </div>
