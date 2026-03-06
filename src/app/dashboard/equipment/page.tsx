@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zone } from '@prisma/client';
+import { Zone, Venue } from '@prisma/client';
 import { QrCodeIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
@@ -36,9 +36,12 @@ interface MonthlyData {
 export default function EquipmentPage() {
   const router = useRouter();
   const [zones, setZones] = useState<ZoneWithStatus[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [monthlyDataByVenue, setMonthlyDataByVenue] = useState<MonthlyData[]>([]);
   const [zoneNames, setZoneNames] = useState<string[]>([]);
+  const [venueNames, setVenueNames] = useState<string[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     inUse: 0,
@@ -46,6 +49,7 @@ export default function EquipmentPage() {
     needsAttention: 0,
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [venueFilter, setVenueFilter] = useState<string>('all');
 
   useEffect(() => {
     loadData();
@@ -54,19 +58,28 @@ export default function EquipmentPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [zonesRes, statsRes, statusRes, monthlyRes] = await Promise.all([
+      const [zonesRes, venuesRes, statsRes, statusRes, monthlyRes, monthlyByVenueRes] = await Promise.all([
         fetch('/api/zones'),
+        fetch('/api/venues'),
         fetch('/api/equipment/analytics/overview'),
         fetch('/api/equipment/analytics/zone-status'),
         fetch('/api/equipment/analytics/safety-issues-monthly?months=6'),
+        fetch('/api/equipment/analytics/safety-issues-monthly-by-venue?months=6'),
       ]);
 
       let zonesData: Zone[] = [];
+      let venuesData: Venue[] = [];
       let statusData: ZoneStatus[] = [];
 
       if (zonesRes.ok) {
         const data = await zonesRes.json();
         zonesData = data.zones || data;
+      }
+
+      if (venuesRes.ok) {
+        const data = await venuesRes.json();
+        venuesData = data.venues || data;
+        setVenues(venuesData);
       }
 
       if (statsRes.ok) {
@@ -94,6 +107,12 @@ export default function EquipmentPage() {
         const data = await monthlyRes.json();
         setMonthlyData(data.data || []);
         setZoneNames(data.zones || []);
+      }
+
+      if (monthlyByVenueRes.ok) {
+        const data = await monthlyByVenueRes.json();
+        setMonthlyDataByVenue(data.data || []);
+        setVenueNames(data.venues || []);
       }
 
       // Merge zone data with status info
@@ -152,9 +171,11 @@ export default function EquipmentPage() {
     return configs[status as keyof typeof configs] || configs.NO_DEFECTS;
   };
 
-  const filteredZones = statusFilter === 'all' 
-    ? zones 
-    : zones.filter(z => z.statusInfo?.status === statusFilter);
+  const filteredZones = zones.filter(z => {
+    const matchesStatus = statusFilter === 'all' || z.statusInfo?.status === statusFilter;
+    const matchesVenue = venueFilter === 'all' || z.venueId === venueFilter;
+    return matchesStatus && matchesVenue;
+  });
 
   if (loading) {
     return (
@@ -199,80 +220,158 @@ export default function EquipmentPage() {
         </div>
 
         {/* Filter Bar */}
-        <div className="flex items-center justify-between">
-          <div>
-            <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mr-2">
-              Filter by Status:
-            </label>
-            <select
-              id="status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="all">All Zones</option>
-              <option value="NO_DEFECTS">No Defects</option>
-              <option value="NON_CRITICAL_ISSUES">Non-Critical Issues</option>
-              <option value="REQUIRES_ATTENTION">Requires Attention</option>
-              <option value="CRITICAL_DEFECTS">Critical Defects</option>
-            </select>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div>
+              <label htmlFor="venue-filter" className="text-sm font-medium text-gray-700 mr-2">
+                Filter by Venue:
+              </label>
+              <select
+                id="venue-filter"
+                value={venueFilter}
+                onChange={(e) => setVenueFilter(e.target.value)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="all">All Venues</option>
+                {venues.map(venue => (
+                  <option key={venue.id} value={venue.id}>
+                    {venue.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mr-2">
+                Filter by Status:
+              </label>
+              <select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              >
+                <option value="all">All Zones</option>
+                <option value="NO_DEFECTS">No Defects</option>
+                <option value="NON_CRITICAL_ISSUES">Non-Critical Issues</option>
+                <option value="REQUIRES_ATTENTION">Requires Attention</option>
+                <option value="CRITICAL_DEFECTS">Critical Defects</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Monthly Safety Issues Chart */}
-        {monthlyData.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Zone</h2>
-              <p className="text-sm text-gray-600">Month-over-month safety issues reported per zone (Last 6 months)</p>
+        {/* Monthly Safety Issues Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* By Zone Chart */}
+          {monthlyData.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Zone</h2>
+                <p className="text-sm text-gray-600">Month-over-month safety issues reported per zone (Last 6 months)</p>
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    angle={-15}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'Number of Issues', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+                    labelStyle={{ fontWeight: 'bold' }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  {zoneNames.map((zoneName, index) => {
+                    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+                    return (
+                      <Line
+                        key={zoneName}
+                        type="monotone"
+                        dataKey={zoneName}
+                        stroke={colors[index % colors.length]}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    );
+                  })}
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#1f2937"
+                    strokeWidth={3}
+                    strokeDasharray="5 5"
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Total (All Zones)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fontSize: 12 }}
-                  angle={-15}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  label={{ value: 'Number of Issues', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
-                  labelStyle={{ fontWeight: 'bold' }}
-                />
-                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                {zoneNames.map((zoneName, index) => {
-                  const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-                  return (
-                    <Line
-                      key={zoneName}
-                      type="monotone"
-                      dataKey={zoneName}
-                      stroke={colors[index % colors.length]}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  );
-                })}
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#1f2937"
-                  strokeWidth={3}
-                  strokeDasharray="5 5"
-                  dot={{ r: 5 }}
-                  activeDot={{ r: 7 }}
-                  name="Total (All Zones)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+          )}
+
+          {/* By Venue Chart */}
+          {monthlyDataByVenue.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Venue</h2>
+                <p className="text-sm text-gray-600">Month-over-month safety issues reported per venue (Last 6 months)</p>
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={monthlyDataByVenue}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    angle={-15}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'Number of Issues', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+                    labelStyle={{ fontWeight: 'bold' }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  {venueNames.map((venueName, index) => {
+                    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+                    return (
+                      <Line
+                        key={venueName}
+                        type="monotone"
+                        dataKey={venueName}
+                        stroke={colors[index % colors.length]}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    );
+                  })}
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#1f2937"
+                    strokeWidth={3}
+                    strokeDasharray="5 5"
+                    dot={{ r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Total (All Venues)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
 
         {/* Zone Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
