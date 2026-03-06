@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import {
+ BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+ XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 interface AnalyticsData {
  totalSubmissions: number;
@@ -16,7 +20,14 @@ interface AnalyticsData {
  equipmentBreakdown: { equipmentName: string; count: number }[];
  coachInvolvementStats: { coachName: string; incidentCount: number }[];
  timePatterns: { hour: number; count: number }[];
- trendData: { period: string; count: number }[];
+ trendData: { period?: string; month?: string; count?: number; total?: number; critical?: number; resolved?: number }[];
+ venueBreakdown?: { venueName: string; count: number; critical: number }[];
+ zoneBreakdown?: { zoneName: string; count: number }[];
+ equipmentInjuryBreakdown?: { equipmentName: string; count: number; critical: number }[];
+ equipmentInjuryByZone?: { zoneName: string; count: number; critical: number }[];
+ equipmentRelatedCount?: number;
+ dayOfWeekPattern?: { day: string; count: number }[];
+ severityDistribution?: { name: string; value: number; color: string }[];
 }
 
 interface Gymsport {
@@ -469,6 +480,203 @@ export default function AnalyticsPage() {
          ))}
        </div>
       </div>
+
+      {/* Enhanced Analytics Charts from Dashboard */}
+      {/* Injury Trends Over Time */}
+      {analytics.trendData && analytics.trendData.length > 0 && analytics.trendData[0].month && (
+       <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Injury Trends (Last 6 Months)</h3>
+        <ResponsiveContainer width="100%" height={300}>
+         <LineChart data={analytics.trendData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
+          <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+          <Tooltip
+           contentStyle={{
+            backgroundColor: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+           }}
+          />
+          <Legend />
+          <Line
+           type="monotone"
+           dataKey="total"
+           stroke="#3b82f6"
+           strokeWidth={2}
+           name="Total Injuries"
+           dot={{ fill: '#3b82f6', r: 4 }}
+          />
+          <Line
+           type="monotone"
+           dataKey="critical"
+           stroke="#ef4444"
+           strokeWidth={2}
+           name="Critical"
+           dot={{ fill: '#ef4444', r: 4 }}
+          />
+          <Line
+           type="monotone"
+           dataKey="resolved"
+           stroke="#22c55e"
+           strokeWidth={2}
+           name="Resolved"
+           dot={{ fill: '#22c55e', r: 4 }}
+          />
+         </LineChart>
+        </ResponsiveContainer>
+       </div>
+      )}
+
+      {/* Severity Distribution */}
+      {analytics.severityDistribution && analytics.severityDistribution.length > 0 && (
+       <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Severity Distribution</h3>
+        <ResponsiveContainer width="100%" height={300}>
+         <PieChart>
+          <Pie
+           data={analytics.severityDistribution}
+           cx="50%"
+           cy="50%"
+           labelLine={false}
+           label={({ name, percent }) => `${name} (${percent ? (percent * 100).toFixed(0) : 0}%)`}
+           outerRadius={100}
+           fill="#8884d8"
+           dataKey="value"
+          >
+           {analytics.severityDistribution.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
+           ))}
+          </Pie>
+          <Tooltip />
+         </PieChart>
+        </ResponsiveContainer>
+       </div>
+      )}
+
+      {/* Charts Grid - Venue and Day of Week */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+       {/* Venue Breakdown */}
+       {analytics.venueBreakdown && analytics.venueBreakdown.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Venue</h3>
+         <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics.venueBreakdown}>
+           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+           <XAxis dataKey="venueName" stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <Tooltip
+            contentStyle={{
+             backgroundColor: '#fff',
+             border: '1px solid #e5e7eb',
+             borderRadius: '8px',
+            }}
+           />
+           <Legend />
+           <Bar dataKey="count" fill="#3b82f6" name="Total" radius={[8, 8, 0, 0]} />
+           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
+          </BarChart>
+         </ResponsiveContainer>
+        </div>
+       )}
+
+       {/* Day of Week Pattern */}
+       {analytics.dayOfWeekPattern && analytics.dayOfWeekPattern.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Day of Week</h3>
+         <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics.dayOfWeekPattern}>
+           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+           <XAxis dataKey="day" stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <Tooltip
+            contentStyle={{
+             backgroundColor: '#fff',
+             border: '1px solid #e5e7eb',
+             borderRadius: '8px',
+            }}
+           />
+           <Bar dataKey="count" fill="#14b8a6" radius={[8, 8, 0, 0]} />
+          </BarChart>
+         </ResponsiveContainer>
+        </div>
+       )}
+      </div>
+
+      {/* Equipment-Related Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+       {/* Equipment-Related Injuries */}
+       {analytics.equipmentInjuryBreakdown && analytics.equipmentInjuryBreakdown.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Equipment-Related Injuries
+          {analytics.equipmentRelatedCount && (
+           <span className="text-sm font-normal text-gray-500 ml-2">
+            ({analytics.equipmentRelatedCount} total)
+           </span>
+          )}
+         </h3>
+         <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics.equipmentInjuryBreakdown.slice(0, 10)}>
+           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+           <XAxis dataKey="equipmentName" stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <Tooltip
+            contentStyle={{
+             backgroundColor: '#fff',
+             border: '1px solid #e5e7eb',
+             borderRadius: '8px',
+            }}
+           />
+           <Legend />
+           <Bar dataKey="count" fill="#f59e0b" name="Total" radius={[8, 8, 0, 0]} />
+           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
+          </BarChart>
+         </ResponsiveContainer>
+        </div>
+       )}
+
+       {/* Equipment-Related Injuries by Zone */}
+       {analytics.equipmentInjuryByZone && analytics.equipmentInjuryByZone.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Equipment Injuries by Zone
+         </h3>
+         <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics.equipmentInjuryByZone}>
+           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+           <XAxis dataKey="zoneName" stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <Tooltip
+            contentStyle={{
+             backgroundColor: '#fff',
+             border: '1px solid #e5e7eb',
+             borderRadius: '8px',
+            }}
+           />
+           <Legend />
+           <Bar dataKey="count" fill="#10b981" name="Total" radius={[8, 8, 0, 0]} />
+           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
+          </BarChart>
+         </ResponsiveContainer>
+        </div>
+       )}
+      </div>
+
+      {/* Zone Breakdown - Grid Display */}
+      {analytics.zoneBreakdown && analytics.zoneBreakdown.length > 0 && (
+       <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Zone</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+         {analytics.zoneBreakdown.map((zone) => (
+          <div key={zone.zoneName} className="bg-gray-50 rounded-lg p-4 text-center">
+           <div className="text-2xl font-bold text-gray-900">{zone.count}</div>
+           <div className="text-sm text-gray-600 mt-1">{zone.zoneName}</div>
+          </div>
+         ))}
+        </div>
+       </div>
+      )}
      </div>
     ) : (
      <div className="text-center py-12">
