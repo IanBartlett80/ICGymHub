@@ -69,15 +69,16 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     logout()
   }
 
-  const services = [
+  const mainServices = [
     { id: 'dashboard' as ServiceType, name: 'Home', basePath: '/dashboard' },
     { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
     { id: 'safety' as ServiceType, name: 'Injury & Incidents', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
     { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
-    { id: 'settings' as ServiceType, name: 'Club Settings', basePath: '/dashboard/admin-config' },
   ]
+
+  const settingsService = { id: 'settings' as ServiceType, name: 'Club Settings', basePath: '/dashboard/admin-config' }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -163,39 +164,61 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
 
           {/* Service Navigation Tabs */}
           <div className="px-4 border-t border-gray-100">
-            <div className="flex items-center gap-5 min-h-10">
-              {services.map((service) => {
-                if (service.external) {
+            <div className="flex items-center justify-between min-h-10">
+              {/* Main Services */}
+              <div className="flex items-center gap-5">
+                {mainServices.map((service) => {
+                  if (service.external) {
+                    return (
+                      <a
+                        key={service.id}
+                        href={service.basePath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative px-1 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      >
+                        {service.name}
+                      </a>
+                    )
+                  }
                   return (
-                    <a
+                    <Link
                       key={service.id}
                       href={service.basePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative px-1 py-2.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                      onClick={() => setActiveService(service.id as ServiceType)}
+                      className={`relative px-1 py-2.5 text-sm transition-colors ${
+                        activeService === service.id
+                          ? 'text-blue-600'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
                     >
                       {service.name}
-                    </a>
+                      {activeService === service.id && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                      )}
+                    </Link>
                   )
-                }
-                return (
-                  <Link
-                    key={service.id}
-                    href={service.basePath}
-                    onClick={() => setActiveService(service.id as ServiceType)}
-                    className={`relative px-1 py-2.5 text-sm transition-colors ${
-                      activeService === service.id
-                        ? 'text-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {service.name}
-                    {activeService === service.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
-                    )}
-                  </Link>
-                )
-              })}
+                })}
+              </div>
+
+              {/* Separator and Settings */}
+              <div className="flex items-center gap-5">
+                <div className="h-6 w-px bg-gray-300"></div>
+                <Link
+                  href={settingsService.basePath}
+                  onClick={() => setActiveService(settingsService.id)}
+                  className={`relative px-1 py-2.5 text-sm transition-colors ${
+                    activeService === settingsService.id
+                      ? 'text-blue-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {settingsService.name}
+                  {activeService === settingsService.id && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                  )}
+                </Link>
+              </div>
             </div>
           </div>
 

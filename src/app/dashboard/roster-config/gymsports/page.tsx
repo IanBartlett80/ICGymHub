@@ -118,7 +118,7 @@ export default function GymsportsPage() {
 
  if (loading) {
   return (
-   <DashboardLayout title="Gymsports" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+   <DashboardLayout title="Gymsports" showClassRosteringNav={true}>
     <div className="p-8">Loading...</div>
    </DashboardLayout>
   )

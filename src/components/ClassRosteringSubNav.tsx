@@ -20,16 +20,6 @@ export default function ClassRosteringSubNav() {
       icon: '📊',
     },
     {
-      label: 'Gymsports',
-      href: '/dashboard/roster-config/gymsports',
-      icon: '🤸',
-    },
-    {
-      label: 'Gym Zones',
-      href: '/dashboard/roster-config/zones',
-      icon: '🏛️',
-    },
-    {
       label: 'Coaches',
       href: '/dashboard/roster-config/coaches',
       icon: '👨‍🏫',

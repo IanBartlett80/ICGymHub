@@ -302,13 +302,13 @@ export default function CoachesPage() {
  }
 
  if (loading) return (
-  <DashboardLayout title="Coaches" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+  <DashboardLayout title="Coaches" showClassRosteringNav={true}>
    <div className="p-8">Loading...</div>
   </DashboardLayout>
  )
 
  return (
-  <DashboardLayout title="Coaches" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+  <DashboardLayout title="Coaches" showClassRosteringNav={true}>
    <div className="p-8">
     <div className="max-w-7xl mx-auto">
      <div className="flex justify-between items-center mb-6">
