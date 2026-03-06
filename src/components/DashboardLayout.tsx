@@ -25,17 +25,15 @@ interface DashboardLayoutProps {
   backTo?: { label: string; href: string }
   showClassRosteringNav?: boolean
   showClubManagementNav?: boolean
-  hideSidebar?: boolean
 }
 
-type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance'
+type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance' | 'settings'
 
-export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false, hideSidebar = false }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const pathname = usePathname()
   const { user: authUser, logout } = useAuth()
   const [user, setUser] = useState<UserData | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeService, setActiveService] = useState<ServiceType>('dashboard')
 
   useEffect(() => {
@@ -60,6 +58,8 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       setActiveService('equipment')
     } else if (pathname?.startsWith('/dashboard/compliance-manager')) {
       setActiveService('compliance')
+    } else if (pathname?.startsWith('/dashboard/admin-config') || pathname?.startsWith('/dashboard/profile')) {
+      setActiveService('settings')
     } else if (pathname === '/dashboard') {
       setActiveService('dashboard')
     }
@@ -69,8 +69,6 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     logout()
   }
 
-  const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/')
-
   const services = [
     { id: 'dashboard' as ServiceType, name: 'Home', basePath: '/dashboard' },
     { id: 'rosters' as ServiceType, name: 'Rosters', basePath: '/dashboard/class-rostering' },
@@ -78,312 +76,13 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
     { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
+    { id: 'settings' as ServiceType, name: 'Club Settings', basePath: '/dashboard/admin-config' },
   ]
 
-  const renderSidebarContent = () => {
-    switch (activeService) {
-      case 'dashboard':
-        return (
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="/dashboard"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📊</span>
-                {!sidebarCollapsed && <span>Analytics Overview</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/quick-stats"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard/quick-stats'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">⚡</span>
-                {!sidebarCollapsed && <span>Quick Stats</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/reports"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/reports')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📈</span>
-                {!sidebarCollapsed && <span>All Reports</span>}
-              </Link>
-            </li>
-          </ul>
-        )
-
-      case 'rosters':
-        return (
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="/dashboard/class-rostering"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard/class-rostering'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📊</span>
-                {!sidebarCollapsed && <span>Dashboard</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/rosters"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/rosters')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📋</span>
-                {!sidebarCollapsed && <span>Rosters</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/roster-reports"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/roster-reports')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📈</span>
-                {!sidebarCollapsed && <span>Reports</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/class-rostering/guide"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard/class-rostering/guide'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📖</span>
-                {!sidebarCollapsed && <span>Get Started Guide</span>}
-              </Link>
-            </li>
-          </ul>
-        )
-
-      case 'safety':
-        return (
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="/dashboard/injury-reports"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard/injury-reports'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📊</span>
-                {!sidebarCollapsed && <span>Dashboard</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/injury-reports/forms"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/injury-reports/forms')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📝</span>
-                {!sidebarCollapsed && <span>Manage Forms</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/injury-reports/submissions"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/injury-reports/submissions')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📋</span>
-                {!sidebarCollapsed && <span>Reports</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/injury-reports/analytics"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/injury-reports/analytics')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📈</span>
-                {!sidebarCollapsed && <span>Analytics</span>}
-              </Link>
-            </li>
-          </ul>
-        )
-
-      case 'equipment':
-        return (
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="/dashboard/equipment"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard/equipment'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📊</span>
-                {!sidebarCollapsed && <span>Zone Overview</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/equipment/all"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  pathname === '/dashboard/equipment/all'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">🔧</span>
-                {!sidebarCollapsed && <span>All Equipment</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/safety-issues"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/safety-issues')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">⚠️</span>
-                {!sidebarCollapsed && <span>Safety Issues</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/equipment/maintenance"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/equipment/maintenance')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">🛠️</span>
-                {!sidebarCollapsed && <span>Maintenance Due</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/equipment/analytics"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/equipment/analytics')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">📈</span>
-                {!sidebarCollapsed && <span>Analytics</span>}
-              </Link>
-            </li>
-          </ul>
-        )
-
-      case 'compliance':
-        return (
-          <ul className="space-y-2">
-            <li>
-              <Link
-                href="/dashboard/compliance-manager"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                  isActive('/dashboard/compliance-manager')
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-xl">✅</span>
-                {!sidebarCollapsed && <span>Compliance Dashboard</span>}
-              </Link>
-            </li>
-          </ul>
-        )
-
-      default:
-        return null
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      {!hideSidebar && (
-        <aside
-          className={`${
-            sidebarCollapsed ? 'w-16' : 'w-64'
-          } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-full z-30 print:hidden`}
-          style={{ display: hideSidebar ? 'none' : undefined }}
-        >
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            {!sidebarCollapsed && (
-              <h2 className="font-semibold text-gray-900 truncate">
-                {activeService === 'dashboard' && 'Dashboard'}
-                {activeService === 'rosters' && 'Rosters'}
-                {activeService === 'safety' && 'Safety'}
-                {activeService === 'equipment' && 'Equipment'}
-                {activeService === 'compliance' && 'Compliance'}
-              </h2>
-            )}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              {sidebarCollapsed ? '→' : '←'}
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4 overflow-y-auto">
-            {renderSidebarContent()}
-          </nav>
-
-          {/* Club Info */}
-          {!sidebarCollapsed && user && (
-            <div className="p-4 border-t border-gray-200">
-              <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Club</p>
-              <p className="text-sm text-gray-700 truncate">{user.clubName}</p>
-            </div>
-          )}
-        </aside>
-      )}
-
+    <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
-      <div className={`flex-1 ${hideSidebar ? '' : sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300 print:ml-0`}>
+      <div className="w-full">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20 print:hidden">
           <div className="px-4 py-1.5 flex items-center justify-between">
@@ -404,18 +103,6 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
             <div className="flex items-center gap-2">
               {/* Notification Bell */}
               <NotificationBell />
-
-              {/* Settings Icon */}
-              <Link
-                href="/dashboard/admin-config"
-                className="p-2 hover:bg-gray-100 rounded-full transition text-gray-500 hover:text-gray-700"
-                title="Club Settings"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              </Link>
               
               {/* User Profile */}
               {user && (
@@ -474,7 +161,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
             </div>
           </div>
 
-          {/* Service Navigation Tabs - Bottom Left */}
+          {/* Service Navigation Tabs */}
           <div className="px-4 border-t border-gray-100">
             <div className="flex items-center gap-5 min-h-10">
               {services.map((service) => {
