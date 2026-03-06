@@ -775,21 +775,23 @@ export default function AnalyticsPage() {
           <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Zone</h2>
           <p className="text-sm text-gray-600">Month-over-month incidents reported per zone (Last 6 months)</p>
          </div>
-         <div className="group hover-legend-chart">
+         <div className="relative group hover-legend-chart">
           <style jsx>{`
-           .hover-legend-chart :global(.recharts-legend-wrapper) {
+           .custom-legend {
             opacity: 0;
             transition: opacity 0.3s ease;
-            position: absolute !important;
-            bottom: 10px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            padding: 8px 16px !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            pointer-events: none;
            }
-           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+           .hover-legend-chart:hover .custom-legend {
             opacity: 1;
            }
           `}</style>
@@ -811,7 +813,6 @@ export default function AnalyticsPage() {
              contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
              labelStyle={{ fontWeight: 'bold' }}
             />
-            <Legend />
             {zoneNames.map((zoneName, index) => {
              const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
              return (
@@ -838,6 +839,23 @@ export default function AnalyticsPage() {
             />
            </LineChart>
           </ResponsiveContainer>
+          <div className="custom-legend">
+           <div className="flex flex-wrap gap-4 justify-center items-center text-xs">
+            {zoneNames.map((zoneName, index) => {
+             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+             return (
+              <div key={zoneName} className="flex items-center gap-1">
+               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></div>
+               <span>{zoneName}</span>
+              </div>
+             );
+            })}
+            <div className="flex items-center gap-1">
+             <div className="w-3 h-0.5 bg-gray-800" style={{ borderTop: '2px dashed #1f2937', width: '12px' }}></div>
+             <span>Total (All Zones)</span>
+            </div>
+           </div>
+          </div>
          </div>
         </div>
        )}
@@ -849,21 +867,23 @@ export default function AnalyticsPage() {
           <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Venue</h2>
           <p className="text-sm text-gray-600">Month-over-month incidents reported per venue (Last 6 months)</p>
          </div>
-         <div className="group hover-legend-chart">
+         <div className="relative group hover-legend-chart">
           <style jsx>{`
-           .hover-legend-chart :global(.recharts-legend-wrapper) {
+           .custom-legend {
             opacity: 0;
             transition: opacity 0.3s ease;
-            position: absolute !important;
-            bottom: 10px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            padding: 8px 16px !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            pointer-events: none;
            }
-           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+           .hover-legend-chart:hover .custom-legend {
             opacity: 1;
            }
           `}</style>
@@ -885,7 +905,6 @@ export default function AnalyticsPage() {
              contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
              labelStyle={{ fontWeight: 'bold' }}
             />
-            <Legend />
             {venueNames.map((venueName, index) => {
              const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
              return (
@@ -912,6 +931,23 @@ export default function AnalyticsPage() {
             />
            </LineChart>
           </ResponsiveContainer>
+          <div className="custom-legend">
+           <div className="flex flex-wrap gap-4 justify-center items-center text-xs">
+            {venueNames.map((venueName, index) => {
+             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+             return (
+              <div key={venueName} className="flex items-center gap-1">
+               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></div>
+               <span>{venueName}</span>
+              </div>
+             );
+            })}
+            <div className="flex items-center gap-1">
+             <div className="w-3 h-0.5 bg-gray-800" style={{ borderTop: '2px dashed #1f2937', width: '12px' }}></div>
+             <span>Total (All Venues)</span>
+            </div>
+           </div>
+          </div>
          </div>
         </div>
        )}
@@ -923,21 +959,23 @@ export default function AnalyticsPage() {
           <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
           <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
          </div>
-         <div className="group hover-legend-chart">
+         <div className="relative group hover-legend-chart">
           <style jsx>{`
-           .hover-legend-chart :global(.recharts-legend-wrapper) {
+           .custom-legend {
             opacity: 0;
             transition: opacity 0.3s ease;
-            position: absolute !important;
-            bottom: 10px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            padding: 8px 16px !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+            pointer-events: none;
            }
-           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
+           .hover-legend-chart:hover .custom-legend {
             opacity: 1;
            }
           `}</style>
@@ -959,7 +997,6 @@ export default function AnalyticsPage() {
              contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
              labelStyle={{ fontWeight: 'bold' }}
             />
-            <Legend />
             {programNames.map((programName, index) => {
              const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
              return (
@@ -986,6 +1023,23 @@ export default function AnalyticsPage() {
             />
            </LineChart>
           </ResponsiveContainer>
+          <div className="custom-legend">
+           <div className="flex flex-wrap gap-4 justify-center items-center text-xs">
+            {programNames.map((programName, index) => {
+             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+             return (
+              <div key={programName} className="flex items-center gap-1">
+               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></div>
+               <span>{programName}</span>
+              </div>
+             );
+            })}
+            <div className="flex items-center gap-1">
+             <div className="w-3 h-0.5 bg-gray-800" style={{ borderTop: '2px dashed #1f2937', width: '12px' }}></div>
+             <span>Total (All Programs)</span>
+            </div>
+           </div>
+          </div>
          </div>
         </div>
        )}
