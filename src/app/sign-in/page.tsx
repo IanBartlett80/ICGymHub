@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import axios from 'axios'
+import { useAuth } from '@/components/AuthProvider'
 
 type FormData = {
   username: string
@@ -14,6 +15,7 @@ type FormData = {
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { setAuthUser } = useAuth()
   const [formData, setFormData] = useState<FormData>({
     username: '',
     password: '',
@@ -40,8 +42,8 @@ function SignInForm() {
 
     try {
       const response = await axios.post('/api/auth/login', formData)
-      // Store user data in localStorage
-      localStorage.setItem('userData', JSON.stringify(response.data.user))
+      // Update AuthProvider state immediately
+      setAuthUser(response.data.user)
       // Redirect to dashboard
       router.push('/dashboard')
     } catch (err: any) {

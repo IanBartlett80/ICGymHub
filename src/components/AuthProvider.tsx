@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   user: UserData | null
   logout: () => void
+  setAuthUser: (userData: UserData) => void
 }
 
 interface UserData {
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   user: null,
   logout: () => {},
+  setAuthUser: () => {},
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -58,6 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(false)
   }, [])
+
+  // Function to manually set authenticated user
+  const setAuthUser = (userData: UserData) => {
+    setUser(userData)
+    setIsAuthenticated(true)
+    localStorage.setItem('userData', JSON.stringify(userData))
+  }
 
   // Logout function
   const logout = async (showExpiredMessage = false) => {
@@ -176,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated,
     user,
     logout: () => logout(false),
+    setAuthUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
