@@ -274,12 +274,20 @@ export default function EquipmentPage() {
          .hover-legend-chart :global(.recharts-legend-wrapper) {
           opacity: 0;
           transition: opacity 0.3s ease;
+          position: absolute !important;
+          bottom: 10px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: rgba(255, 255, 255, 0.95) !important;
+          padding: 8px 16px !important;
+          border-radius: 8px !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
          }
          .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={350}>
+        <ResponsiveContainer width="100%" height={400}>
         <LineChart data={monthlyData}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -297,7 +305,7 @@ export default function EquipmentPage() {
           contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
           labelStyle={{ fontWeight: 'bold' }}
          />
-         <Legend wrapperStyle={{ paddingTop: '20px' }} />
+         <Legend />
          {zoneNames.map((zoneName, index) => {
           const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
           return (
@@ -340,12 +348,20 @@ export default function EquipmentPage() {
          .hover-legend-chart :global(.recharts-legend-wrapper) {
           opacity: 0;
           transition: opacity 0.3s ease;
+          position: absolute !important;
+          bottom: 10px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          background: rgba(255, 255, 255, 0.95) !important;
+          padding: 8px 16px !important;
+          border-radius: 8px !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
          }
          .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={350}>
+        <ResponsiveContainer width="100%" height={400}>
         <LineChart data={monthlyDataByVenue}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -363,7 +379,7 @@ export default function EquipmentPage() {
           contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
           labelStyle={{ fontWeight: 'bold' }}
          />
-         <Legend wrapperStyle={{ paddingTop: '20px' }} />
+         <Legend />
          {venueNames.map((venueName, index) => {
           const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
           return (
