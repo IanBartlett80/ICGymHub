@@ -74,10 +74,26 @@ export default function SubmissionDetailPage() {
  const [loading, setLoading] = useState(true);
  const [newComment, setNewComment] = useState('');
  const [addingComment, setAddingComment] = useState(false);
+ const [showAssignModal, setShowAssignModal] = useState(false);
+ const [users, setUsers] = useState<User[]>([]);
+ const [selectedUserId, setSelectedUserId] = useState<string>('');
 
  useEffect(() => {
   loadSubmission();
+  loadUsers();
  }, [submissionId]);
+
+ const loadUsers = async () => {
+  try {
+   const res = await fetch('/api/users');
+   if (res.ok) {
+    const data = await res.json();
+    setUsers(data.users || data);
+   }
+  } catch (error) {
+   console.error('Error loading users:', error);
+  }
+ };
 
  const loadSubmission = async () => {
   try {
@@ -428,7 +444,7 @@ export default function SubmissionDetailPage() {
        <div>
         <div className="text-gray-500 text-sm mb-3">Not assigned</div>
         <button
-         onClick={() => {/* Open assignment modal */}}
+         onClick={() => setShowAssignModal(true)}
          className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
 >
          Assign User
@@ -456,6 +472,56 @@ export default function SubmissionDetailPage() {
      </div>
     </div>
    </div>
+
+   {/* Assignment Modal */}
+   {showAssignModal && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+     <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign User</h3>
+      <div className="mb-4">
+       <label className="block text-sm font-medium text-gray-700 mb-2">
+        Select user to assign this submission to:
+       </label>
+       <select
+        value={selectedUserId}
+        onChange={(e) => setSelectedUserId(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+>
+        <option value="">Select a user...</option>
+        {users.map((user) => (
+         <option key={user.id} value={user.id}>
+          {user.fullName} ({user.email})
+         </option>
+        ))}
+       </select>
+      </div>
+      <div className="flex gap-3">
+       <button
+        onClick={() => {
+         setShowAssignModal(false);
+         setSelectedUserId('');
+        }}
+        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+>
+        Cancel
+       </button>
+       <button
+        onClick={() => {
+         if (selectedUserId) {
+          updateAssignment(selectedUserId);
+          setShowAssignModal(false);
+          setSelectedUserId('');
+         }
+        }}
+        disabled={!selectedUserId}
+        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+>
+        Assign
+       </button>
+      </div>
+     </div>
+    </div>
+   )}
   </div>
   </DashboardLayout>
  );
