@@ -15,6 +15,14 @@ interface Submission {
   id: string;
   name: string;
  };
+ venue: {
+  id: string;
+  name: string;
+ } | null;
+ zone: {
+  id: string;
+  name: string;
+ } | null;
  assignedTo: {
   id: string;
   fullName: string;
@@ -246,6 +254,15 @@ export default function SubmissionsReportsPage() {
            Class
           </th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+           Venue
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+           Zone
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+           Program
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
            Status
           </th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -273,6 +290,15 @@ export default function SubmissionsReportsPage() {
            </td>
            <td className="px-6 py-4 whitespace-nowrap">
             <div className="text-sm text-gray-900">{submission.className || 'N/A'}</div>
+           </td>
+           <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-900">{submission.venue?.name || 'N/A'}</div>
+           </td>
+           <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-900">{submission.zone?.name || 'N/A'}</div>
+           </td>
+           <td className="px-6 py-4 whitespace-nowrap">
+            <div className="text-sm text-gray-900">{submission.programName || 'N/A'}</div>
            </td>
            <td className="px-6 py-4 whitespace-nowrap">
             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded border ${getStatusColor(submission.status)}`}>

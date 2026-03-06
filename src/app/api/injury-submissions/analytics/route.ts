@@ -279,6 +279,26 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // Equipment-related injuries by zone
+    const equipmentByZoneData = filteredSubmissions.reduce((acc: any, sub) => {
+      if ((sub.equipment || sub.equipmentId) && sub.zone) {
+        const name = sub.zone.name;
+        if (!acc[name]) acc[name] = { count: 0, critical: 0 };
+        acc[name].count++;
+        if (sub.priority === 'CRITICAL' || sub.priority === 'HIGH') {
+          acc[name].critical++;
+        }
+      }
+      return acc;
+    }, {});
+    const equipmentInjuryByZone = Object.entries(equipmentByZoneData).map(
+      ([name, data]: [string, any]) => ({
+        zoneName: name,
+        count: data.count,
+        critical: data.critical,
+      })
+    ).sort((a, b) => b.count - a.count);
+
     // Monthly trend data (last 6 months)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -363,6 +383,7 @@ export async function GET(request: NextRequest) {
       venueBreakdown,
       zoneBreakdown,
       equipmentInjuryBreakdown,
+      equipmentInjuryByZone,
       equipmentRelatedCount: equipmentRelated.length,
       trendData,
       dayOfWeekPattern,

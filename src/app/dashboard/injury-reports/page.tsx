@@ -27,6 +27,7 @@ interface AnalyticsData {
  venueBreakdown: { venueName: string; count: number; critical: number }[];
  zoneBreakdown: { zoneName: string; count: number }[];
  equipmentInjuryBreakdown: { equipmentName: string; count: number; critical: number }[];
+ equipmentInjuryByZone: { zoneName: string; count: number; critical: number }[];
  equipmentRelatedCount: number;
  trendData: { month: string; total: number; critical: number; resolved: number }[];
  dayOfWeekPattern: { day: string; count: number }[];
@@ -43,6 +44,14 @@ interface Submission {
   id: string;
   name: string;
  };
+ venue: {
+  id: string;
+  name: string;
+ } | null;
+ zone: {
+  id: string;
+  name: string;
+ } | null;
  assignedTo: {
   id: string;
   fullName: string;
@@ -73,6 +82,7 @@ export default function InjuryReportsDashboard() {
  const [programFilter, setProgramFilter] = useState<string>('all');
  const [coachFilter, setCoachFilter] = useState<string>('all');
  const [classFilter, setClassFilter] = useState<string>('all');
+ const [zoneFilter, setZoneFilter] = useState<string>('all');
  const [venueId, setVenueId] = useState<string | null>(null);
  const [showAnalytics, setShowAnalytics] = useState(true);
  const [monthlyDataByZone, setMonthlyDataByZone] = useState<MonthlyData[]>([]);
@@ -81,15 +91,29 @@ export default function InjuryReportsDashboard() {
  const [zoneNames, setZoneNames] = useState<string[]>([]);
  const [venueNames, setVenueNames] = useState<string[]>([]);
  const [programNames, setProgramNames] = useState<string[]>([]);
+ const [zones, setZones] = useState<Array<{ id: string; name: string; venueId: string | null }>>([]);
 
  useEffect(() => {
   loadData();
+  loadZones();
  }, [filter]);
 
  useEffect(() => {
   loadAnalytics();
   loadMonthlyTrends();
  }, [venueId]);
+
+ const loadZones = async () => {
+  try {
+   const res = await fetch('/api/zones');
+   if (res.ok) {
+    const data = await res.json();
+    setZones(data.zones || data);
+   }
+  } catch (error) {
+   console.error('Error loading zones:', error);
+  }
+ };
 
  const loadData = async () => {
   try {
@@ -180,6 +204,7 @@ export default function InjuryReportsDashboard() {
   if (programFilter !== 'all' && submission.programName !== programFilter) return false;
   if (coachFilter !== 'all' && submission.coachName !== coachFilter) return false;
   if (classFilter !== 'all' && submission.className !== classFilter) return false;
+  if (zoneFilter !== 'all' && submission.zone?.id !== zoneFilter) return false;
   return true;
  });
 
@@ -296,16 +321,49 @@ export default function InjuryReportsDashboard() {
     {/* Analytics Dashboard Section */}
     {showAnalytics && analytics && (
      <>
-      {/* Venue Filter */}
+      {/* Filters Section */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Analytics Dashboard</h2>
-        <div className="w-48">
+       <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics Filters</h2>
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+         <label className="block text-sm font-medium text-gray-700 mb-2">Venue</label>
          <VenueSelector
           value={venueId}
-          onChange={setVenueId}
+          onChange={(value) => {
+           setVenueId(value);
+           // Reset zone filter when venue changes
+           if (value !== venueId) setZoneFilter('all');
+          }}
           showAllOption={true}
          />
+        </div>
+        <div>
+         <label className="block text-sm font-medium text-gray-700 mb-2">Program (Gymsport)</label>
+         <select
+          value={programFilter}
+          onChange={(e) => setProgramFilter(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+>
+          <option value="all">All Programs</option>
+          {uniquePrograms.map(program => (
+           <option key={program} value={program}>{program}</option>
+          ))}
+         </select>
+        </div>
+        <div>
+         <label className="block text-sm font-medium text-gray-700 mb-2">Zone</label>
+         <select
+          value={zoneFilter}
+          onChange={(e) => setZoneFilter(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+>
+          <option value="all">All Zones</option>
+          {zones
+           .filter(zone => !venueId || venueId === 'all' || zone.venueId === venueId)
+           .map(zone => (
+            <option key={zone.id} value={zone.id}>{zone.name}</option>
+           ))}
+         </select>
         </div>
        </div>
       </div>
@@ -443,7 +501,7 @@ export default function InjuryReportsDashboard() {
       </div>
 
       {/* Charts Section - Row 3 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
        {/* Day of Week Pattern */}
        {analytics.dayOfWeekPattern.length> 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -489,6 +547,32 @@ export default function InjuryReportsDashboard() {
            />
            <Legend />
            <Bar dataKey="count" fill="#f59e0b" name="Total" radius={[8, 8, 0, 0]} />
+           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
+          </BarChart>
+         </ResponsiveContainer>
+        </div>
+       )}
+
+       {/* Equipment-Related Injuries by Zone */}
+       {analytics.equipmentInjuryByZone && analytics.equipmentInjuryByZone.length> 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+         <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Equipment Injuries by Zone
+         </h3>
+         <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={analytics.equipmentInjuryByZone}>
+           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+           <XAxis dataKey="zoneName" stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+           <Tooltip
+            contentStyle={{
+             backgroundColor: '#fff',
+border: '1px solid #e5e7eb',
+             borderRadius: '8px',
+            }}
+           />
+           <Legend />
+           <Bar dataKey="count" fill="#10b981" name="Total" radius={[8, 8, 0, 0]} />
            <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
           </BarChart>
          </ResponsiveContainer>
@@ -777,6 +861,15 @@ export default function InjuryReportsDashboard() {
           Class
          </th>
          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Venue
+         </th>
+         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Zone
+         </th>
+         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Program
+         </th>
+         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
           Status
          </th>
          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -804,6 +897,15 @@ export default function InjuryReportsDashboard() {
           </td>
           <td className="px-6 py-4 whitespace-nowrap">
            <div className="text-sm text-gray-900">{submission.className || 'N/A'}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+           <div className="text-sm text-gray-900">{submission.venue?.name || 'N/A'}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+           <div className="text-sm text-gray-900">{submission.zone?.name || 'N/A'}</div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+           <div className="text-sm text-gray-900">{submission.programName || 'N/A'}</div>
           </td>
           <td className="px-6 py-4 whitespace-nowrap">
            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded border ${getStatusColor(submission.status)}`}>

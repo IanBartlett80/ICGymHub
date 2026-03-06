@@ -63,6 +63,18 @@ export async function GET(req: NextRequest) {
             name: true,
           },
         },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        zone: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         assignedTo: {
           select: {
             id: true,
@@ -119,6 +131,8 @@ export async function GET(req: NextRequest) {
         priority: submission.priority,
         submittedAt: submission.submittedAt,
         template: submission.template,
+        venue: submission.venue,
+        zone: submission.zone,
         assignedTo: submission.assignedTo,
         athleteName,
         coachName,
