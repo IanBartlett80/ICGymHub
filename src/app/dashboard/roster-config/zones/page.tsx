@@ -116,7 +116,7 @@ export default function ZonesPage() {
  }
 
  return (
-  <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+  <DashboardLayout title="Gym Zones" showClassRosteringNav={true}>
    <div className="p-8">
     <div className="max-w-6xl mx-auto">
      <div className="mb-6">

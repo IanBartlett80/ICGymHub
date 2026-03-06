@@ -434,7 +434,7 @@ export default function RosterReportsPage() {
 
  if (loading) {
   return (
-   <DashboardLayout title="Reports" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+   <DashboardLayout title="Reports" showClassRosteringNav={true}>
     <div className="p-8">Loading...</div>
    </DashboardLayout>
   )
@@ -444,7 +444,7 @@ export default function RosterReportsPage() {
  const groupedSlots = groupSlotsByDay()
 
  return (
-  <DashboardLayout title="Reports" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+  <DashboardLayout title="Reports" showClassRosteringNav={true}>
    <div className="p-8">
     <div className="max-w-7xl mx-auto">
      {/* Header with action buttons */}

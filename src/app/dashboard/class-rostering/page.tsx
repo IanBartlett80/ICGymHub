@@ -298,7 +298,7 @@ export default function ClassRosteringPage() {
  }
 
  return (
-  <DashboardLayout title="Class Rostering" backTo={{ label: 'Back to Home', href: '/dashboard' }} showClassRosteringNav={true}>
+  <DashboardLayout title="Class Rostering" showClassRosteringNav={true}>
    <div className="p-6">
     {/* Roster Calendar View */}
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
