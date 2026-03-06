@@ -513,8 +513,8 @@ export default function InjuryReportsDashboard() {
      </>
     )}
 
-    {/* Monthly Incident Trends - Row 1 */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    {/* Monthly Incident Trends */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
      {/* Incident Trends by Zone */}
      {monthlyDataByZone.length > 0 && (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -624,62 +624,62 @@ export default function InjuryReportsDashboard() {
        </ResponsiveContainer>
       </div>
      )}
-    </div>
 
-    {/* Monthly Incident Trends - Row 2 */}
-    {monthlyDataByProgram.length > 0 && (
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="mb-4">
-       <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
-       <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
+     {/* Incident Trends by Program */}
+     {monthlyDataByProgram.length > 0 && (
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+       <div className="mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
+        <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
+       </div>
+       <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={monthlyDataByProgram}>
+         <CartesianGrid strokeDasharray="3 3" />
+         <XAxis 
+          dataKey="month" 
+          tick={{ fontSize: 12 }}
+          angle={-15}
+          textAnchor="end"
+          height={60}
+         />
+         <YAxis 
+          tick={{ fontSize: 12 }}
+          label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
+         />
+         <Tooltip 
+          contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+          labelStyle={{ fontWeight: 'bold' }}
+         />
+         <Legend wrapperStyle={{ paddingTop: '20px' }} />
+         {programNames.map((programName, index) => {
+          const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+          return (
+           <Line
+            key={programName}
+            type="monotone"
+            dataKey={programName}
+            stroke={colors[index % colors.length]}
+            strokeWidth={2}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+           />
+          );
+         })}
+         <Line
+          type="monotone"
+          dataKey="total"
+          stroke="#1f2937"
+          strokeWidth={3}
+          strokeDasharray="5 5"
+          dot={{ r: 5 }}
+          activeDot={{ r: 7 }}
+          name="Total (All Programs)"
+         />
+        </LineChart>
+       </ResponsiveContainer>
       </div>
-      <ResponsiveContainer width="100%" height={350}>
-       <LineChart data={monthlyDataByProgram}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis 
-         dataKey="month" 
-         tick={{ fontSize: 12 }}
-         angle={-15}
-         textAnchor="end"
-         height={60}
-        />
-        <YAxis 
-         tick={{ fontSize: 12 }}
-         label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
-        />
-        <Tooltip 
-         contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
-         labelStyle={{ fontWeight: 'bold' }}
-        />
-        <Legend wrapperStyle={{ paddingTop: '20px' }} />
-        {programNames.map((programName, index) => {
-         const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-         return (
-          <Line
-           key={programName}
-           type="monotone"
-           dataKey={programName}
-           stroke={colors[index % colors.length]}
-           strokeWidth={2}
-           dot={{ r: 4 }}
-           activeDot={{ r: 6 }}
-          />
-         );
-        })}
-        <Line
-         type="monotone"
-         dataKey="total"
-         stroke="#1f2937"
-         strokeWidth={3}
-         strokeDasharray="5 5"
-         dot={{ r: 5 }}
-         activeDot={{ r: 7 }}
-         name="Total (All Programs)"
-        />
-       </LineChart>
-      </ResponsiveContainer>
-     </div>
-    )}
+     )}
+    </div>
 
    {/* Submissions List */}
    <div className="bg-white rounded-lg shadow border border-gray-200">
