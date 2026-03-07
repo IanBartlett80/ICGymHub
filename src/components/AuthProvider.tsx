@@ -31,7 +31,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext)
 
 const INACTIVITY_TIMEOUT = 60 * 60 * 1000 // 1 hour in milliseconds
-const PUBLIC_PATHS = ['/sign-in', '/register', '/verify-email', '/resend-verification', '/injury-report']
+const PUBLIC_PATHS = ['/sign-in', '/register', '/verify-email', '/resend-verification', '/injury-report', '/zone']
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()

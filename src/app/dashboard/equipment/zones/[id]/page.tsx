@@ -94,7 +94,13 @@ export default function ZoneDetailPage() {
    ]);
 
    if (zoneRes.ok) {
-    setZone(await zoneRes.json());
+    const zoneData = await zoneRes.json();
+    setZone(zoneData);
+    
+    // Load existing QR code if zone has publicId
+    if (zoneData.publicId) {
+      loadExistingQR();
+    }
    }
 
    if (equipmentRes.ok) {
@@ -123,6 +129,20 @@ export default function ZoneDetailPage() {
    alert('Failed to load zone details');
   } finally {
    setLoading(false);
+  }
+ };
+
+ const loadExistingQR = async () => {
+  try {
+   const response = await fetch(`/api/zones/${zoneId}/generate-qr`);
+   if (response.ok) {
+    const data = await response.json();
+    if (data.hasQRCode) {
+     setQrCodeDataUrl(data.qrCodeDataUrl);
+    }
+   }
+  } catch (error) {
+   console.error('Failed to load existing QR code:', error);
   }
  };
 
@@ -208,6 +228,15 @@ export default function ZoneDetailPage() {
  const handlePrintQR = () => {
   if (!qrCodeDataUrl || !zone) return;
   
+  // Escape HTML to prevent issues with special characters
+  const escapeHtml = (text: string) => {
+   const div = document.createElement('div');
+   div.textContent = text;
+   return div.innerHTML;
+  };
+  
+  const zoneName = escapeHtml(zone.name);
+  
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
   
@@ -215,7 +244,7 @@ export default function ZoneDetailPage() {
    <!DOCTYPE html>
    <html>
     <head>
-     <title>QR Code - ${zone.name}</title>
+     <title>QR Code - ${zoneName}</title>
      <style>
       body {
        font-family: Arial, sans-serif;
@@ -261,8 +290,8 @@ export default function ZoneDetailPage() {
     </head>
     <body>
      <h1>Equipment Zone QR Code</h1>
-     <div class="zone-name">${zone.name}</div>
-     <img src="${qrCodeDataUrl}" alt="QR Code for ${zone.name}" />
+     <div class="zone-name">${zoneName}</div>
+     <img src="${qrCodeDataUrl}" alt="QR Code for ${zoneName}" />
      <div class="instructions">
       <p>Scan this QR code to access zone information</p>
      </div>

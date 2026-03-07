@@ -130,11 +130,35 @@ export default function EquipmentPage() {
    })));
 
    setZones(zonesWithStatus);
+   
+   // Load existing QR codes for zones with publicIds
+   loadExistingQRCodes(zonesWithStatus);
   } catch (error) {
    console.error('Failed to load data:', error);
    alert('Failed to load equipment data');
   } finally {
    setLoading(false);
+  }
+ };
+
+ const loadExistingQRCodes = async (zones: ZoneWithStatus[]) => {
+  const zonesWithPublicIds = zones.filter(z => z.publicId);
+  
+  for (const zone of zonesWithPublicIds) {
+   try {
+    const response = await fetch(`/api/zones/${zone.id}/generate-qr`);
+    if (response.ok) {
+     const data = await response.json();
+     if (data.hasQRCode) {
+      setZoneQRCodes(prev => ({
+       ...prev,
+       [zone.id]: data.qrCodeDataUrl,
+      }));
+     }
+    }
+   } catch (error) {
+    console.error(`Failed to load QR code for zone ${zone.id}:`, error);
+   }
   }
  };
 

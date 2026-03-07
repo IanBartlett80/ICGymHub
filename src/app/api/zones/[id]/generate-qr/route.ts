@@ -3,6 +3,82 @@ import { verifyAuth } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
 
+// GET /api/zones/[id]/generate-qr - Get existing QR code for zone if publicId exists
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await verifyAuth(req);
+    if (!auth.authenticated || !auth.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Verify the zone belongs to the user's club
+    const zone = await prisma.zone.findFirst({
+      where: {
+        id,
+        clubId: auth.user.clubId,
+      },
+    });
+
+    if (!zone) {
+      return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
+    }
+
+    // Only return QR code if publicId exists
+    if (!zone.publicId) {
+      return NextResponse.json({ hasQRCode: false });
+    }
+
+    // Generate public URL
+    const forwardedProto = req.headers.get('x-forwarded-proto');
+    const forwardedHost = req.headers.get('x-forwarded-host');
+    const host = req.headers.get('host');
+    const requestOrigin = forwardedHost
+      ? `${forwardedProto || 'https'}://${forwardedHost}`
+      : host
+      ? `${forwardedProto || 'https'}://${host}`
+      : req.headers.get('origin');
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || requestOrigin;
+
+    if (!baseUrl) {
+      return NextResponse.json(
+        { error: 'Application base URL is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const publicUrl = `${baseUrl}/zone/${zone.publicId}`;
+
+    // Generate QR code data URL
+    const QRCode = require('qrcode');
+    const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
+      width: 500,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    });
+
+    return NextResponse.json({
+      hasQRCode: true,
+      publicId: zone.publicId,
+      publicUrl,
+      qrCodeDataUrl,
+    });
+  } catch (error) {
+    console.error('Failed to fetch QR code:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch QR code' },
+      { status: 500 }
+    );
+  }
+}
+
 // POST /api/zones/[id]/generate-qr - Generate QR code for zone
 export async function POST(
   req: NextRequest,
