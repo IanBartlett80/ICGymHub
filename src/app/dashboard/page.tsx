@@ -189,11 +189,11 @@ export default function DashboardPage() {
        </div>
       </Link>
 
-      <Link href="/injury-report" className="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition">
+      <Link href="/dashboard/injury-reports" className="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition">
        <span className="text-3xl">📝</span>
        <div>
-        <p className="font-medium text-gray-900">Report Incident</p>
-        <p className="text-xs text-gray-600">Submit injury report</p>
+        <p className="font-medium text-gray-900">Review Incidents</p>
+        <p className="text-xs text-gray-600">Review Injury Reports</p>
        </div>
       </Link>
 
