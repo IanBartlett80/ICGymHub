@@ -60,6 +60,7 @@ export async function GET(
         name: zone.name,
         description: zone.description,
         club: zone.club,
+        venue: zone.venue,
       },
       equipment,
     });

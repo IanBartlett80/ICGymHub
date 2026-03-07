@@ -23,6 +23,11 @@ interface EquipmentFormData {
   addedByEmail: string;
 }
 
+interface Zone {
+  id: string;
+  name: string;
+}
+
 const conditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Out of Service'];
 
 export default function MobileEquipmentForm({
@@ -36,6 +41,9 @@ export default function MobileEquipmentForm({
 }: MobileEquipmentFormProps) {
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loadingZones, setLoadingZones] = useState(false);
+  const [selectedZoneId, setSelectedZoneId] = useState<string>(zoneId || '');
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: '',
     category: '',
@@ -53,16 +61,22 @@ export default function MobileEquipmentForm({
 
   useEffect(() => {
     loadCategories();
-  }, []);
+    // If we have venueId but no zoneId, load zones for selection
+    if (venueId && !zoneId) {
+      loadZones();
+    }
+  }, [clubId, venueId, zoneId]);
 
   const loadCategories = async () => {
     try {
       setLoadingCategories(true);
-      const response = await fetch('/api/equipment/categories');
+      const response = await fetch(`/api/public/equipment/categories?clubId=${clubId}`);
       if (response.ok) {
         const data = await response.json();
         const categoryNames = data.categories.map((c: any) => c.name);
         setCategories(categoryNames);
+      } else {
+        throw new Error('Failed to load categories');
       }
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -84,6 +98,23 @@ export default function MobileEquipmentForm({
     }
   };
 
+  const loadZones = async () => {
+    if (!venueId) return;
+    
+    try {
+      setLoadingZones(true);
+      const response = await fetch(`/api/public/zones?venueId=${venueId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setZones(data.zones);
+      }
+    } catch (error) {
+      console.error('Failed to load zones:', error);
+    } finally {
+      setLoadingZones(false);
+    }
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
@@ -95,8 +126,9 @@ export default function MobileEquipmentForm({
       newErrors.category = 'Category is required';
     }
 
-    if (!formData.addedBy.trim()) {
-      newErrors.addedBy = 'Your name is required';
+    // If adding from venue level (no zoneId), require zone selection
+    if (venueId && !zoneId && !selectedZoneId) {
+      newErrors.zone = 'Please select a zone';
     }
 
     setErrors(newErrors);
@@ -166,7 +198,7 @@ export default function MobileEquipmentForm({
         body: JSON.stringify({
           clubId,
           venueId: venueId || null,
-          zoneId: zoneId || null,
+          zoneId: zoneId || selectedZoneId || null,
           ...formData,
         }),
       });
@@ -210,6 +242,36 @@ export default function MobileEquipmentForm({
               {zoneName && (
                 <p className="text-sm text-indigo-700">Zone: {zoneName}</p>
               )}
+            </div>
+          )}
+
+          {/* Zone Selector - Only show if venueId exists but zoneId doesn't */}
+          {venueId && !zoneId && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Zone <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedZoneId}
+                onChange={(e) => {
+                  setSelectedZoneId(e.target.value);
+                  if (errors.zone) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.zone;
+                      return newErrors;
+                    });
+                  }
+                }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.zone ? 'border-red-300' : 'border-gray-300'}`}
+                disabled={loadingZones || isSubmitting}
+              >
+                <option value="">{loadingZones ? 'Loading zones...' : 'Select a zone...'}</option>
+                {zones.map(zone => (
+                  <option key={zone.id} value={zone.id}>{zone.name}</option>
+                ))}
+              </select>
+              {errors.zone && <p className="mt-1 text-sm text-red-600">{errors.zone}</p>}
             </div>
           )}
 
@@ -343,27 +405,26 @@ export default function MobileEquipmentForm({
 
           {/* Staff Info */}
           <div className="border-t pt-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Staff Information</p>
+            <p className="text-sm font-medium text-gray-700 mb-3">Staff Information (Optional)</p>
             
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Name <span className="text-red-500">*</span>
+                  Your Name
                 </label>
                 <input
                   type="text"
                   value={formData.addedBy}
                   onChange={(e) => handleChange('addedBy', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.addedBy ? 'border-red-300' : 'border-gray-300'}`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Your full name"
                   disabled={isSubmitting}
                 />
-                {errors.addedBy && <p className="mt-1 text-sm text-red-600">{errors.addedBy}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Email (Optional)
+                  Your Email
                 </label>
                 <input
                   type="email"
