@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CubeIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { CubeIcon, MapPinIcon, PlusIcon } from '@heroicons/react/24/outline';
+import MobileEquipmentForm from '@/components/MobileEquipmentForm';
 
 interface Venue {
   id: string;
@@ -11,6 +12,7 @@ interface Venue {
   city: string | null;
   state: string | null;
   club: {
+    id: string;
     name: string;
   };
 }
@@ -31,6 +33,7 @@ export default function PublicVenuePage() {
   const [venue, setVenue] = useState<Venue | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddEquipment, setShowAddEquipment] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -59,6 +62,12 @@ export default function PublicVenuePage() {
     if (zone.publicId) {
       router.push(`/zone/${zone.publicId}`);
     }
+  };
+
+  const handleAddEquipmentSuccess = () => {
+    setShowAddEquipment(false);
+    // Optionally reload data to show updated counts
+    loadData();
   };
 
   if (loading) {
@@ -104,11 +113,20 @@ export default function PublicVenuePage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Equipment Zones</h2>
-          <p className="text-gray-600">
-            Select a zone to view equipment details and report issues
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Equipment Zones</h2>
+            <p className="text-gray-600">
+              Select a zone to view equipment details and report issues
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddEquipment(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Add Equipment</span>
+          </button>
         </div>
 
         {zones.length === 0 ? (
@@ -166,6 +184,17 @@ export default function PublicVenuePage() {
           <p>Powered by {venue.club.name}</p>
         </div>
       </div>
+
+      {/* Add Equipment Form Modal */}
+      {showAddEquipment && venue && (
+        <MobileEquipmentForm
+          clubId={venue.club.id}
+          venueId={venue.id}
+          venueName={venue.name}
+          onSubmit={handleAddEquipmentSuccess}
+          onCancel={() => setShowAddEquipment(false)}
+        />
+      )}
     </div>
   );
 }

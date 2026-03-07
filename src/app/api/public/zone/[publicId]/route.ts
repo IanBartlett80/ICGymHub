@@ -16,6 +16,13 @@ export async function GET(
       include: {
         club: {
           select: {
+            id: true,
+            name: true,
+          },
+        },
+        venue: {
+          select: {
+            id: true,
             name: true,
           },
         },

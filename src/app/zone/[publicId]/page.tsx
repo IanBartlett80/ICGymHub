@@ -2,13 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ExclamationTriangleIcon, CubeIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, CubeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import MobileEquipmentForm from '@/components/MobileEquipmentForm';
 
 interface Zone {
   id: string;
   name: string;
   description: string | null;
   club: {
+    id: string;
+    name: string;
+  };
+  venue: {
+    id: string;
     name: string;
   };
 }
@@ -33,6 +39,7 @@ export default function PublicZoneReportPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showAddEquipment, setShowAddEquipment] = useState(false);
 
   const [formData, setFormData] = useState({
     issueType: 'CRITICAL',
@@ -64,6 +71,11 @@ export default function PublicZoneReportPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddEquipmentSuccess = () => {
+    setShowAddEquipment(false);
+    loadData(); // Reload equipment list
   };
 
   const handleEquipmentSelect = (item: Equipment) => {
@@ -418,6 +430,17 @@ export default function PublicZoneReportPage() {
           </div>
         </div>
 
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Equipment in this Zone</h2>
+          <button
+            onClick={() => setShowAddEquipment(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          >
+            <PlusIcon className="h-5 w-5" />
+            <span>Add Equipment</span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {equipment.length === 0 ? (
             <div className="col-span-full text-center py-12">
@@ -454,6 +477,19 @@ export default function PublicZoneReportPage() {
             ))
           )}
         </div>
+
+        {/* Equipment Addition Modal */}
+        {showAddEquipment && zone && (
+          <MobileEquipmentForm
+            clubId={zone.club.id}
+            venueId={zone.venue.id}
+            venueName={zone.venue.name}
+            zoneId={zone.id}
+            zoneName={zone.name}
+            onSubmit={handleAddEquipmentSuccess}
+            onCancel={() => setShowAddEquipment(false)}
+          />
+        )}
       </div>
     </div>
   );
