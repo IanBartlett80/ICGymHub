@@ -74,6 +74,7 @@ model Venue {
   clubId               String
   name                 String
   slug                 String
+  publicId             String?              @unique
   address              String?
   city                 String?
   state                String?

@@ -217,79 +217,78 @@ export default function ZoneDetailPage() {
  };
 
  const handlePrintQR = () => {
-  if (!qrCodeDataUrl || !zone) return;
-  
-  // Escape HTML to prevent issues with special characters
-  const escapeHtml = (text: string) => {
-   const div = document.createElement('div');
-   div.textContent = text;
-   return div.innerHTML;
-  };
-  
-  const zoneName = escapeHtml(zone.name);
+  if (!qrCodeDataUrl || !zone) {
+   console.error('Cannot print: missing QR code or zone data');
+   return;
+  }
   
   const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
+  if (!printWindow) {
+   console.error('Failed to open print window');
+   return;
+  }
   
-  printWindow.document.write(`
-   <!DOCTYPE html>
-   <html>
-    <head>
-     <title>QR Code - ${zoneName}</title>
-     <style>
+  // Use textContent to safely encode the zone name
+  const safeZoneName = zone.name || 'Equipment Zone';
+  
+  const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Code - ${safeZoneName.replace(/"/g, '&quot;')}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .zone-name {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      text-align: center;
+      color: #1f2937;
+    }
+    img {
+      max-width: 400px;
+      height: auto;
+      border: 2px solid #000;
+      padding: 10px;
+      background: white;
+    }
+    .instructions {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    @media print {
       body {
-       font-family: Arial, sans-serif;
-       display: flex;
-       flex-direction: column;
-       align-items: center;
-       justify-content: center;
-       min-height: 100vh;
-       margin: 0;
-       padding: 20px;
-      }
-      h1 {
-       font-size: 24px;
-       margin-bottom: 10px;
-       text-align: center;
-      }
-      .zone-name {
-       font-size: 32px;
-       font-weight: bold;
-       margin-bottom: 30px;
-       text-align: center;
-       color: #1f2937;
-      }
-      img {
-       max-width: 400px;
-       height: auto;
-       border: 2px solid #000;
-       padding: 10px;
-       background: white;
-      }
-      .instructions {
-       margin-top: 20px;
-       text-align: center;
-       font-size: 14px;
-       color: #6b7280;
-      }
-      @media print {
-       body {
         padding: 0;
-       }
       }
-     </style>
-    </head>
-    <body>
-     <h1>Equipment Zone QR Code</h1>
-     <div class="zone-name">${zoneName}</div>
-     <img src="${qrCodeDataUrl}" alt="QR Code for ${zoneName}" />
-     <div class="instructions">
-      <p>Scan this QR code to access zone information</p>
-     </div>
-    </body>
-   </html>
-  `);
+    }
+  </style>
+</head>
+<body>
+  <h1>Equipment Zone QR Code</h1>
+  <div class="zone-name">${safeZoneName.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+  <img src="${qrCodeDataUrl}" alt="QR Code" />
+  <div class="instructions">
+    <p>Scan this QR code to access zone information</p>
+  </div>
+</body>
+</html>`;
   
+  printWindow.document.write(htmlContent);
   printWindow.document.close();
   printWindow.focus();
   

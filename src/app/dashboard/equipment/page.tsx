@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zone, Venue } from '@prisma/client';
-import { QrCodeIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -52,6 +52,15 @@ export default function EquipmentPage() {
  const [venueFilter, setVenueFilter] = useState<string>('all');
  const [zoneQRCodes, setZoneQRCodes] = useState<Record<string, string>>({});
  const [generatingQRForZone, setGeneratingQRForZone] = useState<string | null>(null);
+ const [venueQRCodes, setVenueQRCodes] = useState<Array<{
+  venueId: string;
+  venueName: string;
+  publicId: string;
+  publicUrl: string;
+  qrCodeDataUrl: string;
+ }>>([]);
+ const [generatingVenueQRs, setGeneratingVenueQRs] = useState(false);
+ const [showVenueQRs, setShowVenueQRs] = useState(false);
 
  useEffect(() => {
   loadData();
@@ -223,6 +232,116 @@ export default function EquipmentPage() {
   }
  };
 
+ const handleGenerateVenueQRs = async () => {
+  try {
+   setGeneratingVenueQRs(true);
+   
+   // First try to GET existing QR codes
+   const getResponse = await fetch('/api/venues/generate-qr');
+   if (getResponse.ok) {
+    const getData = await getResponse.json();
+    if (getData.venueQRCodes && getData.venueQRCodes.length > 0) {
+     setVenueQRCodes(getData.venueQRCodes);
+     setShowVenueQRs(true);
+     return;
+    }
+   }
+
+   // If no existing QR codes, generate new ones
+   const response = await fetch('/api/venues/generate-qr', {
+    method: 'POST',
+   });
+
+   if (!response.ok) {
+    throw new Error('Failed to generate venue QR codes');
+   }
+
+   const data = await response.json();
+   setVenueQRCodes(data.venueQRCodes);
+   setShowVenueQRs(true);
+  } catch (error) {
+   console.error('Failed to generate venue QR codes:', error);
+   alert('Failed to generate venue QR codes');
+  } finally {
+   setGeneratingVenueQRs(false);
+  }
+ };
+
+ const handlePrintVenueQR = (venueQR: { venueName: string; qrCodeDataUrl: string }) => {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+   console.error('Failed to open print window');
+   return;
+  }
+  
+  const safeVenueName = venueQR.venueName || 'Equipment Venue';
+  
+  const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Venue QR Code - ${safeVenueName.replace(/"/g, '&quot;')}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .venue-name {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      text-align: center;
+      color: #1f2937;
+    }
+    img {
+      max-width: 400px;
+      height: auto;
+      border: 2px solid #000;
+      padding: 10px;
+      background: white;
+    }
+    .instructions {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    @media print {
+      body {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Equipment Venue QR Code</h1>
+  <div class="venue-name">${safeVenueName.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+  <img src="${venueQR.qrCodeDataUrl}" alt="QR Code" />
+  <div class="instructions">
+    <p>Scan this QR code to access venue equipment zones</p>
+  </div>
+</body>
+</html>`;
+  
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  printWindow.focus();
+  
+  setTimeout(() => {
+   printWindow.print();
+  }, 250);
+ };
+
  const filteredZones = zones.filter(z => {
   const matchesStatus = statusFilter === 'all' || z.statusInfo?.status === statusFilter;
   const matchesVenue = venueFilter === 'all' || z.venueId === venueFilter;
@@ -244,11 +363,21 @@ export default function EquipmentPage() {
    <EquipmentManagementSubNav />
    <div className="p-6 space-y-6">
     {/* Header */}
-    <div className="mb-6">
-     <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
-     <p className="mt-1 text-sm text-gray-600">
-      Zone-based equipment tracking and safety management
-     </p>
+    <div className="mb-6 flex items-center justify-between">
+     <div>
+      <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
+      <p className="mt-1 text-sm text-gray-600">
+       Zone-based equipment tracking and safety management
+      </p>
+     </div>
+     <button
+      onClick={handleGenerateVenueQRs}
+      disabled={generatingVenueQRs}
+      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+     >
+      <QrCodeIcon className="h-5 w-5 mr-2" />
+      {generatingVenueQRs ? 'Generating...' : 'Generate Venue QR Codes'}
+     </button>
     </div>
 
     {/* Stats */}
@@ -498,6 +627,44 @@ export default function EquipmentPage() {
       </div>
      )}
     </div>
+
+    {/* Venue QR Codes Section */}
+    {showVenueQRs && venueQRCodes.length > 0 && (
+     <div className="mb-8">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Venue QR Codes</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+       {venueQRCodes.map((venueQR) => (
+        <div
+         key={venueQR.venueId}
+         className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+        >
+         <div className="flex flex-col items-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3 text-center">
+           {venueQR.venueName}
+          </h3>
+          <div className="w-32 h-32 mb-4">
+           <img
+            src={venueQR.qrCodeDataUrl}
+            alt={`QR Code for ${venueQR.venueName}`}
+            className="w-full h-full"
+           />
+          </div>
+          <button
+           onClick={(e) => {
+            e.stopPropagation();
+            handlePrintVenueQR(venueQR);
+           }}
+           className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+           <PrinterIcon className="h-4 w-4 mr-2" />
+           Print
+          </button>
+         </div>
+        </div>
+       ))}
+      </div>
+     </div>
+    )}
 
     {/* Zone Cards Grid */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
