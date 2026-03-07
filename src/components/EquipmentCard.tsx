@@ -146,7 +146,7 @@ export default function EquipmentCard({
                 className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors flex items-center justify-center"
               >
                 <XCircleIcon className="w-4 h-4 mr-1" />
-                Check In
+                Checked In
               </button>
             )
           ) : (
@@ -156,7 +156,7 @@ export default function EquipmentCard({
                 className="flex-1 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
               >
                 <CheckCircleIcon className="w-4 h-4 mr-1" />
-                Check Out
+                Checked Out
               </button>
             )
           )
