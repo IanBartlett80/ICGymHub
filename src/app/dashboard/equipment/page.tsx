@@ -67,6 +67,13 @@ export default function EquipmentPage() {
   loadData();
  }, []);
 
+ // Reload graph data when filters change
+ useEffect(() => {
+  if (!loading) {
+   loadGraphData();
+  }
+ }, [statusFilter, venueFilter]);
+
  const loadData = async () => {
   try {
    setLoading(true);
@@ -151,6 +158,48 @@ export default function EquipmentPage() {
    alert('Failed to load equipment data');
   } finally {
    setLoading(false);
+  }
+ };
+
+ const loadGraphData = async () => {
+  try {
+   // Get filtered zone IDs based on current filters
+   const filtered = zones.filter(z => {
+    const matchesStatus = statusFilter === 'all' || z.statusInfo?.status === statusFilter;
+    const matchesVenue = venueFilter === 'all' || z.venueId === venueFilter;
+    return matchesStatus && matchesVenue;
+   });
+   
+   const zoneIds = filtered.map(z => z.id).join(',');
+   const venueIds = venueFilter !== 'all' ? venueFilter : '';
+
+   // Build query params
+   const params = new URLSearchParams({ months: '6' });
+   if (zoneIds) {
+    params.append('zoneIds', zoneIds);
+   }
+   if (venueIds) {
+    params.append('venueId', venueIds);
+   }
+
+   const [monthlyRes, monthlyByVenueRes] = await Promise.all([
+    fetch(`/api/equipment/analytics/safety-issues-monthly?${params.toString()}`),
+    fetch(`/api/equipment/analytics/safety-issues-monthly-by-venue?${params.toString()}`),
+   ]);
+
+   if (monthlyRes.ok) {
+    const data = await monthlyRes.json();
+    setMonthlyData(data.data || []);
+    setZoneNames(data.zones || []);
+   }
+
+   if (monthlyByVenueRes.ok) {
+    const data = await monthlyByVenueRes.json();
+    setMonthlyDataByVenue(data.data || []);
+    setVenueNames(data.venues || []);
+   }
+  } catch (error) {
+   console.error('Failed to load graph data:', error);
   }
  };
 

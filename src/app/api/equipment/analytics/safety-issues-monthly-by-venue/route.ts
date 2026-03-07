@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get('months') || '6'); // Default to 6 months
+    const venueIdFilter = searchParams.get('venueId');
 
     // Calculate date range
     const now = new Date();
@@ -17,12 +18,20 @@ export async function GET(request: NextRequest) {
     startDate.setDate(1); // Start from first day of month
     startDate.setHours(0, 0, 0, 0);
 
-    // Get all venues
+    // Build venue query
+    const venueWhere: any = {
+      clubId: club.id,
+      active: true,
+    };
+    
+    // If venueId filter is set, only get that specific venue
+    if (venueIdFilter && venueIdFilter !== 'all') {
+      venueWhere.id = venueIdFilter;
+    }
+
+    // Get venues (filtered if needed)
     const venues = await prisma.venue.findMany({
-      where: {
-        clubId: club.id,
-        active: true,
-      },
+      where: venueWhere,
       select: {
         id: true,
         name: true,
@@ -32,7 +41,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Get all safety issues for the date range
+    // Get safety issues only for the filtered venues
+    const activeVenueIds = venues.map(v => v.id);
+    
     const safetyIssues = await prisma.safetyIssue.findMany({
       where: {
         clubId: club.id,
@@ -41,6 +52,7 @@ export async function GET(request: NextRequest) {
         },
         equipment: {
           active: true,
+          venueId: activeVenueIds.length > 0 ? { in: activeVenueIds } : undefined,
         },
       },
       select: {

@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get('months') || '6'); // Default to 6 months
+    const zoneIdsParam = searchParams.get('zoneIds');
 
     // Calculate date range
     const now = new Date();
@@ -17,19 +18,32 @@ export async function GET(request: NextRequest) {
     startDate.setDate(1); // Start from first day of month
     startDate.setHours(0, 0, 0, 0);
 
-    // Get all zones
+    // Build zone query
+    const zoneWhere: any = {
+      clubId: club.id,
+      active: true,
+    };
+    
+    // If zoneIds filter is set, only get those specific zones
+    if (zoneIdsParam) {
+      const zoneIds = zoneIdsParam.split(',').filter(id => id.trim());
+      if (zoneIds.length > 0) {
+        zoneWhere.id = { in: zoneIds };
+      }
+    }
+
+    // Get zones (filtered if needed)
     const zones = await prisma.zone.findMany({
-      where: {
-        clubId: club.id,
-        active: true,
-      },
+      where: zoneWhere,
       select: {
         id: true,
         name: true,
       },
     });
 
-    // Get all safety issues for the date range
+    // Get safety issues only for the filtered zones
+    const activeZoneIds = zones.map(z => z.id);
+    
     const safetyIssues = await prisma.safetyIssue.findMany({
       where: {
         clubId: club.id,
@@ -38,6 +52,7 @@ export async function GET(request: NextRequest) {
         },
         equipment: {
           active: true,
+          zoneId: activeZoneIds.length > 0 ? { in: activeZoneIds } : undefined,
         },
       },
       select: {
