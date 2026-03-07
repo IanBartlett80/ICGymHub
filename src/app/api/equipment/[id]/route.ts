@@ -90,6 +90,7 @@ export async function PUT(
       purchaseCost,
       condition,
       location,
+      venueId,
       zoneId,
       lastMaintenance,
       nextMaintenance,
@@ -144,6 +145,22 @@ export async function PUT(
       }
     }
 
+    // Check if venue exists if provided
+    if (venueId !== undefined && venueId !== null) {
+      const venue = await prisma.venue.findFirst({
+        where: {
+          id: venueId,
+          clubId: auth.user.clubId,
+        },
+      });
+      if (!venue) {
+        return NextResponse.json(
+          { error: 'Venue not found' },
+          { status: 404 }
+        );
+      }
+    }
+
     // Check for duplicate serial number
     if (serialNumber && serialNumber !== existing.serialNumber) {
       const duplicate = await prisma.equipment.findUnique({
@@ -165,6 +182,7 @@ export async function PUT(
     if (purchaseCost !== undefined) updateData.purchaseCost = purchaseCost || null;
     if (condition !== undefined) updateData.condition = condition;
     if (location !== undefined) updateData.location = location || null;
+    if (venueId !== undefined) updateData.venueId = venueId || null;
     if (zoneId !== undefined) updateData.zoneId = zoneId || null;
     if (lastMaintenance !== undefined) updateData.lastMaintenance = lastMaintenance ? new Date(lastMaintenance) : null;
     if (nextMaintenance !== undefined) updateData.nextMaintenance = nextMaintenance ? new Date(nextMaintenance) : null;

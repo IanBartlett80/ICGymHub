@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zone, Venue } from '@prisma/client';
-import { QrCodeIcon, PrinterIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon, PrinterIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -143,6 +143,9 @@ export default function EquipmentPage() {
    
    // Load existing QR codes for zones with publicIds
    loadExistingQRCodes(zonesWithStatus);
+   
+   // Load existing venue QR codes
+   loadExistingVenueQRCodes();
   } catch (error) {
    console.error('Failed to load data:', error);
    alert('Failed to load equipment data');
@@ -169,6 +172,21 @@ export default function EquipmentPage() {
    } catch (error) {
     console.error(`Failed to load QR code for zone ${zone.id}:`, error);
    }
+  }
+ };
+
+ const loadExistingVenueQRCodes = async () => {
+  try {
+   const response = await fetch('/api/venues/generate-qr');
+   if (response.ok) {
+    const data = await response.json();
+    if (data.venueQRCodes && data.venueQRCodes.length > 0) {
+     setVenueQRCodes(data.venueQRCodes);
+     setShowVenueQRs(true);
+    }
+   }
+  } catch (error) {
+   console.error('Failed to load venue QR codes:', error);
   }
  };
 
@@ -636,16 +654,18 @@ export default function EquipmentPage() {
        className="flex items-center justify-between mb-4 cursor-pointer group"
        onClick={() => setVenueQRsExpanded(!venueQRsExpanded)}
       >
-       <h2 className="text-xl font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
-        Venue QR Codes
-       </h2>
-       <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-        {venueQRsExpanded ? (
-         <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-        ) : (
-         <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-        )}
-       </button>
+       <div className="flex items-center gap-2">
+        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+         {venueQRsExpanded ? (
+          <MinusIcon className="h-5 w-5 text-gray-500" />
+         ) : (
+          <PlusIcon className="h-5 w-5 text-gray-500" />
+         )}
+        </button>
+        <h2 className="text-xl font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+         Venue QR Codes
+        </h2>
+       </div>
       </div>
       {venueQRsExpanded && (
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
