@@ -61,7 +61,7 @@ export default function EquipmentPage() {
  }>>([]);
  const [generatingVenueQRs, setGeneratingVenueQRs] = useState(false);
  const [showVenueQRs, setShowVenueQRs] = useState(false);
- const [venueQRsExpanded, setVenueQRsExpanded] = useState(true);
+ const [venueQRsExpanded, setVenueQRsExpanded] = useState(false);
 
  useEffect(() => {
   loadData();
