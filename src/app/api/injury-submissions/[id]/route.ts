@@ -54,6 +54,19 @@ export async function GET(
             select: {
               id: true,
               name: true,
+              venueId: true,
+              venue: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          venue: {
+            select: {
+              id: true,
+              name: true,
             },
           },
           equipment: {
@@ -63,6 +76,9 @@ export async function GET(
               serialNumber: true,
               category: true,
               condition: true,
+              lastCheckedDate: true,
+              lastCheckStatus: true,
+              lastCheckedBy: true,
             },
           },
           data: {

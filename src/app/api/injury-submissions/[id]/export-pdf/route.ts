@@ -34,6 +34,32 @@ export async function GET(
             },
           },
         },
+        venue: {
+          select: {
+            name: true,
+          },
+        },
+        zone: {
+          select: {
+            name: true,
+            venue: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        equipment: {
+          select: {
+            name: true,
+            serialNumber: true,
+            category: true,
+            condition: true,
+            lastCheckedDate: true,
+            lastCheckStatus: true,
+            lastCheckedBy: true,
+          },
+        },
         data: {
           include: {
             field: true,
@@ -153,6 +179,47 @@ export async function GET(
     </div>
     ` : ''}
   </div>
+
+  ${submission.venue || submission.zone || submission.equipment ? `
+  <div class="section">
+    <h2>Location & Equipment Information</h2>
+    ${submission.venue ? `
+    <div class="field">
+      <div class="field-label">Venue:</div>
+      <div class="field-value">${submission.venue.name}</div>
+    </div>
+    ` : ''}
+    ${submission.zone ? `
+    <div class="field">
+      <div class="field-label">Gym Zone / Area:</div>
+      <div class="field-value">${submission.zone.name}${submission.zone.venue ? ` (${submission.zone.venue.name})` : ''}</div>
+    </div>
+    ` : ''}
+    ${submission.equipment ? `
+    <div class="field">
+      <div class="field-label">Equipment / Apparatus:</div>
+      <div class="field-value">
+        <strong>${submission.equipment.name}</strong>
+        ${submission.equipment.serialNumber ? `<br>Serial: ${submission.equipment.serialNumber}` : ''}
+        ${submission.equipment.category ? `<br>Category: ${submission.equipment.category}` : ''}
+        ${submission.equipment.condition ? `<br>Condition: ${submission.equipment.condition}` : ''}
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Equipment Safety Check Status:</div>
+      <div class="field-value">
+        ${submission.equipment.lastCheckedDate ? `
+          <strong>Last Checked:</strong> ${new Date(submission.equipment.lastCheckedDate).toLocaleDateString()}<br>
+          ${submission.equipment.lastCheckStatus ? `<strong>Status:</strong> ${submission.equipment.lastCheckStatus}<br>` : ''}
+          ${submission.equipment.lastCheckedBy ? `<strong>Checked By:</strong> ${submission.equipment.lastCheckedBy}` : ''}
+        ` : `
+          <span style="color: #d48806;">⚠️ Never Checked</span> - No safety check recorded for this equipment
+        `}
+      </div>
+    </div>
+    ` : ''}
+  </div>
+  ` : ''}
 
   <div class="section">
     <h2>Report Data</h2>

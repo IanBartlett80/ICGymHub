@@ -24,6 +24,29 @@ interface SubmissionData {
  };
 }
 
+interface Venue {
+ id: string;
+ name: string;
+}
+
+interface Zone {
+ id: string;
+ name: string;
+ venueId: string | null;
+ venue: Venue | null;
+}
+
+interface Equipment {
+ id: string;
+ name: string;
+ serialNumber: string | null;
+ category: string | null;
+ condition: string | null;
+ lastCheckedDate: string | null;
+ lastCheckStatus: string | null;
+ lastCheckedBy: string | null;
+}
+
 interface Comment {
  id: string;
  comment: string;
@@ -51,6 +74,9 @@ interface Submission {
   id: string;
   name: string;
  };
+ venue: Venue | null;
+ zone: Zone | null;
+ equipment: Equipment | null;
  assignedTo: User | null;
  data: SubmissionData[];
  comments: Comment[];
@@ -283,6 +309,107 @@ export default function SubmissionDetailPage() {
        )}
       </div>
      </div>
+
+     {/* Location & Equipment Information */}
+     {(submission.venue || submission.zone || submission.equipment) && (
+      <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+       <h2 className="text-lg font-semibold text-gray-900 mb-4">Location & Equipment Information</h2>
+       <div className="grid grid-cols-2 gap-4 text-sm">
+        {submission.venue && (
+         <div>
+          <div className="text-gray-600 font-medium">Venue</div>
+          <div className="text-gray-900">{submission.venue.name}</div>
+         </div>
+        )}
+        {submission.zone && (
+         <div>
+          <div className="text-gray-600 font-medium">Gym Zone / Area</div>
+          <div className="text-gray-900">
+           {submission.zone.name}
+           {submission.zone.venue && submission.zone.venue.id !== submission.venue?.id && (
+            <span className="text-gray-500 text-xs ml-1">({submission.zone.venue.name})</span>
+           )}
+          </div>
+         </div>
+        )}
+        {submission.equipment && (
+         <>
+          <div className="col-span-2">
+           <div className="text-gray-600 font-medium mb-2">Equipment / Apparatus</div>
+           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between items-start">
+             <div>
+              <div className="font-semibold text-gray-900">{submission.equipment.name}</div>
+              {submission.equipment.serialNumber && (
+               <div className="text-xs text-gray-600">Serial: {submission.equipment.serialNumber}</div>
+              )}
+             </div>
+             {submission.equipment.category && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+               {submission.equipment.category}
+              </span>
+             )}
+            </div>
+            
+            {/* Equipment Safety Check Information */}
+            <div className="border-t border-gray-200 pt-3 mt-3">
+             <div className="text-sm font-medium text-gray-700 mb-2">Equipment Safety Check Status</div>
+             {submission.equipment.lastCheckedDate ? (
+              <div className="space-y-1.5">
+               <div className="flex items-center gap-2">
+                <span className="text-gray-600 text-xs">Last Checked:</span>
+                <span className="text-gray-900 text-sm font-medium">
+                 {new Date(submission.equipment.lastCheckedDate).toLocaleDateString()}
+                </span>
+               </div>
+               {submission.equipment.lastCheckStatus && (
+                <div className="flex items-center gap-2">
+                 <span className="text-gray-600 text-xs">Status:</span>
+                 <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                  submission.equipment.lastCheckStatus === 'No Issues Detected' 
+                   ? 'bg-green-100 text-green-800' 
+                   : 'bg-orange-100 text-orange-800'
+                 }`}>
+                  {submission.equipment.lastCheckStatus}
+                 </span>
+                </div>
+               )}
+               {submission.equipment.lastCheckedBy && (
+                <div className="flex items-center gap-2">
+                 <span className="text-gray-600 text-xs">Checked By:</span>
+                 <span className="text-gray-900 text-sm">{submission.equipment.lastCheckedBy}</span>
+                </div>
+               )}
+              </div>
+             ) : (
+              <div className="flex items-center gap-2">
+               <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded font-medium">
+                ⚠️ Never Checked
+               </span>
+               <span className="text-gray-500 text-xs">No safety check recorded for this equipment</span>
+              </div>
+             )}
+            </div>
+
+            {submission.equipment.condition && (
+             <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-600">Condition:</span>
+              <span className={`px-2 py-0.5 text-xs rounded ${
+               submission.equipment.condition === 'Good' ? 'bg-green-100 text-green-800' :
+               submission.equipment.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800' :
+               'bg-red-100 text-red-800'
+              }`}>
+               {submission.equipment.condition}
+              </span>
+             </div>
+            )}
+           </div>
+          </div>
+         </>
+        )}
+       </div>
+      </div>
+     )}
 
      {/* Report Data */}
      <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
