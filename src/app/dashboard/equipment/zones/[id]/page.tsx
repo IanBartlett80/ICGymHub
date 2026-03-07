@@ -85,22 +85,18 @@ export default function ZoneDetailPage() {
  const loadData = async () => {
   try {
    setLoading(true);
-   const [zoneRes, equipmentRes, issuesRes, tasksRes, statusRes] = await Promise.all([
+   const [zoneRes, equipmentRes, issuesRes, tasksRes, statusRes, qrRes] = await Promise.all([
     fetch(`/api/zones/${zoneId}`),
     fetch(`/api/equipment?zoneId=${zoneId}`),
     fetch(`/api/safety-issues?zoneId=${zoneId}`),
     fetch(`/api/maintenance-tasks?zoneId=${zoneId}`),
     fetch(`/api/equipment/analytics/zone-status`),
+    fetch(`/api/zones/${zoneId}/generate-qr`), // Load QR code together with other data
    ]);
 
    if (zoneRes.ok) {
     const zoneData = await zoneRes.json();
     setZone(zoneData);
-    
-    // Load existing QR code if zone has publicId
-    if (zoneData.publicId) {
-      loadExistingQR();
-    }
    }
 
    if (equipmentRes.ok) {
@@ -124,25 +120,19 @@ export default function ZoneDetailPage() {
     const thisZoneStatus = Array.isArray(data) ? data.find((z: any) => z.zoneId === zoneId) : null;
     setZoneStatus(thisZoneStatus);
    }
+
+   // Load existing QR code if available
+   if (qrRes.ok) {
+    const qrData = await qrRes.json();
+    if (qrData.hasQRCode) {
+     setQrCodeDataUrl(qrData.qrCodeDataUrl);
+    }
+   }
   } catch (error) {
    console.error('Failed to load zone details:', error);
    alert('Failed to load zone details');
   } finally {
    setLoading(false);
-  }
- };
-
- const loadExistingQR = async () => {
-  try {
-   const response = await fetch(`/api/zones/${zoneId}/generate-qr`);
-   if (response.ok) {
-    const data = await response.json();
-    if (data.hasQRCode) {
-     setQrCodeDataUrl(data.qrCodeDataUrl);
-    }
-   }
-  } catch (error) {
-   console.error('Failed to load existing QR code:', error);
   }
  };
 
