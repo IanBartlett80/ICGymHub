@@ -22,6 +22,7 @@ export async function GET(
       },
       include: {
         zone: true,
+        venue: true,
         maintenanceLogs: {
           orderBy: { performedAt: 'desc' },
           take: 20,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Equipment, Zone } from '@prisma/client';
+import { Equipment, Zone, Venue } from '@prisma/client';
 import { useState } from 'react';
 import {
   PencilIcon,
@@ -12,6 +12,7 @@ import {
 
 interface EquipmentWithRelations extends Equipment {
   zone?: Zone | null;
+  venue?: Venue | null;
   _count?: {
     maintenanceLogs: number;
     usageHistory: number;
@@ -95,14 +96,14 @@ export default function EquipmentCard({
             <span className="font-medium">S/N:</span> {equipment.serialNumber}
           </p>
         )}
+        {equipment.venue && (
+          <p className="text-sm text-gray-600">
+            <span className="font-medium">Venue:</span> {equipment.venue.name}
+          </p>
+        )}
         {equipment.zone && (
           <p className="text-sm text-gray-600">
             <span className="font-medium">Zone:</span> {equipment.zone.name}
-          </p>
-        )}
-        {equipment.location && (
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Location:</span> {equipment.location}
           </p>
         )}
         {equipment.inUse && (

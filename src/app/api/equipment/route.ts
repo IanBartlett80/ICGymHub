@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           zone: true,
+          venue: true,
           _count: {
             select: {
               maintenanceLogs: true,

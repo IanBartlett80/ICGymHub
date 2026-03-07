@@ -368,19 +368,6 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                     ))}
                 </select>
               </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => handleChange('location', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., Storage Room B, Row 3"
-                />
-              </div>
             </div>
           </div>
 
