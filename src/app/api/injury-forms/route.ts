@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
     // Generate unique public URL slug
     const publicUrl = `injury-report-${nanoid(10)}`;
 
-    // Fetch coaches, gymsports, class templates, and zones for default fields
-    const [coaches, gymsports, classTemplates, zones] = await Promise.all([
+    // Fetch coaches, gymsports, class templates, zones, and venues for default fields
+    const [coaches, gymsports, classTemplates, zones, venues] = await Promise.all([
       prisma.coach.findMany({
         where: { clubId: authResult.user.clubId },
         select: { id: true, name: true },
@@ -85,6 +85,11 @@ export async function POST(req: NextRequest) {
         orderBy: { name: 'asc' },
       }),
       prisma.zone.findMany({
+        where: { clubId: authResult.user.clubId, active: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.venue.findMany({
         where: { clubId: authResult.user.clubId, active: true },
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
@@ -129,20 +134,24 @@ export async function POST(req: NextRequest) {
       {
         templateId: template.id,
         sectionId: section1.id,
-        fieldType: 'DATE',
-        label: 'Date of Report Submission',
-        description: 'Date this report is being submitted',
+        fieldType: 'DATETIME',
+        label: 'Date and Time of Incident',
+        description: 'When did the incident occur?',
         required: true,
         order: 1,
       },
       {
         templateId: template.id,
         sectionId: section1.id,
-        fieldType: 'DATETIME',
-        label: 'Date and Time of Incident',
-        description: 'When did the incident occur?',
+        fieldType: 'DROPDOWN',
+        label: 'Venue',
+        description: 'Select the venue where the incident occurred',
+        placeholder: 'Choose a venue...',
         required: true,
         order: 2,
+        options: venues.length > 0 
+          ? JSON.stringify(venues.map(v => ({ id: v.id, name: v.name })))
+          : JSON.stringify([]),
       },
       {
         templateId: template.id,

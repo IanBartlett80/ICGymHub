@@ -51,6 +51,7 @@ export default function FormBuilderPage() {
  const [sections, setSections] = useState<FormSection[]>([]);
  const [editingField, setEditingField] = useState<{ sectionId: string; field: FormField } | null>(null);
  const [saving, setSaving] = useState(false);
+ const [showPreview, setShowPreview] = useState(false);
 
  const addSection = () => {
   const newSection: FormSection = {
@@ -231,6 +232,12 @@ export default function FormBuilderPage() {
        Cancel
       </button>
       <button
+       onClick={() => setShowPreview(true)}
+       className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+>
+       Preview Form
+      </button>
+      <button
        onClick={saveForm}
        disabled={saving}
        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -252,7 +259,7 @@ export default function FormBuilderPage() {
         When you create this form, the following default sections will be automatically added and fully editable:
        </p>
        <ul className="text-sm text-blue-800 space-y-1 ml-4">
-        <li><strong>1. Reported By Details</strong> - Reporter name, submission date, incident date/time, supervising coach, coach email, coach phone, description</li>
+        <li><strong>1. Reported By Details</strong> - Reporter name, incident date/time, venue selection, gym zone/area, equipment/apparatus, supervising coach, coach email, coach phone, description</li>
         <li><strong>2. Athlete Details</strong> - Athlete name, program, class</li>
         <li><strong>3. Injury Details</strong> - Body part injured, nature of injury</li>
         <li><strong>4. Action Taken</strong> - First aid, medication, emergency services, medical advice, parent contact, additional details</li>
@@ -304,7 +311,6 @@ export default function FormBuilderPage() {
          <VenueSelector
           value={venueId}
           onChange={setVenueId}
-          required={false}
          />
          <p className="mt-1 text-xs text-gray-500">
           Assign this form to a specific venue (optional)
@@ -505,6 +511,243 @@ export default function FormBuilderPage() {
      </div>
     </div>
    </div>
+
+   {/* Preview Modal */}
+   {showPreview && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      {/* Modal Header */}
+      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between" style={{ backgroundColor: headerColor }}>
+       <h2 className="text-2xl font-bold text-white">Form Preview</h2>
+       <button
+        onClick={() => setShowPreview(false)}
+        className="text-white hover:text-gray-200 text-2xl"
+>
+        ×
+       </button>
+      </div>
+
+      {/* Modal Content */}
+      <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+       {/* Form Header */}
+       <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{formName || 'Untitled Form'}</h1>
+        {formDescription && <p className="text-gray-600">{formDescription}</p>}
+       </div>
+
+       {/* Default Section 1: Reported By Details */}
+       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">1. Reported By Details</h3>
+        <p className="text-sm text-gray-600 mb-4">Information about who is reporting the incident</p>
+        <div className="space-y-4">
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Injury Reported By <span className="text-red-500">*</span></label>
+          <input type="text" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" placeholder="Name of the person reporting this incident" />
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Date and Time of Incident <span className="text-red-500">*</span></label>
+          <input type="datetime-local" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Venue <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Choose a venue...</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Gym Zone / Area <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Choose a zone...</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Equipment / Apparatus <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Select equipment...</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Supervising Coach <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Select coach...</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Coach Email</label>
+          <input type="email" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Coach Phone</label>
+          <input type="tel" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Detailed Description of What Happened <span className="text-red-500">*</span></label>
+          <textarea disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" rows={4} placeholder="Please provide a detailed account of the incident" />
+         </div>
+        </div>
+       </div>
+
+       {/* Default Section 2: Athlete Details */}
+       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">2. Athlete Details</h3>
+        <p className="text-sm text-gray-600 mb-4">Information about the athlete involved</p>
+        <div className="space-y-4">
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Athlete Name <span className="text-red-500">*</span></label>
+          <input type="text" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Program <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Select program...</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Class <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Select class...</option>
+          </select>
+         </div>
+        </div>
+       </div>
+
+       {/* Default Section 3: Injury Details */}
+       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">3. Injury Details</h3>
+        <p className="text-sm text-gray-600 mb-4">Information about the injury sustained</p>
+        <div className="space-y-4">
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Part of Body Injured <span className="text-red-500">*</span></label>
+          <div className="text-sm text-gray-500">Multiple choice options</div>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nature of Injury Sustained <span className="text-red-500">*</span></label>
+          <div className="text-sm text-gray-500">Multiple choice options</div>
+         </div>
+        </div>
+       </div>
+
+       {/* Default Section 4: Action Taken */}
+       <div className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">4. Action Taken</h3>
+        <p className="text-sm text-gray-600 mb-4">Actions taken following the incident</p>
+        <div className="space-y-4">
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Was First Aid Administered <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Select...</option>
+           <option>Yes</option>
+           <option>No</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Was Medication Administered <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Yes</option>
+           <option>No</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Was Emergency Services Contacted <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Yes</option>
+           <option>No</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Was Advice Given to Seek Further Medical Attention <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Yes</option>
+           <option>No</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Was Parent / Guardian Contacted to Discuss the Incident? <span className="text-red-500">*</span></label>
+          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+           <option>Yes</option>
+           <option>No</option>
+          </select>
+         </div>
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Additional Details Related to the Incident</label>
+          <textarea disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" rows={3} />
+         </div>
+        </div>
+       </div>
+
+       {/* Custom Sections */}
+       {sections.map((section, index) => (
+        <div key={section.id} className="mb-8 p-6 border border-gray-200 rounded-lg bg-blue-50">
+         <h3 className="text-xl font-semibold text-gray-900 mb-2">{index + 5}. {section.title}</h3>
+         {section.description && <p className="text-sm text-gray-600 mb-4">{section.description}</p>}
+         <div className="space-y-4">
+          {section.fields.map((field) => (
+           <div key={field.id}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+             {field.label} {field.required && <span className="text-red-500">*</span>}
+            </label>
+            {field.description && <p className="text-xs text-gray-500 mb-1">{field.description}</p>}
+            {['TEXT_SHORT', 'EMAIL', 'PHONE'].includes(field.fieldType) && (
+             <input type="text" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" placeholder={field.placeholder} />
+            )}
+            {field.fieldType === 'TEXT_LONG' && (
+             <textarea disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" rows={3} placeholder={field.placeholder} />
+            )}
+            {field.fieldType === 'NUMBER' && (
+             <input type="number" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" placeholder={field.placeholder} />
+            )}
+            {field.fieldType === 'DATE' && (
+             <input type="date" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+            )}
+            {field.fieldType === 'TIME' && (
+             <input type="time" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+            )}
+            {field.fieldType === 'DATETIME' && (
+             <input type="datetime-local" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
+            )}
+            {['DROPDOWN', 'MULTIPLE_CHOICE'].includes(field.fieldType) && (
+             <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
+              <option>{field.placeholder || 'Select...'}</option>
+              {field.options?.map((option, i) => (
+               <option key={i}>{option}</option>
+              ))}
+             </select>
+            )}
+            {field.fieldType === 'CHECKBOXES' && (
+             <div className="space-y-2">
+              {field.options?.map((option, i) => (
+               <div key={i} className="flex items-center gap-2">
+                <input type="checkbox" disabled className="rounded" />
+                <span className="text-sm text-gray-700">{option}</span>
+               </div>
+              ))}
+             </div>
+            )}
+           </div>
+          ))}
+         </div>
+        </div>
+       ))}
+
+       {/* Thank You Message Preview */}
+       <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <h4 className="font-semibold text-green-900 mb-2">Upon Submission:</h4>
+        <p className="text-sm text-green-800">{thankYouMessage}</p>
+       </div>
+      </div>
+
+      {/* Modal Footer */}
+      <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+       <button
+        onClick={() => setShowPreview(false)}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+>
+        Close Preview
+       </button>
+      </div>
+     </div>
+    </div>
+   )}
    </div>
   </DashboardLayout>
  );
