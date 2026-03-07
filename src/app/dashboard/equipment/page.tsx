@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zone, Venue } from '@prisma/client';
-import { QrCodeIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon, PrinterIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -61,6 +61,7 @@ export default function EquipmentPage() {
  }>>([]);
  const [generatingVenueQRs, setGeneratingVenueQRs] = useState(false);
  const [showVenueQRs, setShowVenueQRs] = useState(false);
+ const [venueQRsExpanded, setVenueQRsExpanded] = useState(true);
 
  useEffect(() => {
   loadData();
@@ -631,8 +632,23 @@ export default function EquipmentPage() {
     {/* Venue QR Codes Section */}
     {showVenueQRs && venueQRCodes.length > 0 && (
      <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Venue QR Codes</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div
+       className="flex items-center justify-between mb-4 cursor-pointer group"
+       onClick={() => setVenueQRsExpanded(!venueQRsExpanded)}
+      >
+       <h2 className="text-xl font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+        Venue QR Codes
+       </h2>
+       <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+        {venueQRsExpanded ? (
+         <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+        ) : (
+         <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+        )}
+       </button>
+      </div>
+      {venueQRsExpanded && (
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
        {venueQRCodes.map((venueQR) => (
         <div
          key={venueQR.venueId}
@@ -662,7 +678,8 @@ export default function EquipmentPage() {
          </div>
         </div>
        ))}
-      </div>
+       </div>
+      )}
      </div>
     )}
 
