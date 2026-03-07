@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get('months') || '6'); // Default to 6 months
+    const gymsport = searchParams.get('gymsport');
 
     // Calculate date range
     const now = new Date();
@@ -46,8 +47,21 @@ export async function GET(request: NextRequest) {
         status: true,
         priority: true,
         venueId: true,
+        data: gymsport ? {
+          include: {
+            field: true,
+          },
+        } : false,
       },
     });
+
+    // Filter by gymsport if specified
+    const filteredSubmissions = gymsport && gymsport !== 'all'
+      ? submissions.filter((submission: any) => {
+          const gymsportField = submission.data?.find((d: any) => d.field.label === 'Gymsport' || d.field.label === 'Program');
+          return gymsportField && gymsportField.value === gymsport;
+        })
+      : submissions;
 
     // Group submissions by month and venue
     const monthlyData: { [key: string]: any } = {};
@@ -76,7 +90,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Count submissions per month per venue
-    submissions.forEach((submission: any) => {
+    filteredSubmissions.forEach((submission: any) => {
       const submissionDate = new Date(submission.submittedAt);
       const monthKey = `${submissionDate.getFullYear()}-${String(submissionDate.getMonth() + 1).padStart(2, '0')}`;
       

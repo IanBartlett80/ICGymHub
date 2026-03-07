@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get('months') || '6'); // Default to 6 months
+    const venueId = searchParams.get('venueId');
 
     // Calculate date range
     const now = new Date();
@@ -17,14 +18,18 @@ export async function GET(request: NextRequest) {
     startDate.setDate(1); // Start from first day of month
     startDate.setHours(0, 0, 0, 0);
 
+    // Build submissions filter with venue if specified
+    const submissionsWhere: any = {
+      clubId: club.id,
+      submittedAt: {
+        gte: startDate,
+      },
+      ...(venueId && venueId !== 'all' ? { venueId } : {}),
+    };
+
     // Get all injury submissions for the date range with their data fields
     const submissions = await prisma.injurySubmission.findMany({
-      where: {
-        clubId: club.id,
-        submittedAt: {
-          gte: startDate,
-        },
-      },
+      where: submissionsWhere,
       select: {
         id: true,
         submittedAt: true,

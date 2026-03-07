@@ -227,10 +227,60 @@ export async function GET(
       .sort((a, b) => a.field.order - b.field.order)
       .map((data) => {
         const value = JSON.parse(data.value);
+        let displayValue;
+        
+        // Handle date/time fields
+        if (data.field.fieldType === 'datetime' || data.field.label.toLowerCase().includes('date') || data.field.label.toLowerCase().includes('time')) {
+          try {
+            const dateValue = value.value || data.value;
+            if (dateValue && dateValue !== 'N/A') {
+              const date = new Date(dateValue);
+              if (!isNaN(date.getTime())) {
+                // Format as: "5:47pm Saturday 7th March, 2026"
+                const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+                const day = date.getDate();
+                const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
+                              day === 2 || day === 22 ? 'nd' : 
+                              day === 3 || day === 23 ? 'rd' : 'th';
+                const month = date.toLocaleDateString('en-US', { month: 'long' });
+                const year = date.getFullYear();
+                displayValue = `${time} ${weekday} ${day}${suffix} ${month}, ${year}`;
+              } else {
+                displayValue = value.displayValue || value.value || 'N/A';
+              }
+            } else {
+              displayValue = 'N/A';
+            }
+          } catch {
+            displayValue = value.displayValue || value.value || 'N/A';
+          }
+        }
+        // Handle Venue field - show name from submission.venue if available
+        else if (data.field.label.toLowerCase().includes('venue') && submission.venue) {
+          displayValue = submission.venue.name;
+        }
+        // Handle Zone/Area field - show name from submission.zone if available
+        else if ((data.field.label.toLowerCase().includes('zone') || data.field.label.toLowerCase().includes('area')) && submission.zone) {
+          displayValue = submission.zone.name;
+        }
+        // Handle Equipment field - show name from submission.equipment if available
+        else if ((data.field.label.toLowerCase().includes('equipment') || data.field.label.toLowerCase().includes('apparatus')) && submission.equipment) {
+          displayValue = submission.equipment.name;
+        }
+        // Handle array values
+        else if (Array.isArray(value.value)) {
+          displayValue = value.value.join(', ');
+        }
+        // Default: use displayValue, then value, then 'N/A'
+        else {
+          displayValue = value.displayValue || value.value || 'N/A';
+        }
+        
         return `
       <div class="field">
         <div class="field-label">${data.field.label}${data.field.required ? ' *' : ''}</div>
-        <div class="field-value">${value.displayValue || value.value || 'N/A'}</div>
+        <div class="field-value">${displayValue}</div>
       </div>
     `;
       })

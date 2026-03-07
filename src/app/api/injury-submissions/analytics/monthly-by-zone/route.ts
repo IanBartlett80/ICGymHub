@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get('months') || '6'); // Default to 6 months
+    const venueId = searchParams.get('venueId');
+    const gymsport = searchParams.get('gymsport');
 
     // Calculate date range
     const now = new Date();
@@ -17,11 +19,12 @@ export async function GET(request: NextRequest) {
     startDate.setDate(1); // Start from first day of month
     startDate.setHours(0, 0, 0, 0);
 
-    // Get all zones
+    // Get zones (filtered by venue if specified)
     const zones = await prisma.zone.findMany({
       where: {
         clubId: club.id,
         active: true,
+        ...(venueId && venueId !== 'all' ? { venueId } : {}),
       },
       select: {
         id: true,
@@ -32,22 +35,39 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Build submissions filter with gymsport if specified
+    const submissionsWhere: any = {
+      clubId: club.id,
+      submittedAt: {
+        gte: startDate,
+      },
+      ...(venueId && venueId !== 'all' ? { venueId } : {}),
+    };
+
     // Get all injury submissions for the date range
     const submissions = await prisma.injurySubmission.findMany({
-      where: {
-        clubId: club.id,
-        submittedAt: {
-          gte: startDate,
-        },
-      },
+      where: submissionsWhere,
       select: {
         id: true,
         submittedAt: true,
         status: true,
         priority: true,
         zoneId: true,
+        data: gymsport ? {
+          include: {
+            field: true,
+          },
+        } : false,
       },
     });
+
+    // Filter by gymsport if specified
+    const filteredSubmissions = gymsport && gymsport !== 'all'
+      ? submissions.filter((submission: any) => {
+          const gymsportField = submission.data?.find((d: any) => d.field.label === 'Gymsport' || d.field.label === 'Program');
+          return gymsportField && gymsportField.value === gymsport;
+        })
+      : submissions;
 
     // Group submissions by month and zone
     const monthlyData: { [key: string]: any } = {};
@@ -76,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Count submissions per month per zone
-    submissions.forEach((submission: any) => {
+    filteredSubmissions.forEach((submission: any) => {
       const submissionDate = new Date(submission.submittedAt);
       const monthKey = `${submissionDate.getFullYear()}-${String(submissionDate.getMonth() + 1).padStart(2, '0')}`;
       

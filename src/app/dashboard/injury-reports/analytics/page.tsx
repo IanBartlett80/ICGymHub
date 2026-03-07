@@ -135,10 +135,21 @@ export default function AnalyticsPage() {
 
  const loadMonthlyTrends = async () => {
   try {
+   // Build query params for each graph based on filters
+   const zoneParams = new URLSearchParams({ months: '6' });
+   if (venueId && venueId !== 'all') zoneParams.append('venueId', venueId);
+   if (gymsportFilter !== 'all') zoneParams.append('gymsport', gymsportFilter);
+   
+   const venueParams = new URLSearchParams({ months: '6' });
+   if (gymsportFilter !== 'all') venueParams.append('gymsport', gymsportFilter);
+   
+   const programParams = new URLSearchParams({ months: '6' });
+   if (venueId && venueId !== 'all') programParams.append('venueId', venueId);
+
    const [zoneRes, venueRes, programRes] = await Promise.all([
-    fetch('/api/injury-submissions/analytics/monthly-by-zone?months=6'),
-    fetch('/api/injury-submissions/analytics/monthly-by-venue?months=6'),
-    fetch('/api/injury-submissions/analytics/monthly-by-program?months=6'),
+    fetch(`/api/injury-submissions/analytics/monthly-by-zone?${zoneParams.toString()}`),
+    fetch(`/api/injury-submissions/analytics/monthly-by-venue?${venueParams.toString()}`),
+    fetch(`/api/injury-submissions/analytics/monthly-by-program?${programParams.toString()}`),
    ]);
 
    if (zoneRes.ok) {
