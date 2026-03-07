@@ -11,6 +11,7 @@ import {
  WrenchScrewdriverIcon,
  CubeIcon,
  QrCodeIcon,
+ PrinterIcon,
 } from '@heroicons/react/24/outline';
 
 interface Zone {
@@ -75,6 +76,7 @@ export default function ZoneDetailPage() {
  const [statusFilter, setStatusFilter] = useState<string>('all');
  const [zoneStatus, setZoneStatus] = useState<any>(null);
  const [generatingQR, setGeneratingQR] = useState(false);
+ const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
 
  useEffect(() => {
   loadData();
@@ -190,24 +192,91 @@ export default function ZoneDetailPage() {
 
    const data = await response.json();
    
+   // Store QR code data for display
+   setQrCodeDataUrl(data.qrCodeDataUrl);
+   
    // Reload zone data to get the publicId
    await loadData();
-   
-   // Download the QR code
-   const qrLink = document.createElement('a');
-   qrLink.href = data.qrCodeDataUrl;
-   qrLink.download = `${zone?.name || 'zone'}-qr-code.png`;
-   document.body.appendChild(qrLink);
-   qrLink.click();
-   document.body.removeChild(qrLink);
-   
-   alert(`QR Code generated successfully!\\n\\nPublic URL: ${data.publicUrl}`);
   } catch (error) {
    console.error('Failed to generate QR code:', error);
    alert('Failed to generate QR code');
   } finally {
    setGeneratingQR(false);
   }
+ };
+
+ const handlePrintQR = () => {
+  if (!qrCodeDataUrl || !zone) return;
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  
+  printWindow.document.write(`
+   <!DOCTYPE html>
+   <html>
+    <head>
+     <title>QR Code - ${zone.name}</title>
+     <style>
+      body {
+       font-family: Arial, sans-serif;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       justify-content: center;
+       min-height: 100vh;
+       margin: 0;
+       padding: 20px;
+      }
+      h1 {
+       font-size: 24px;
+       margin-bottom: 10px;
+       text-align: center;
+      }
+      .zone-name {
+       font-size: 32px;
+       font-weight: bold;
+       margin-bottom: 30px;
+       text-align: center;
+       color: #1f2937;
+      }
+      img {
+       max-width: 400px;
+       height: auto;
+       border: 2px solid #000;
+       padding: 10px;
+       background: white;
+      }
+      .instructions {
+       margin-top: 20px;
+       text-align: center;
+       font-size: 14px;
+       color: #6b7280;
+      }
+      @media print {
+       body {
+        padding: 0;
+       }
+      }
+     </style>
+    </head>
+    <body>
+     <h1>Equipment Zone QR Code</h1>
+     <div class="zone-name">${zone.name}</div>
+     <img src="${qrCodeDataUrl}" alt="QR Code for ${zone.name}" />
+     <div class="instructions">
+      <p>Scan this QR code to access zone information</p>
+     </div>
+    </body>
+   </html>
+  `);
+  
+  printWindow.document.close();
+  printWindow.focus();
+  
+  // Delay print to ensure content is loaded
+  setTimeout(() => {
+   printWindow.print();
+  }, 250);
  };
 
  const formatDate = (dateString: string) => {
@@ -281,7 +350,7 @@ export default function ZoneDetailPage() {
     </div>
 
     {/* Stats Cards */}
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
      <div className="bg-white overflow-hidden shadow rounded-lg">
       <div className="p-5">
        <div className="flex items-center">
@@ -327,6 +396,44 @@ export default function ZoneDetailPage() {
          </dl>
         </div>
        </div>
+      </div>
+     </div>
+
+     {/* QR Code Card */}
+     <div className="bg-white overflow-hidden shadow rounded-lg">
+      <div className="p-5">
+       <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+         <div className="flex-shrink-0">
+          <QrCodeIcon className="h-6 w-6 text-indigo-400" />
+         </div>
+         <div className="ml-3">
+          <dt className="text-sm font-medium text-gray-500 truncate">Zone QR Code</dt>
+         </div>
+        </div>
+        {qrCodeDataUrl && (
+         <button
+          onClick={handlePrintQR}
+          className="p-1 text-gray-400 hover:text-indigo-600 transition-colors"
+          title="Print QR Code"
+         >
+          <PrinterIcon className="h-5 w-5" />
+         </button>
+        )}
+       </div>
+       {qrCodeDataUrl ? (
+        <div className="flex justify-center">
+         <img 
+          src={qrCodeDataUrl} 
+          alt="Zone QR Code" 
+          className="w-32 h-32 border-2 border-gray-200 rounded"
+         />
+        </div>
+       ) : (
+        <div className="text-center py-4">
+         <p className="text-xs text-gray-400">Generate QR code above</p>
+        </div>
+       )}
       </div>
      </div>
     </div>

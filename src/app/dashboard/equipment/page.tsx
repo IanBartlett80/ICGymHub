@@ -50,6 +50,8 @@ export default function EquipmentPage() {
  });
  const [statusFilter, setStatusFilter] = useState<string>('all');
  const [venueFilter, setVenueFilter] = useState<string>('all');
+ const [zoneQRCodes, setZoneQRCodes] = useState<Record<string, string>>({});
+ const [generatingQRForZone, setGeneratingQRForZone] = useState<string | null>(null);
 
  useEffect(() => {
   loadData();
@@ -169,6 +171,32 @@ export default function EquipmentPage() {
    },
   };
   return configs[status as keyof typeof configs] || configs.NO_DEFECTS;
+ };
+
+ const handleGenerateZoneQR = async (zoneId: string) => {
+  try {
+   setGeneratingQRForZone(zoneId);
+   const response = await fetch(`/api/zones/${zoneId}/generate-qr`, {
+    method: 'POST',
+   });
+
+   if (!response.ok) {
+    throw new Error('Failed to generate QR code');
+   }
+
+   const data = await response.json();
+   
+   // Store the QR code data URL for this zone
+   setZoneQRCodes(prev => ({
+    ...prev,
+    [zoneId]: data.qrCodeDataUrl,
+   }));
+  } catch (error) {
+   console.error('Failed to generate QR code:', error);
+   alert('Failed to generate QR code');
+  } finally {
+   setGeneratingQRForZone(null);
+  }
  };
 
  const filteredZones = zones.filter(z => {
@@ -475,6 +503,16 @@ export default function EquipmentPage() {
              <p className="text-sm text-gray-500 mt-1">{zone.description}</p>
             )}
            </div>
+           {/* QR Code Display in Top Right */}
+           {zoneQRCodes[zone.id] && (
+            <div className="ml-4">
+             <img 
+              src={zoneQRCodes[zone.id]} 
+              alt="Zone QR Code" 
+              className="w-16 h-16 border border-gray-300 rounded"
+             />
+            </div>
+           )}
           </div>
 
           {/* Status Badge */}
@@ -531,11 +569,17 @@ export default function EquipmentPage() {
           <button
            onClick={(e) => {
             e.stopPropagation();
-            alert('QR code generation coming soon!');
+            handleGenerateZoneQR(zone.id);
            }}
-           className="text-gray-400 hover:text-gray-600"
+           disabled={generatingQRForZone === zone.id}
+           className="text-gray-400 hover:text-indigo-600 disabled:opacity-50 transition-colors"
+           title="Generate QR Code"
 >
-           <QrCodeIcon className="h-5 w-5" />
+           {generatingQRForZone === zone.id ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+           ) : (
+            <QrCodeIcon className="h-5 w-5" />
+           )}
           </button>
          </div>
         </div>
