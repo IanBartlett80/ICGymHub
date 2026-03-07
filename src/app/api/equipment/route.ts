@@ -42,7 +42,11 @@ export async function GET(request: NextRequest) {
       prisma.equipment.findMany({
         where,
         include: {
-          zone: true,
+          zone: {
+            include: {
+              venue: true,
+            },
+          },
           venue: true,
           _count: {
             select: {

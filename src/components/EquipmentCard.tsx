@@ -11,8 +11,11 @@ import {
 } from '@heroicons/react/24/outline';
 
 interface EquipmentWithRelations extends Equipment {
-  zone?: Zone | null;
+  zone?: (Zone & { venue?: Venue | null }) | null;
   venue?: Venue | null;
+  lastCheckedDate?: Date | null;
+  lastCheckStatus?: string | null;
+  lastCheckedBy?: string | null;
   _count?: {
     maintenanceLogs: number;
     usageHistory: number;
@@ -85,7 +88,7 @@ export default function EquipmentCard({
           <img
             src={equipment.photoUrl}
             alt={equipment.name}
-            className="w-full h-32 object-cover rounded border border-gray-200"
+            className="w-full h-24 object-cover rounded border border-gray-200"
           />
         </div>
       )}

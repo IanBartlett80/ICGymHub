@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Equipment, Zone } from '@prisma/client';
-import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { Equipment, Zone, Venue } from '@prisma/client';
+import { PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
@@ -12,7 +12,11 @@ import VenueSelector from '@/components/VenueSelector';
 import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface EquipmentWithRelations extends Equipment {
- zone?: Zone | null;
+ zone?: (Zone & { venue?: Venue | null }) | null;
+ venue?: Venue | null;
+ lastCheckedDate?: Date | null;
+ lastCheckStatus?: string | null;
+ lastCheckedBy?: string | null;
  _count?: {
   maintenanceLogs: number;
   usageHistory: number;
@@ -161,6 +165,104 @@ export default function AllEquipmentPage() {
   router.push(`/dashboard/equipment/items/${id}`);
  };
 
+ const exportToCSV = () => {
+  const headers = [
+    'Name', 'Serial Number', 'Category', 'Venue', 'Zone', 'Condition',
+    'Purchase Date', 'Purchase Cost', 'Last Checked', 'Last Check Status',
+    'Last Checked By', 'In Use', 'Last Maintenance', 'Next Maintenance',
+    'Safety Issues Count', 'Maintenance Logs Count'
+  ];
+
+  const rows = filteredEquipment.map(item => [
+    item.name,
+    item.serialNumber || '',
+    item.category || '',
+    item.zone?.venue?.name ||'',
+    item.zone?.name || '',
+    item.condition || '',
+    item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : '',
+    item.purchaseCost || '',
+    item.lastCheckedDate ? new Date(item.lastCheckedDate).toLocaleDateString() : '',
+    item.lastCheckStatus || '',
+    item.lastCheckedBy || '',
+    item.inUse ? 'Yes' : 'No',
+    item.lastMaintenance ? new Date(item.lastMaintenance).toLocaleDateString() : '',
+    item.nextMaintenance ? new Date(item.nextMaintenance).toLocaleDateString() : '',
+    item._count?.safetyIssues?.toString() || '0',
+    item._count?.maintenanceLogs?.toString() || '0'
+  ]);
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `equipment-register-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  showToast.success('Equipment register exported to CSV');
+ };
+
+ const exportToExcel = async () => {
+  try {
+    const params = new URLSearchParams();
+    if (venueId && venueId !== 'all') params.set('venueId', venueId);
+    if (categoryFilter !== 'all') params.set('category', categoryFilter);
+    if (conditionFilter !== 'all') params.set('condition', conditionFilter);
+    
+    const response = await fetch(`/api/equipment/export/excel?${params.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `equipment-register-${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    showToast.success('Equipment register exported to Excel');
+  } catch (error) {
+    showToast.error('Failed to export to Excel');
+  }
+ };
+
+ const exportToPDF = async () => {
+  try {
+    const params = new URLSearchParams();
+    if (venueId && venueId !== 'all') params.set('venueId', venueId);
+    if (categoryFilter !== 'all') params.set('category', categoryFilter);
+    if (conditionFilter !== 'all') params.set('condition', conditionFilter);
+    
+    window.open(`/api/equipment/export/pdf?${params.toString()}`, '_blank');
+    showToast.success('Opening PDF export...');
+  } catch (error) {
+    showToast.error('Failed to export to PDF');
+  }
+ };
+
+ const generateComplianceReport = async () => {
+  try {
+    const params = new URLSearchParams();
+    if (venueId && venueId !== 'all') params.set('venueId', venueId);
+    
+    window.open(`/api/equipment/compliance-report?${params.toString()}`, '_blank');
+    showToast.success('Opening compliance report...');
+  } catch (error) {
+    showToast.error('Failed to generate compliance report');
+  }
+ };
+
  // Get unique categories
  const categories = Array.from(new Set(equipment.map(e => e.category).filter(Boolean)));
 
@@ -193,23 +295,80 @@ export default function AllEquipmentPage() {
    <div className="p-6">
     {/* Header */}
     <div className="mb-6">
-     <div className="flex justify-between items-center mb-4">
+     <div className="flex justify-between items-start mb-4">
       <div>
        <h1 className="text-2xl font-bold text-gray-900">All Equipment</h1>
        <p className="mt-1 text-sm text-gray-600">
         Complete inventory of all gym equipment
        </p>
       </div>
-      <button
-       onClick={() => {
-        setEditingEquipment(null);
-        setShowForm(true);
-       }}
-       className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
->
-       <PlusIcon className="w-5 h-5 mr-2" />
-       Add Equipment
-      </button>
+      <div className="flex gap-2">
+       {/* Export Dropdown */}
+       <div className="relative inline-block text-left">
+        <button
+         onClick={() => {
+          const menu = document.getElementById('export-menu');
+          if (menu) menu.classList.toggle('hidden');
+         }}
+         className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+         <ArrowDownTrayIcon className="w-5 h-5 mr-2" />
+         Export
+        </button>
+        <div id="export-menu" className="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+         <div className="py-1">
+          <button
+           onClick={() => {
+            exportToCSV();
+            document.getElementById('export-menu')?.classList.add('hidden');
+           }}
+           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+           Export as CSV
+          </button>
+          <button
+           onClick={() => {
+            exportToExcel();
+            document.getElementById('export-menu')?.classList.add('hidden');
+           }}
+           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+           Export as Excel (.xlsx)
+          </button>
+          <button
+           onClick={() => {
+            exportToPDF();
+            document.getElementById('export-menu')?.classList.add('hidden');
+           }}
+           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+           Export as PDF
+          </button>
+         </div>
+        </div>
+       </div>
+
+       {/* Compliance Report Button */}
+       <button
+        onClick={generateComplianceReport}
+        className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+       >
+        <DocumentTextIcon className="w-5 h-5 mr-2" />
+        Compliance Report
+       </button>
+
+       {/* Add Equipment Button */}
+       <button
+        onClick={() => {
+         setEditingEquipment(null);
+         setShowForm(true);
+        }}
+        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+       >
+        <PlusIcon className="w-5 h-5 mr-2" />
+        Add Equipment
+       </button>
+      </div>
      </div>
 
      {/* Search and Filters */}
