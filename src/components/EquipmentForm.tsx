@@ -2,7 +2,7 @@
 
 import { Equipment, Zone } from '@prisma/client';
 import { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import VenueSelector from './VenueSelector';
 
 interface EquipmentFormData {
@@ -28,22 +28,14 @@ interface EquipmentFormProps {
   onCancel: () => void;
 }
 
-const categories = [
-  'Mats',
-  'Bars (Uneven, Parallel, Horizontal)',
-  'Beams',
-  'Vault Equipment',
-  'Rings',
-  'Trampoline',
-  'Floor Equipment',
-  'Safety Equipment',
-  'Training Aids',
-  'Other',
-];
-
 const conditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Out of Service'];
 
 export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: EquipmentFormProps) {
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: equipment?.name || '',
     category: equipment?.category || '',
@@ -63,6 +55,65 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoPreview, setPhotoPreview] = useState<string>(equipment?.photoUrl || '');
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await fetch('/api/equipment/categories');
+      if (response.ok) {
+        const data = await response.json();
+        const categoryNames = data.categories.map((c: any) => c.name);
+        setCategories(categoryNames);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      setErrors(prev => ({ ...prev, newCategory: 'Category name is required' }));
+      return;
+    }
+
+    try {
+      setCreatingCategory(true);
+      const response = await fetch('/api/equipment/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setErrors(prev => ({ ...prev, newCategory: data.error || 'Failed to create category' }));
+        return;
+      }
+
+      const category = await response.json();
+      setCategories(prev => [...prev, category.name]);
+      setFormData(prev => ({ ...prev, category: category.name }));
+      setNewCategoryName('');
+      setShowNewCategoryInput(false);
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.newCategory;
+        delete newErrors.category;
+        return newErrors;
+      });
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      setErrors(prev => ({ ...prev, newCategory: 'Failed to create category' }));
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -183,17 +234,76 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => handleChange('category', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category ? 'border-red-300' : 'border-gray-300'}`}
-                >
-                  <option value="">Select category...</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
+                {showNewCategoryInput ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => {
+                          setNewCategoryName(e.target.value);
+                          if (errors.newCategory) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.newCategory;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Enter new category name"
+                        className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.newCategory ? 'border-red-300' : 'border-gray-300'}`}
+                        disabled={creatingCategory}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        disabled={creatingCategory}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      >
+                        {creatingCategory ? 'Adding...' : 'Add'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewCategoryInput(false);
+                          setNewCategoryName('');
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.newCategory;
+                            return newErrors;
+                          });
+                        }}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {errors.newCategory && <p className="text-sm text-red-600">{errors.newCategory}</p>}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <select
+                      value={formData.category}
+                      onChange={(e) => handleChange('category', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category ? 'border-red-300' : 'border-gray-300'}`}
+                      disabled={loadingCategories}
+                    >
+                      <option value="">{loadingCategories ? 'Loading...' : 'Select category...'}</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCategoryInput(true)}
+                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      Add New Category
+                    </button>
+                    {errors.category && <p className="text-sm text-red-600">{errors.category}</p>}
+                  </div>
+                )}
               </div>
 
               <div>

@@ -34,6 +34,7 @@ model Club {
   complianceItems      ComplianceItem[]
   emailVerifications   EmailVerification[]
   equipment            Equipment[]
+  equipmentCategories  EquipmentCategory[]
   equipmentUsage       EquipmentUsage[]
   gymsports            Gymsport[]
   injuryFormTemplates  InjuryFormTemplate[]
@@ -792,6 +793,21 @@ model InjuryNotification {
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+model EquipmentCategory {
+  id        String   @id @default(cuid())
+  clubId    String
+  name      String
+  isDefault Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, name])
+  @@index([clubId])
+  @@index([active])
 }
 
 model Equipment {
