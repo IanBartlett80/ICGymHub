@@ -113,12 +113,20 @@ export async function POST(
       }
     }
 
-    // Resolve zone/equipment IDs from valid submitted values instead of label heuristics
+    // Resolve venue/zone/equipment IDs from valid submitted values instead of label heuristics
     const submittedStringValues = Object.values(formData).filter(
       (value): value is string => typeof value === 'string' && value.trim().length > 0
     );
 
-    const [matchingZones, matchingEquipment] = await Promise.all([
+    const [matchingVenues, matchingZones, matchingEquipment] = await Promise.all([
+      prisma.venue.findMany({
+        where: {
+          clubId: template.clubId,
+          active: true,
+          id: { in: submittedStringValues },
+        },
+        select: { id: true },
+      }),
       prisma.zone.findMany({
         where: {
           clubId: template.clubId,
@@ -140,6 +148,7 @@ export async function POST(
       }),
     ]);
 
+    const venueId = matchingVenues[0]?.id || null;
     const zoneId = matchingZones[0]?.id || null;
     const equipmentRecord = matchingEquipment[0] || null;
     const equipmentId = equipmentRecord?.id || null;
@@ -253,6 +262,7 @@ export async function POST(
     const submissionData: any = {
       templateId: template.id,
       clubId: template.clubId,
+      venueId: venueId || null,
       zoneId: zoneId || null,
       equipmentId: equipmentId || null,
       equipmentMaintenanceSnapshot: equipmentMaintenanceSnapshot,
