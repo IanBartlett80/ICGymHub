@@ -60,6 +60,23 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Also ensure all zones in this venue have publicIds
+      const zones = await prisma.zone.findMany({
+        where: {
+          venueId: venue.id,
+          active: true,
+        },
+      });
+
+      for (const zone of zones) {
+        if (!zone.publicId) {
+          await prisma.zone.update({
+            where: { id: zone.id },
+            data: { publicId: nanoid(16) },
+          });
+        }
+      }
+
       const publicUrl = `${baseUrl}/venue/${publicId}`;
 
       // Generate QR code data URL
