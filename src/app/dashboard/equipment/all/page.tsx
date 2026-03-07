@@ -181,7 +181,7 @@ export default function AllEquipmentPage() {
     item.zone?.name || '',
     item.condition || '',
     item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : '',
-    item.purchaseCost || '',
+    item.purchaseCost ? `$${item.purchaseCost}` : '',
     item.lastCheckedDate ? new Date(item.lastCheckedDate).toLocaleDateString() : '',
     item.lastCheckStatus || '',
     item.lastCheckedBy || '',

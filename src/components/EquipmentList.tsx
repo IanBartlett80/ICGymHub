@@ -267,7 +267,7 @@ export default function EquipmentList({
                         {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : '-'}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
-                        {item.purchaseCost || '-'}
+                        {item.purchaseCost ? `$${item.purchaseCost}` : '-'}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-600">
                         {item.lastCheckedDate ? new Date(item.lastCheckedDate).toLocaleDateString() : '-'}

@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
           <td>${item.zone?.name || '-'}</td>
           <td class="${conditionClass}">${item.condition || '-'}</td>
           <td>${item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : '-'}</td>
-          <td>${item.purchaseCost || '-'}</td>
+          <td>${item.purchaseCost ? `$${item.purchaseCost}` : '-'}</td>
           <td>${item.lastCheckedDate ? new Date(item.lastCheckedDate).toLocaleDateString() : '-'}</td>
           <td>${item.lastCheckStatus || '-'}</td>
           <td class="text-center">${item.inUse ? 'Yes' : 'No'}</td>
