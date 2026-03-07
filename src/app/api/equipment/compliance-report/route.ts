@@ -351,6 +351,11 @@ export async function GET(req: NextRequest) {
       </div>
 
       <div class="equipment-info">
+        ${item.photoUrl ? `
+        <div style="margin-bottom: 15px;">
+          <img src="${item.photoUrl}" alt="${item.name}" style="max-width: 200px; max-height: 200px; border-radius: 4px; border: 2px solid #E5E7EB;" />
+        </div>
+        ` : ''}
         <div class="info-row">
           <div class="info-label">Serial Number:</div>
           <div class="info-value">${item.serialNumber || 'N/A'}</div>
