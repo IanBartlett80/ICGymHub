@@ -106,6 +106,20 @@ export default function EquipmentCard({
             <span className="font-medium">Zone:</span> {equipment.zone.name}
           </p>
         )}
+        {equipment.lastCheckedDate && (
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">Last Checked:</span> {new Date(equipment.lastCheckedDate).toLocaleDateString()}
+            {equipment.lastCheckStatus && (
+              <span className={`ml-2 px-2 py-0.5 text-xs rounded ${
+                equipment.lastCheckStatus === 'No Issues Detected' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-orange-100 text-orange-800'
+              }`}>
+                {equipment.lastCheckStatus}
+              </span>
+            )}
+          </div>
+        )}
         {equipment.inUse && (
           <div className="flex items-center text-sm text-amber-600">
             <CheckCircleIcon className="w-4 h-4 mr-1" />

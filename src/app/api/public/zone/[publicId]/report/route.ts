@@ -81,6 +81,15 @@ export async function POST(
       },
     });
 
+    // Update equipment with last check info
+    await prisma.equipment.update({
+      where: { id: equipmentId },
+      data: {
+        lastCheckedDate: new Date(),
+        lastCheckStatus: issueType,
+      },
+    });
+
     return NextResponse.json({
       success: true,
       issueId: safetyIssue.id,

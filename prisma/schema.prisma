@@ -831,6 +831,9 @@ model Equipment {
   currentClass        String?
   photoUrl            String?
   venueId             String?
+  lastCheckedDate     DateTime?
+  lastCheckStatus     String?
+  lastCheckedBy       String?
   club                Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
   venue               Venue?               @relation(fields: [venueId], references: [id], onDelete: Cascade)
   zone                Zone?                @relation(fields: [zoneId], references: [id])

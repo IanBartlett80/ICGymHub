@@ -112,24 +112,20 @@ export async function POST(request: NextRequest) {
     });
 
     // Create an audit log entry
-    if (addedBy || addedByEmail) {
-      const auditLogNote = `Equipment added via QR code scan by ${addedBy || 'staff'}${addedByEmail ? ` (${addedByEmail})` : ''}`;
-      
-      await prisma.auditLog.create({
-        data: {
-          clubId,
-          action: 'CREATE_EQUIPMENT',
-          entityType: 'Equipment',
-          entityId: equipment.id,
-          details: auditLogNote,
-          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown',
-        },
-      }).catch(err => {
-        console.error('Failed to create audit log:', err);
-        // Don't fail the request if audit log fails
-      });
-    }
+    await prisma.auditLog.create({
+      data: {
+        clubId,
+        action: 'CREATE_EQUIPMENT',
+        entityType: 'Equipment',
+        entityId: equipment.id,
+        details: 'Equipment added via QR code scan',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      },
+    }).catch(err => {
+      console.error('Failed to create audit log:', err);
+      // Don't fail the request if audit log fails
+    });
 
     return NextResponse.json(equipment, { status: 201 });
   } catch (error) {

@@ -19,8 +19,6 @@ interface EquipmentFormData {
   serialNumber: string;
   condition: string;
   photoUrl: string;
-  addedBy: string;
-  addedByEmail: string;
 }
 
 interface Zone {
@@ -50,8 +48,6 @@ export default function MobileEquipmentForm({
     serialNumber: '',
     condition: 'Good',
     photoUrl: '',
-    addedBy: '',
-    addedByEmail: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -401,41 +397,6 @@ export default function MobileEquipmentForm({
               className="hidden"
             />
             {errors.photo && <p className="mt-1 text-sm text-red-600">{errors.photo}</p>}
-          </div>
-
-          {/* Staff Info */}
-          <div className="border-t pt-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Staff Information (Optional)</p>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.addedBy}
-                  onChange={(e) => handleChange('addedBy', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Your full name"
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.addedByEmail}
-                  onChange={(e) => handleChange('addedByEmail', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="your.email@example.com"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Submit Buttons */}

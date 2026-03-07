@@ -48,6 +48,8 @@ export async function GET(
         condition: true,
         photoUrl: true,
         serialNumber: true,
+        lastCheckedDate: true,
+        lastCheckStatus: true,
       },
       orderBy: {
         name: 'asc',

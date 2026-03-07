@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ExclamationTriangleIcon, CubeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, CubeIcon, PlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import MobileEquipmentForm from '@/components/MobileEquipmentForm';
 
 interface Zone {
@@ -26,6 +26,8 @@ interface Equipment {
   condition: string;
   photoUrl: string | null;
   serialNumber: string | null;
+  lastCheckedDate: string | null;
+  lastCheckStatus: string | null;
 }
 
 export default function PublicZoneReportPage() {
@@ -40,6 +42,7 @@ export default function PublicZoneReportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showAddEquipment, setShowAddEquipment] = useState(false);
+  const [checkingEquipment, setCheckingEquipment] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     issueType: 'CRITICAL',
@@ -76,6 +79,32 @@ export default function PublicZoneReportPage() {
   const handleAddEquipmentSuccess = () => {
     setShowAddEquipment(false);
     loadData(); // Reload equipment list
+  };
+
+  const handleSafetyCheck = async (equipmentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      setCheckingEquipment(equipmentId);
+      const response = await fetch(`/api/public/equipment/${equipmentId}/safety-check`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to record safety check');
+      }
+
+      // Reload data to show updated check status
+      await loadData();
+      
+      // Show brief success message (optional)
+      alert('Safety check recorded successfully!');
+    } catch (error) {
+      console.error('Failed to record safety check:', error);
+      alert('Failed to record safety check. Please try again.');
+    } finally {
+      setCheckingEquipment(null);
+    }
   };
 
   const handleEquipmentSelect = (item: Equipment) => {
@@ -450,8 +479,7 @@ export default function PublicZoneReportPage() {
             equipment.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer"
-                onClick={() => handleEquipmentSelect(item)}
+                className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4"
               >
                 {item.photoUrl && (
                   <img
@@ -465,12 +493,44 @@ export default function PublicZoneReportPage() {
                 {item.serialNumber && (
                   <p className="text-xs text-gray-500 mt-1">S/N: {item.serialNumber}</p>
                 )}
+                
+                {/* Last Check Info */}
+                {item.lastCheckedDate && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    <p>Last Checked: {new Date(item.lastCheckedDate).toLocaleDateString()}</p>
+                    {item.lastCheckStatus && (
+                      <p className={`font-medium ${
+                        item.lastCheckStatus === 'No Issues Detected' 
+                          ? 'text-green-600' 
+                          : 'text-orange-600'
+                      }`}>
+                        {item.lastCheckStatus}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 <div className="mt-3 flex items-center justify-between">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${getConditionColor(item.condition)}`}>
                     {item.condition}
                   </span>
-                  <button className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-                    Report Issue →
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={(e) => handleSafetyCheck(item.id, e)}
+                    disabled={checkingEquipment === item.id}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <CheckCircleIcon className="w-4 h-4" />
+                    {checkingEquipment === item.id ? 'Checking...' : 'No Issues'}
+                  </button>
+                  <button
+                    onClick={() => handleEquipmentSelect(item)}
+                    className="flex-1 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                  >
+                    Report Issue
                   </button>
                 </div>
               </div>
