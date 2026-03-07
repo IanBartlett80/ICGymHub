@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import { showToast } from '@/lib/toast';
 import { useConfirm } from '@/components/ConfirmProvider';
+import { PrinterIcon } from '@heroicons/react/24/outline';
 
 interface FormTemplate {
  id: string;
@@ -95,6 +96,84 @@ export default function FormTemplatesPage() {
   link.href = template.qrCode;
   link.download = `injury-form-qr-${template.name.replace(/\s+/g, '-').toLowerCase()}.png`;
   link.click();
+ };
+
+ const handlePrintQRCode = (template: FormTemplate) => {
+  if (!template.qrCode) return;
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+   console.error('Failed to open print window');
+   return;
+  }
+  
+  const safeTemplateName = template.name || 'Injury Report Form';
+  
+  const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Injury Report Form QR Code - ${safeTemplateName.replace(/"/g, '&quot;')}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-align: center;
+      color: #1f2937;
+    }
+    .form-name {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      text-align: center;
+      color: #1f2937;
+    }
+    img {
+      max-width: 400px;
+      height: auto;
+      border: 2px solid #000;
+      padding: 10px;
+      background: white;
+    }
+    .instructions {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+    }
+    @media print {
+      body {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Injury Report Form QR Code</h1>
+  <div class="form-name">${safeTemplateName.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+  <img src="${template.qrCode}" alt="QR Code" />
+  <div class="instructions">
+    <p>Scan this QR code to submit an injury report</p>
+  </div>
+</body>
+</html>`;
+  
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  printWindow.focus();
+  
+  setTimeout(() => {
+   printWindow.print();
+  }, 250);
  };
 
  const deleteTemplate = async (id: string, name: string) => {
@@ -256,6 +335,13 @@ export default function FormTemplatesPage() {
               className="px-4 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
 >
               {showQRCode === template.id ? 'Hide' : 'Show'} QR Code
+             </button>
+             <button
+              onClick={() => handlePrintQRCode(template)}
+              className="px-4 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+>
+              <PrinterIcon className="h-4 w-4" />
+              Print
              </button>
              <button
               onClick={() => downloadQRCode(template)}
