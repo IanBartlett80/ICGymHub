@@ -42,6 +42,7 @@ interface Coach {
 interface Zone {
   id: string;
   name: string;
+  venueId: string | null;
 }
 
 interface Equipment {
@@ -61,6 +62,7 @@ export default function PublicSubmissionForm() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -335,11 +337,51 @@ export default function PublicSubmissionForm() {
 
       case 'DROPDOWN':
         const isCoachField = field.label === 'Supervising Coach';
+        const isVenueField = field.label.includes('Venue') || field.label.includes('Location');
         const isZoneField = field.label.includes('Zone') || field.label.includes('Area');
         const isEquipmentField = field.label.includes('Equipment') || field.label.includes('Apparatus');
         
-        // Zone dropdown - populated from zones state
+        // Venue dropdown - track selection for filtering zones
+        if (isVenueField) {
+          const venueOptions = field.options ? JSON.parse(field.options) : [];
+          return (
+            <select
+              value={value}
+              onChange={(e) => {
+                const venueId = e.target.value;
+                setSelectedVenueId(venueId);
+                updateValue(venueId);
+                // Clear zone and equipment selection when venue changes
+                const zoneField = section.fields.find(f => 
+                  f.label.includes('Zone') || f.label.includes('Area')
+                );
+                const equipmentField = section.fields.find(f => 
+                  f.label.includes('Equipment') || f.label.includes('Apparatus')
+                );
+                const updates: { [key: string]: any } = { [field.id]: venueId };
+                if (zoneField) updates[zoneField.id] = '';
+                if (equipmentField) updates[equipmentField.id] = '';
+                setFormData({ ...formData, ...updates });
+                setSelectedZoneId(null);
+              }}
+              className={commonInputClass}
+            >
+              <option value="">Select a venue...</option>
+              {venueOptions.map((option: any, index: number) => (
+                <option key={index} value={typeof option === 'object' ? option.id : option}>
+                  {typeof option === 'object' ? option.name : option}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        
+        // Zone dropdown - populated from zones state, filtered by venue
         if (isZoneField) {
+          const filteredZones = selectedVenueId 
+            ? zones.filter(z => z.venueId === selectedVenueId)
+            : zones;
+          
           return (
             <select
               value={value}
@@ -356,9 +398,14 @@ export default function PublicSubmissionForm() {
                 }
               }}
               className={commonInputClass}
+              disabled={!!(selectedVenueId && filteredZones.length === 0)}
             >
-              <option value="">Select a zone...</option>
-              {zones.map((zone) => (
+              <option value="">
+                {selectedVenueId && filteredZones.length === 0 
+                  ? 'No zones available for selected venue' 
+                  : 'Select a zone...'}
+              </option>
+              {filteredZones.map((zone) => (
                 <option key={zone.id} value={zone.id}>
                   {zone.name}
                 </option>
