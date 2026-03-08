@@ -30,12 +30,12 @@ export default function AdminConfigPage() {
       </div>
      </Link>
 
-     {/* GymSports Card */}
+     {/* Gym Sports Card */}
      <Link href="/dashboard/admin-config/gymsports">
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition cursor-pointer">
        <div className="flex items-center gap-3 mb-3">
         <span className="text-3xl">🏃</span>
-        <h2 className="text-xl font-bold text-gray-900">GymSports</h2>
+        <h2 className="text-xl font-bold text-gray-900">Gym Sports</h2>
        </div>
        <p className="text-gray-600 text-sm">
         Manage the master list of gymnastics sports available across the system.

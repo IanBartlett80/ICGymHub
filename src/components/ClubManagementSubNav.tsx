@@ -20,7 +20,12 @@ export default function ClubManagementSubNav() {
       icon: '📊',
     },
     {
-      label: 'GymSports',
+      label: 'Venues',
+      href: '/dashboard/admin-config/venues',
+      icon: '🏢',
+    },
+    {
+      label: 'Gym Sports',
       href: '/dashboard/admin-config/gymsports',
       icon: '🏃',
     },

@@ -169,7 +169,7 @@ export default function AdminVenuesPage() {
 
  if (loading) {
   return (
-   <DashboardLayout>
+   <DashboardLayout title="Venues" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
     <div className="p-6">
      <div className="animate-pulse">
       <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
@@ -184,11 +184,10 @@ export default function AdminVenuesPage() {
  }
 
  return (
-  <DashboardLayout>
+  <DashboardLayout title="Venues" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
    <div className="p-6">
     <div className="flex justify-between items-center mb-6">
      <div>
-      <h1 className="text-2xl font-bold text-gray-900">Venue Management</h1>
       <p className="text-sm text-gray-600 mt-1">Manage physical locations for your club</p>
      </div>
      <button
