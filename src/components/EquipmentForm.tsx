@@ -347,7 +347,7 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                       handleChange('zoneId', '');
                     }
                   }}
-                  required={false}
+                  showLabel={false}
                 />
               </div>
 

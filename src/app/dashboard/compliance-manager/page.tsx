@@ -899,7 +899,7 @@ export default function ComplianceManagerPage() {
         <VenueSelector
          value={itemForm.venueId || null}
          onChange={(venue) => setItemForm((prev) => ({ ...prev, venueId: venue || '' }))}
-         required={false}
+         showLabel={false}
         />
        </div>
 

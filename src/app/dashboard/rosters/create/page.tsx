@@ -26,6 +26,7 @@ type Coach = {
 type Zone = {
  id: string
  name: string
+ venueId?: string | null
 }
 
 const DAYS_OF_WEEK = [
@@ -304,6 +305,7 @@ export default function RosterBuilderPage() {
         value={selectedVenue}
         onChange={setSelectedVenue}
         showAllOption={false}
+        showLabel={false}
        />
       </div>
 
@@ -474,7 +476,9 @@ export default function RosterBuilderPage() {
               <div>
                <label className="block text-sm font-medium mb-2">Allowed Zones</label>
                <div className="flex gap-2 flex-wrap">
-                {zones.map((zone) => {
+                {zones
+                 .filter(zone => !selectedVenue || zone.venueId === selectedVenue)
+                 .map((zone) => {
                  const selectedZones = custom.allowedZoneIds || classTemplate.allowedZones.map((z) => z.zone.id)
                  const isZoneSelected = selectedZones.includes(zone.id)
 
@@ -493,6 +497,9 @@ export default function RosterBuilderPage() {
                   </button>
                  )
                 })}
+                {zones.filter(zone => !selectedVenue || zone.venueId === selectedVenue).length === 0 && (
+                 <p className="text-sm text-gray-500">No zones available for selected venue</p>
+                )}
                </div>
               </div>
 

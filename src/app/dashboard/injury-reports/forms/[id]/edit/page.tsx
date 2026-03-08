@@ -270,7 +270,7 @@ export default function EditFormPage() {
        <VenueSelector
         value={template.venueId || null}
         onChange={(venue) => setTemplate({ ...template, venueId: venue || null })}
-        required={false}
+        showLabel={false}
        />
        <p className="mt-1 text-xs text-gray-500">
         Assign this form to a specific venue (optional)

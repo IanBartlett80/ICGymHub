@@ -195,6 +195,7 @@ export default function AdminZonesPage() {
           value={formData.venueId}
           onChange={(venueId) => setFormData({ ...formData, venueId })}
           showAllOption={false}
+          showLabel={false}
          />
         </div>
 

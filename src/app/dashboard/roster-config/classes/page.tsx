@@ -7,6 +7,7 @@ import VenueSelector from '@/components/VenueSelector'
 type Zone = {
  id: string
  name: string
+ venueId?: string | null
 }
 
 type Gymsport = {
@@ -61,6 +62,7 @@ function calculateSessionLength(startTime: string, endTime: string): number {
 export default function ClassesPage() {
  const [classes, setClasses] = useState<ClassTemplate[]>([])
  const [zones, setZones] = useState<Zone[]>([])
+ const [allZones, setAllZones] = useState<Zone[]>([])
  const [gymsports, setGymsports] = useState<Gymsport[]>([])
  const [coaches, setCoaches] = useState<Coach[]>([])
  const [allCoaches, setAllCoaches] = useState<Coach[]>([])
@@ -125,6 +127,7 @@ export default function ClassesPage() {
    if (zonesRes.ok) {
     const data = await zonesRes.json()
     setZones(data.zones)
+    setAllZones(data.zones)
    }
 
    if (gymsportsRes.ok) {
@@ -229,6 +232,15 @@ export default function ClassesPage() {
    setCoaches(allCoaches)
   }
   
+  // Filter zones by venue when editing
+  const venueId = (classTemplate as any).venueId || null
+  if (venueId) {
+   const filteredZones = allZones.filter((zone) => zone.venueId === venueId)
+   setZones(filteredZones)
+  } else {
+   setZones(allZones)
+  }
+  
   setEditingId(classTemplate.id)
   setShowForm(true)
  }
@@ -277,6 +289,24 @@ export default function ClassesPage() {
   })
  }
 
+ const handleVenueChange = (venueId: string | null) => {
+  // Filter zones by selected venue
+  const filteredZones = venueId 
+   ? allZones.filter((zone) => zone.venueId === venueId)
+   : allZones
+  setZones(filteredZones)
+  
+  // Remove any selected zones that don't belong to the new venue
+  const validZoneIds = filteredZones.map(z => z.id)
+  const filteredAllowedZoneIds = formData.allowedZoneIds.filter(id => validZoneIds.includes(id))
+  
+  setFormData({
+   ...formData,
+   venueId,
+   allowedZoneIds: filteredAllowedZoneIds,
+  })
+ }
+
  const handleGymsportChange = (gymsportId: string) => {
   // Filter coaches by selected gymsport
   if (gymsportId) {
@@ -313,6 +343,7 @@ export default function ClassesPage() {
        setShowForm(!showForm)
        setEditingId(null)
        setCoaches(allCoaches)
+       setZones(allZones)
        setFormData({
         name: '',
         venueId: null,
@@ -388,8 +419,9 @@ export default function ClassesPage() {
          <label className="block text-sm font-medium mb-1">Venue</label>
          <VenueSelector
           value={formData.venueId}
-          onChange={(venueId) => setFormData({ ...formData, venueId })}
+          onChange={handleVenueChange}
           showAllOption={false}
+          showLabel={false}
          />
         </div>
 

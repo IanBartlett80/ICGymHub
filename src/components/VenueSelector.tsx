@@ -15,6 +15,7 @@ interface VenueSelectorProps {
   onChange: (venueId: string | null) => void
   className?: string
   showAllOption?: boolean
+  showLabel?: boolean // Whether to show the "Venue" label
 }
 
 export default function VenueSelector({
@@ -22,6 +23,7 @@ export default function VenueSelector({
   onChange,
   className = '',
   showAllOption = true,
+  showLabel = true,
 }: VenueSelectorProps) {
   const [venues, setVenues] = useState<Venue[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,9 +88,11 @@ export default function VenueSelector({
 
   return (
     <div className={className}>
-      <label htmlFor="venue-selector" className="block text-sm font-medium text-gray-700 mb-1">
-        Venue
-      </label>
+      {showLabel && (
+        <label htmlFor="venue-selector" className="block text-sm font-medium text-gray-700 mb-1">
+          Venue
+        </label>
+      )}
       <select
         id="venue-selector"
         value={value || (showAllOption ? 'all' : '')}

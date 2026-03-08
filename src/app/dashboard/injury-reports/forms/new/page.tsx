@@ -311,6 +311,7 @@ export default function FormBuilderPage() {
          <VenueSelector
           value={venueId}
           onChange={setVenueId}
+          showLabel={false}
          />
          <p className="mt-1 text-xs text-gray-500">
           Assign this form to a specific venue (optional)
