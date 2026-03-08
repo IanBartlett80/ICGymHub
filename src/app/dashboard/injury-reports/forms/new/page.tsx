@@ -260,7 +260,7 @@ export default function FormBuilderPage() {
        </p>
        <ul className="text-sm text-blue-800 space-y-1 ml-4">
         <li><strong>1. Reported By Details</strong> - Reporter name, incident date/time, venue selection, gym zone/area, equipment/apparatus, supervising coach, coach email, coach phone, description</li>
-        <li><strong>2. Athlete Details</strong> - Athlete name, program, class</li>
+        <li><strong>2. Athlete Details</strong> - Athlete name, class</li>
         <li><strong>3. Injury Details</strong> - Body part injured, nature of injury</li>
         <li><strong>4. Action Taken</strong> - First aid, medication, emergency services, medical advice, parent contact, additional details</li>
        </ul>
@@ -596,12 +596,6 @@ export default function FormBuilderPage() {
          <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Athlete Name <span className="text-red-500">*</span></label>
           <input type="text" disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white" />
-         </div>
-         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Program <span className="text-red-500">*</span></label>
-          <select disabled className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white">
-           <option>Select program...</option>
-          </select>
          </div>
          <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Class <span className="text-red-500">*</span></label>
