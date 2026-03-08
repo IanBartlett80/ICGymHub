@@ -268,7 +268,7 @@ export default function AnalyticsPage() {
 
         {/* KPI Cards - Premium Design */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
             <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
@@ -286,7 +286,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
             <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
@@ -304,7 +304,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
             <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
@@ -322,7 +322,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
             <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
@@ -343,9 +343,9 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Status & Priority Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Status Distribution - Donut Chart */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Status Distribution</h2>
@@ -397,7 +397,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Priority Breakdown - Horizontal Bar */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Priority Breakdown</h2>
@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
             </div>
             {priorityChartData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={320}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={priorityChartData} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis type="number" />
@@ -442,7 +442,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Trend Analysis */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">📈 Incident Trends Over Time</h2>
@@ -515,7 +515,7 @@ export default function AnalyticsPage() {
 
         {/* Injuries by Class */}
         {topClasses.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">🏫 Injuries by Class</h2>
@@ -543,10 +543,10 @@ export default function AnalyticsPage() {
         )}
 
         {/* Location & Equipment Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Injuries by Zone */}
           {topZones.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">🗺️ Injuries by Zone</h2>
@@ -567,7 +567,7 @@ export default function AnalyticsPage() {
 
           {/* Equipment-Related Injuries */}
           {topEquipment.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">🛠️ Equipment-Related Injuries</h2>
@@ -590,7 +590,7 @@ export default function AnalyticsPage() {
 
         {/* Day of Week Pattern */}
         {sortedDayData.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">📅 Incident Pattern by Day of Week</h2>
@@ -628,7 +628,7 @@ export default function AnalyticsPage() {
 
         {/* Venue Breakdown */}
         {analytics.venueBreakdown && analytics.venueBreakdown.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">🏢 Injuries by Venue</h2>
@@ -658,7 +658,7 @@ export default function AnalyticsPage() {
 
         {/* Program Breakdown */}
         {analytics.gymsportBreakdown && analytics.gymsportBreakdown.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-lg hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">🤸 Injuries by Program</h2>
