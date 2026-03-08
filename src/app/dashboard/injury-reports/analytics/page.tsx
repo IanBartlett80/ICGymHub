@@ -5,1063 +5,690 @@ import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
 import {
- BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
- XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
 interface AnalyticsData {
- totalSubmissions: number;
- statusCounts: { status: string; count: number }[];
- priorityCounts: { priority: string; count: number }[];
- submissionsByDate: { [key: string]: number };
- avgResponseTimeHours: number;
- gymsportBreakdown: { gymsportName: string; count: number }[];
- classBreakdown: { className: string; count: number }[];
- equipmentBreakdown: { equipmentName: string; count: number }[];
- coachInvolvementStats: { coachName: string; incidentCount: number }[];
- timePatterns: { hour: number; count: number }[];
- trendData: { period?: string; month?: string; count?: number; total?: number; critical?: number; resolved?: number }[];
- venueBreakdown?: { venueName: string; count: number; critical: number }[];
- zoneBreakdown?: { zoneName: string; count: number }[];
- equipmentInjuryBreakdown?: { equipmentName: string; count: number; critical: number }[];
- equipmentInjuryByZone?: { zoneName: string; count: number; critical: number }[];
- equipmentRelatedCount?: number;
- dayOfWeekPattern?: { day: string; count: number }[];
- severityDistribution?: { name: string; value: number; color: string }[];
+  totalSubmissions: number;
+  statusCounts: { status: string; count: number }[];
+  priorityCounts: { priority: string; count: number }[];
+  submissionsByDate: { [key: string]: number };
+  avgResponseTimeHours: number;
+  gymsportBreakdown: { gymsportName: string; count: number }[];
+  classBreakdown: { className: string; count: number }[];
+  trendData: { period?: string; month?: string; count?: number; total?: number; critical?: number; resolved?: number }[];
+  venueBreakdown?: { venueName: string; count: number; critical: number }[];
+  zoneBreakdown?: { zoneName: string; count: number }[];
+  equipmentInjuryBreakdown?: { equipmentName: string; count: number; critical: number }[];
+  dayOfWeekPattern?: { day: string; count: number }[];
 }
 
-interface Gymsport {
- id: string;
- name: string;
-}
+const COLORS = {
+  primary: '#3b82f6',
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#ef4444',
+  purple: '#8b5cf6',
+  pink: '#ec4899',
+  cyan: '#06b6d4',
+  gray: '#6b7280',
+  indigo: '#6366f1',
+  emerald: '#34d399',
+};
 
-interface Class {
- id: string;
- name: string;
-}
+const STATUS_COLORS: { [key: string]: string } = {
+  NEW: '#3b82f6',
+  UNDER_REVIEW: '#f59e0b',
+  RESOLVED: '#10b981',
+  CLOSED: '#6b7280',
+};
 
-interface Equipment {
- id: string;
- name: string;
-}
+const PRIORITY_COLORS: { [key: string]: string } = {
+  LOW: '#10b981',
+  MEDIUM: '#f59e0b',
+  HIGH: '#ef4444',
+  CRITICAL: '#991b1b',
+  NONE: '#9ca3af',
+};
 
-interface MonthlyData {
- month: string;
- [key: string]: string | number;
-}
+const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function AnalyticsPage() {
- const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
- const [loading, setLoading] = useState(true);
- 
- // Filter states
- const [venueId, setVenueId] = useState<string | null>(null);
- const [gymsportFilter, setGymsportFilter] = useState<string>('all');
- const [classFilter, setClassFilter] = useState<string>('all');
- const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
- const [statusFilter, setStatusFilter] = useState<string>('all');
- const [priorityFilter, setPriorityFilter] = useState<string>('all');
- const [startDate, setStartDate] = useState<string>('');
- const [endDate, setEndDate] = useState<string>('');
- 
- // Monthly trend data
- const [monthlyDataByZone, setMonthlyDataByZone] = useState<MonthlyData[]>([]);
- const [monthlyDataByVenue, setMonthlyDataByVenue] = useState<MonthlyData[]>([]);
- const [monthlyDataByProgram, setMonthlyDataByProgram] = useState<MonthlyData[]>([]);
- const [zoneNames, setZoneNames] = useState<string[]>([]);
- const [venueNames, setVenueNames] = useState<string[]>([]);
- const [programNames, setProgramNames] = useState<string[]>([]);
- 
- // Dropdown options
- const [gymsports, setGymsports] = useState<Gymsport[]>([]);
- const [classes, setClasses] = useState<Class[]>([]);
- const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [venueId, setVenueId] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<string>('30');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
- useEffect(() => {
-  loadFilters();
-  loadAnalytics();
-  loadMonthlyTrends();
- }, [venueId, gymsportFilter, classFilter, equipmentFilter, statusFilter, priorityFilter, startDate, endDate]);
+  useEffect(() => {
+    loadAnalytics();
+  }, [venueId, dateRange, statusFilter]);
 
- const loadFilters = async () => {
-  try {
-   const [gymsportsRes, classesRes, equipmentRes] = await Promise.all([
-    fetch('/api/gymsports'),
-    fetch('/api/classes'),
-    fetch('/api/equipment?active=true'),
-   ]);
+  const loadAnalytics = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (venueId && venueId !== 'all') params.append('venueId', venueId);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      
+      if (dateRange !== 'all') {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - parseInt(dateRange));
+        params.append('startDate', startDate.toISOString().split('T')[0]);
+        params.append('endDate', endDate.toISOString().split('T')[0]);
+      }
 
-   if (gymsportsRes.ok) {
-    const data = await gymsportsRes.json();
-    setGymsports(Array.isArray(data) ? data : data.gymsports || []);
-   }
-   if (classesRes.ok) {
-    const data = await classesRes.json();
-    setClasses(Array.isArray(data) ? data : data.classes || []);
-   }
-   if (equipmentRes.ok) {
-    const data = await equipmentRes.json();
-    setEquipment(Array.isArray(data) ? data : []);
-   }
-  } catch (error) {
-   console.error('Error loading filters:', error);
+      const res = await fetch(`/api/injury-submissions/analytics?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status.replace('_', ' ');
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    if (priority === 'NONE') return 'Not Set';
+    return priority.charAt(0) + priority.slice(1).toLowerCase();
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <InjuryReportsSubNav />
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-pulse">
+            <div className="text-xl text-gray-500">Loading advanced analytics...</div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
   }
- };
 
- const loadAnalytics = async () => {
-  try {
-   setLoading(true);
-   const params = new URLSearchParams();
-   if (venueId && venueId !== 'all') params.append('venueId', venueId);
-   if (gymsportFilter !== 'all') params.append('gymsport', gymsportFilter);
-   if (classFilter !== 'all') params.append('class', classFilter);
-   if (equipmentFilter !== 'all') params.append('equipment', equipmentFilter);
-   if (statusFilter !== 'all') params.append('status', statusFilter);
-   if (priorityFilter !== 'all') params.append('priority', priorityFilter);
-   if (startDate) params.append('startDate', startDate);
-   if (endDate) params.append('endDate', endDate);
-
-   const res = await fetch(`/api/injury-submissions/analytics?${params}`);
-   if (res.ok) {
-    const data = await res.json();
-    setAnalytics(data);
-   }
-  } catch (error) {
-   console.error('Error loading analytics:', error);
-  } finally {
-   setLoading(false);
+  if (!analytics) {
+    return (
+      <DashboardLayout>
+        <InjuryReportsSubNav />
+        <div className="flex flex-col items-center justify-center h-96">
+          <div className="text-6xl mb-4">📊</div>
+          <div className="text-xl text-gray-500">No analytics data available</div>
+          <p className="text-gray-400 mt-2">Start receiving injury reports to see insights</p>
+        </div>
+      </DashboardLayout>
+    );
   }
- };
 
- const loadMonthlyTrends = async () => {
-  try {
-   // Build query params for each graph based on filters
-   const zoneParams = new URLSearchParams({ months: '6' });
-   if (venueId && venueId !== 'all') zoneParams.append('venueId', venueId);
-   if (gymsportFilter !== 'all') zoneParams.append('gymsport', gymsportFilter);
-   
-   const venueParams = new URLSearchParams({ months: '6' });
-   if (gymsportFilter !== 'all') venueParams.append('gymsport', gymsportFilter);
-   
-   const programParams = new URLSearchParams({ months: '6' });
-   if (venueId && venueId !== 'all') programParams.append('venueId', venueId);
+  // Calculate metrics
+  const totalResolved = analytics.statusCounts.find(s => s.status === 'RESOLVED')?.count || 0;
+  const totalClosed = analytics.statusCounts.find(s => s.status === 'CLOSED')?.count || 0;
+  const totalNew = analytics.statusCounts.find(s => s.status === 'NEW')?.count || 0;
+  const totalUnderReview = analytics.statusCounts.find(s => s.status === 'UNDER_REVIEW')?.count || 0;
+  
+  const resolutionRate = analytics.totalSubmissions > 0 
+    ? Math.round(((totalResolved + totalClosed) / analytics.totalSubmissions) * 100)
+    : 0;
+  
+  const criticalCount = analytics.priorityCounts.find(p => p.priority === 'CRITICAL')?.count || 0;
+  const highCount = analytics.priorityCounts.find(p => p.priority === 'HIGH')?.count || 0;
+  const urgentCases = criticalCount + highCount;
 
-   const [zoneRes, venueRes, programRes] = await Promise.all([
-    fetch(`/api/injury-submissions/analytics/monthly-by-zone?${zoneParams.toString()}`),
-    fetch(`/api/injury-submissions/analytics/monthly-by-venue?${venueParams.toString()}`),
-    fetch(`/api/injury-submissions/analytics/monthly-by-program?${programParams.toString()}`),
-   ]);
+  // Prepare chart data
+  const statusChartData = analytics.statusCounts.map(item => ({
+    name: getStatusLabel(item.status),
+    value: item.count,
+    fill: STATUS_COLORS[item.status] || COLORS.gray,
+  }));
 
-   if (zoneRes.ok) {
-    const data = await zoneRes.json();
-    setMonthlyDataByZone(data.data || []);
-    setZoneNames(data.zones || []);
-   }
+  const priorityChartData = analytics.priorityCounts
+    .filter(p => p.priority !== 'NONE')
+    .map(item => ({
+      name: getPriorityLabel(item.priority),
+      count: item.count,
+      fill: PRIORITY_COLORS[item.priority] || COLORS.gray,
+    }))
+    .sort((a, b) => b.count - a.count);
 
-   if (venueRes.ok) {
-    const data = await venueRes.json();
-    setMonthlyDataByVenue(data.data || []);
-    setVenueNames(data.venues || []);
-   }
+  // Sort and limit class breakdown for better visualization
+  const topClasses = (analytics.classBreakdown || [])
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
 
-   if (programRes.ok) {
-    const data = await programRes.json();
-    setMonthlyDataByProgram(data.data || []);
-    setProgramNames(data.programs || []);
-   }
-  } catch (error) {
-   console.error('Error loading monthly trends:', error);
-  }
- };
+  // Sort day of week data
+  const sortedDayData = (analytics.dayOfWeekPattern || []).sort((a, b) => {
+    return DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day);
+  });
 
- const clearFilters = () => {
-  setVenueId(null);
-  setGymsportFilter('all');
-  setClassFilter('all');
-  setEquipmentFilter('all');
-  setStatusFilter('all');
-  setPriorityFilter('all');
-  setStartDate('');
-  setEndDate('');
- };
+  // Top zones
+  const topZones = (analytics.zoneBreakdown || [])
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
 
- const exportComplianceReport = async () => {
-  try {
-   const params = new URLSearchParams();
-   if (startDate) params.append('startDate', startDate);
-   if (endDate) params.append('endDate', endDate);
+  // Top equipment
+  const topEquipment = (analytics.equipmentInjuryBreakdown || [])
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 
-   const res = await fetch(`/api/injury-submissions/export-compliance?${params}`);
-   if (res.ok) {
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `injury-compliance-report-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-   }
-  } catch (error) {
-   console.error('Error exporting report:', error);
-  }
- };
-
- const getStatusLabel = (status: string) => {
-  return status.replace('_', ' ');
- };
-
- return (
-  <DashboardLayout>
-   <InjuryReportsSubNav />
-   <div className="p-6">
-    <div className="mb-6">
-     <h1 className="text-3xl font-bold mb-2">Analytics & Insights</h1>
-     <p className="text-gray-600">
-      View trends, patterns, and comprehensive statistics for injury reports
-     </p>
-    </div>
-
-    {/* Filters Section */}
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-     <div className="flex justify-between items-center mb-4">
-      <h2 className="text-xl font-semibold">Filters</h2>
-      <div className="flex gap-2">
-       <button
-        onClick={clearFilters}
-        className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
->
-        Clear All
-       </button>
-       <button
-        onClick={exportComplianceReport}
-        className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
->
-        📄 Export Compliance Report
-       </button>
-      </div>
-     </div>
-     
-     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      {/* Venue Filter */}
-      <div>
-       <VenueSelector
-        value={venueId}
-        onChange={setVenueId}
-        showAllOption={true}
-       />
-      </div>
-
-      {/* Gymsport Filter */}
-      <div>
-       <label className="block text-sm font-medium mb-1">Gymsport</label>
-       <select
-        value={gymsportFilter}
-        onChange={(e) => setGymsportFilter(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-        <option value="all">All Gymsports</option>
-        {gymsports.map((gs) => (
-         <option key={gs.id} value={gs.id}>{gs.name}</option>
-        ))}
-       </select>
-      </div>
-
-      {/* Class Filter */}
-      <div>
-       <label className="block text-sm font-medium mb-1">Class</label>
-       <select
-        value={classFilter}
-        onChange={(e) => setClassFilter(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-        <option value="all">All Classes</option>
-        {classes.map((c) => (
-         <option key={c.id} value={c.id}>{c.name}</option>
-        ))}
-       </select>
-      </div>
-
-      {/* Equipment Filter */}
-      <div>
-       <label className="block text-sm font-medium mb-1">Equipment</label>
-       <select
-        value={equipmentFilter}
-        onChange={(e) => setEquipmentFilter(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-        <option value="all">All Equipment</option>
-        {equipment.map((eq) => (
-         <option key={eq.id} value={eq.id}>{eq.name}</option>
-        ))}
-       </select>
-      </div>
-
-      {/* Status Filter */}
-      <div>
-       <label className="block text-sm font-medium mb-1">Status</label>
-       <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-        <option value="all">All Statuses</option>
-        <option value="NEW">New</option>
-        <option value="UNDER_REVIEW">Under Review</option>
-        <option value="RESOLVED">Resolved</option>
-        <option value="CLOSED">Closed</option>
-       </select>
-      </div>
-
-      {/* Priority Filter */}
-      <div>
-       <label className="block text-sm font-medium mb-1">Priority</label>
-       <select
-        value={priorityFilter}
-        onChange={(e) => setPriorityFilter(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-        <option value="all">All Priorities</option>
-        <option value="LOW">Low</option>
-        <option value="MEDIUM">Medium</option>
-        <option value="HIGH">High</option>
-        <option value="CRITICAL">Critical</option>
-       </select>
-      </div>
-
-      {/* Start Date */}
-      <div>
-       <label className="block text-sm font-medium mb-1">Start Date</label>
-       <input
-        type="date"
-        value={startDate}
-        onChange={(e) => setStartDate(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-       />
-      </div>
-
-      {/* End Date */}
-      <div>
-       <label className="block text-sm font-medium mb-1">End Date</label>
-       <input
-        type="date"
-        value={endDate}
-        onChange={(e) => setEndDate(e.target.value)}
-        className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-       />
-      </div>
-     </div>
-    </div>
-
-    {loading ? (
-     <div className="text-center py-12">
-      <div className="text-gray-500">Loading analytics...</div>
-     </div>
-    ) : analytics ? (
-     <div className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-       <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-sm text-gray-600 mb-1">Total Submissions</div>
-        <div className="text-3xl font-bold text-blue-600">{analytics.totalSubmissions}</div>
-       </div>
-       <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-sm text-gray-600 mb-1">Avg Response Time</div>
-        <div className="text-3xl font-bold text-purple-600">
-         {analytics.avgResponseTimeHours.toFixed(1)}h
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+          <p className="font-semibold text-gray-900">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {entry.name}: <span className="font-bold">{entry.value}</span>
+            </p>
+          ))}
         </div>
-       </div>
-       <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-sm text-gray-600 mb-1">New Reports</div>
-        <div className="text-3xl font-bold text-orange-600">
-         {analytics.statusCounts.find(s => s.status === 'NEW')?.count || 0}
+      );
+    }
+    return null;
+  };
+
+  return (
+    <DashboardLayout>
+      <InjuryReportsSubNav />
+      
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">📊 Injury & Incidents Analytics</h1>
+              <p className="text-blue-100 text-lg">Comprehensive insights and data-driven intelligence</p>
+            </div>
+            <div className="text-right">
+              <div className="text-5xl font-bold">{analytics.totalSubmissions}</div>
+              <div className="text-blue-100 mt-1">Total Incidents Tracked</div>
+            </div>
+          </div>
         </div>
-       </div>
-       <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-sm text-gray-600 mb-1">Resolved Reports</div>
-        <div className="text-3xl font-bold text-green-600">
-         {analytics.statusCounts.find(s => s.status === 'RESOLVED')?.count || 0}
-        </div>
-       </div>
-      </div>
 
-      {/* Status Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
-       <h3 className="text-lg font-semibold mb-4">Status Distribution</h3>
-       <div className="space-y-3">
-        {analytics.statusCounts.map((item) => (
-         <div key={item.status}>
-          <div className="flex justify-between mb-1">
-           <span className="text-sm font-medium">{getStatusLabel(item.status)}</span>
-           <span className="text-sm text-gray-600">{item.count}</span>
+        {/* Filters Section */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">📌 Analytics Filters</h2>
+            <button
+              onClick={() => {
+                setVenueId(null);
+                setDateRange('30');
+                setStatusFilter('all');
+              }}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Reset Filters
+            </button>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-           <div
-            className="bg-blue-600 h-2 rounded-full"
-            style={{
-             width: `${(item.count / analytics.totalSubmissions) * 100}%`,
-            }}
-           />
-          </div>
-         </div>
-        ))}
-       </div>
-      </div>
-
-      {/* Priority Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
-       <h3 className="text-lg font-semibold mb-4">Priority Breakdown</h3>
-       <div className="space-y-3">
-        {analytics.priorityCounts.map((item) => (
-         <div key={item.priority}>
-          <div className="flex justify-between mb-1">
-           <span className="text-sm font-medium">{item.priority}</span>
-           <span className="text-sm text-gray-600">{item.count}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-           <div
-            className={`h-2 rounded-full ${
-             item.priority === 'CRITICAL' ? 'bg-red-600' :
-             item.priority === 'HIGH' ? 'bg-orange-600' :
-             item.priority === 'MEDIUM' ? 'bg-yellow-600' :
-             'bg-green-600'
-            }`}
-            style={{
-             width: `${(item.count / analytics.totalSubmissions) * 100}%`,
-            }}
-           />
-          </div>
-         </div>
-        ))}
-       </div>
-      </div>
-
-      {/* Gymsport Breakdown */}
-      {analytics.gymsportBreakdown && analytics.gymsportBreakdown.length> 0 && (
-       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Injuries by Gymsport</h3>
-        <div className="space-y-3">
-         {analytics.gymsportBreakdown.map((item) => (
-          <div key={item.gymsportName}>
-           <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium">{item.gymsportName}</span>
-            <span className="text-sm text-gray-600">{item.count}</span>
-           </div>
-           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-             className="bg-indigo-600 h-2 rounded-full"
-             style={{
-              width: `${(item.count / analytics.totalSubmissions) * 100}%`,
-             }}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+              showLabel={true}
             />
-           </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="180">Last 6 months</option>
+                <option value="365">Last year</option>
+                <option value="all">All time</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status Filter</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Statuses</option>
+                <option value="NEW">New</option>
+                <option value="UNDER_REVIEW">Under Review</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </div>
           </div>
-         ))}
         </div>
-       </div>
-      )}
 
-      {/* Class Breakdown */}
-      {analytics.classBreakdown && analytics.classBreakdown.length> 0 && (
-       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Injuries by Class</h3>
-        <div className="space-y-3">
-         {analytics.classBreakdown.map((item) => (
-          <div key={item.className}>
-           <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium">{item.className}</span>
-            <span className="text-sm text-gray-600">{item.count}</span>
-           </div>
-           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-             className="bg-teal-600 h-2 rounded-full"
-             style={{
-              width: `${(item.count / analytics.totalSubmissions) * 100}%`,
-             }}
-            />
-           </div>
+        {/* KPI Cards - Premium Design */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-6xl">📋</span>
+                <span className="text-blue-100 text-sm font-medium uppercase tracking-wide">Total</span>
+              </div>
+              <div className="text-5xl font-bold mb-2">{analytics.totalSubmissions}</div>
+              <div className="text-blue-100 text-sm font-medium">Total Incidents</div>
+              <div className="mt-4 pt-4 border-t border-blue-400">
+                <div className="flex justify-between text-xs">
+                  <span className="text-blue-200">New: {totalNew}</span>
+                  <span className="text-blue-200">Review: {totalUnderReview}</span>
+                </div>
+              </div>
+            </div>
           </div>
-         ))}
-        </div>
-       </div>
-      )}
 
-      {/* Equipment Breakdown */}
-      {analytics.equipmentBreakdown && analytics.equipmentBreakdown.length> 0 && (
-       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Injuries by Equipment</h3>
-        <div className="space-y-3">
-         {analytics.equipmentBreakdown.map((item) => (
-          <div key={item.equipmentName}>
-           <div className="flex justify-between mb-1">
-            <span className="text-sm font-medium">{item.equipmentName}</span>
-            <span className="text-sm text-gray-600">{item.count}</span>
-           </div>
-           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-             className="bg-pink-600 h-2 rounded-full"
-             style={{
-              width: `${(item.count / analytics.totalSubmissions) * 100}%`,
-             }}
-            />
-           </div>
+          <div className="relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-6xl">✅</span>
+                <span className="text-green-100 text-sm font-medium uppercase tracking-wide">Success</span>
+              </div>
+              <div className="text-5xl font-bold mb-2">{resolutionRate}%</div>
+              <div className="text-green-100 text-sm font-medium">Resolution Rate</div>
+              <div className="mt-4 pt-4 border-t border-green-400">
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-200">Resolved: {totalResolved}</span>
+                  <span className="text-green-200">Closed: {totalClosed}</span>
+                </div>
+              </div>
+            </div>
           </div>
-         ))}
-        </div>
-       </div>
-      )}
 
-      {/* Submissions Over Time */}
-      <div className="bg-white rounded-lg shadow p-6">
-       <h3 className="text-lg font-semibold mb-4">Submissions Over Time</h3>
-       <div className="space-y-2">
-        {Object.entries(analytics.submissionsByDate)
-         .sort(([a], [b]) => a.localeCompare(b))
-         .slice(-30)
-         .map(([date, count]) => (
-          <div key={date} className="flex items-center gap-3">
-           <span className="text-sm text-gray-600 w-24">{date}</span>
-           <div className="flex-1 bg-gray-200 rounded-full h-2">
-            <div
-             className="bg-blue-600 h-2 rounded-full"
-             style={{
-              width: `${(count / Math.max(...Object.values(analytics.submissionsByDate))) * 100}%`,
-             }}
-            />
-           </div>
-           <span className="text-sm font-medium w-8 text-right">{count}</span>
+          <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-6xl">🚨</span>
+                <span className="text-red-100 text-sm font-medium uppercase tracking-wide">Urgent</span>
+              </div>
+              <div className="text-5xl font-bold mb-2">{urgentCases}</div>
+              <div className="text-red-100 text-sm font-medium">High/Critical Priority</div>
+              <div className="mt-4 pt-4 border-t border-red-400">
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-200">Critical: {criticalCount}</span>
+                  <span className="text-red-200">High: {highCount}</span>
+                </div>
+              </div>
+            </div>
           </div>
-         ))}
-       </div>
-      </div>
 
-      {/* Enhanced Analytics Charts from Dashboard */}
-      {/* Injury Trends Over Time */}
-      {analytics.trendData && analytics.trendData.length > 0 && analytics.trendData[0].month && (
-       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Injury Trends (Last 6 Months)</h3>
-        <div className="group hover-legend-chart">
-         <style jsx>{`
-          .hover-legend-chart :global(.recharts-legend-wrapper) {
-           opacity: 0;
-           transition: opacity 0.3s ease;
-          }
-          .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-           opacity: 1;
-          }
-         `}</style>
-         <ResponsiveContainer width="100%" height={300}>
-         <LineChart data={analytics.trendData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
-          <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-          <Tooltip
-           contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-           }}
-          />
-          <Legend />
-          <Line
-           type="monotone"
-           dataKey="total"
-           stroke="#3b82f6"
-           strokeWidth={2}
-           name="Total Injuries"
-           dot={{ fill: '#3b82f6', r: 4 }}
-          />
-          <Line
-           type="monotone"
-           dataKey="critical"
-           stroke="#ef4444"
-           strokeWidth={2}
-           name="Critical"
-           dot={{ fill: '#ef4444', r: 4 }}
-          />
-          <Line
-           type="monotone"
-           dataKey="resolved"
-           stroke="#22c55e"
-           strokeWidth={2}
-           name="Resolved"
-           dot={{ fill: '#22c55e', r: 4 }}
-          />
-         </LineChart>
-        </ResponsiveContainer>
+          <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white opacity-10"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-6xl">⏱️</span>
+                <span className="text-purple-100 text-sm font-medium uppercase tracking-wide">Speed</span>
+              </div>
+              <div className="text-5xl font-bold mb-2">
+                {analytics.avgResponseTimeHours > 0 ? `${Math.round(analytics.avgResponseTimeHours)}h` : 'N/A'}
+              </div>
+              <div className="text-purple-100 text-sm font-medium">Avg Response Time</div>
+              <div className="mt-4 pt-4 border-t border-purple-400">
+                <div className="text-xs text-purple-200">
+                  Time to initial review
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-       </div>
-      )}
 
-      {/* Severity Distribution */}
-      {analytics.severityDistribution && analytics.severityDistribution.length > 0 && (
-       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Severity Distribution</h3>
-        <ResponsiveContainer width="100%" height={300}>
-         <PieChart>
-          <Pie
-           data={analytics.severityDistribution}
-           cx="50%"
-           cy="50%"
-           labelLine={false}
-           label={({ name, percent }) => `${name} (${percent ? (percent * 100).toFixed(0) : 0}%)`}
-           outerRadius={100}
-           fill="#8884d8"
-           dataKey="value"
-          >
-           {analytics.severityDistribution.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-           ))}
-          </Pie>
-          <Tooltip />
-         </PieChart>
-        </ResponsiveContainer>
-       </div>
-      )}
+        {/* Status & Priority Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Status Distribution - Donut Chart */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Status Distribution</h2>
+                <p className="text-sm text-gray-600 mt-1">Current incident status breakdown</p>
+              </div>
+              <span className="text-4xl">📊</span>
+            </div>
+            {statusChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={320}>
+                  <PieChart>
+                    <Pie
+                      data={statusChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={110}
+                      fill="#8884d8"
+                      paddingAngle={4}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
+                      labelLine={true}
+                    >
+                      {statusChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  {statusChartData.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: item.fill }}></div>
+                      <span className="text-sm text-gray-700">{item.name}</span>
+                      <span className="ml-auto font-semibold text-gray-900">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-80 text-gray-400">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">📭</div>
+                  <div>No status data</div>
+                </div>
+              </div>
+            )}
+          </div>
 
-      {/* Charts Grid - Venue and Day of Week */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-       {/* Venue Breakdown */}
-       {analytics.venueBreakdown && analytics.venueBreakdown.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Venue</h3>
-         <div className="group hover-legend-chart">
-          <style jsx>{`
-           .hover-legend-chart :global(.recharts-legend-wrapper) {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-           }
-           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-            opacity: 1;
-           }
-          `}</style>
-          <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={analytics.venueBreakdown}>
-           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-           <XAxis dataKey="venueName" stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <Tooltip
-            contentStyle={{
-             backgroundColor: '#fff',
-             border: '1px solid #e5e7eb',
-             borderRadius: '8px',
-            }}
-           />
-           <Legend />
-           <Bar dataKey="count" fill="#3b82f6" name="Total" radius={[8, 8, 0, 0]} />
-           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
-          </BarChart>
-         </ResponsiveContainer>
-         </div>
+          {/* Priority Breakdown - Horizontal Bar */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Priority Breakdown</h2>
+                <p className="text-sm text-gray-600 mt-1">Severity levels of incidents</p>
+              </div>
+              <span className="text-4xl">🎯</span>
+            </div>
+            {priorityChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={priorityChartData} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="name" type="category" width={90} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="count" radius={[0, 8, 8, 0]}>
+                      {priorityChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  {priorityChartData.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: item.fill }}></div>
+                      <span className="text-sm text-gray-700">{item.name}</span>
+                      <span className="ml-auto font-semibold text-gray-900">{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-80 text-gray-400">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">📭</div>
+                  <div>No priority data</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-       )}
 
-       {/* Day of Week Pattern */}
-       {analytics.dayOfWeekPattern && analytics.dayOfWeekPattern.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Day of Week</h3>
-         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={analytics.dayOfWeekPattern}>
-           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-           <XAxis dataKey="day" stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <Tooltip
-            contentStyle={{
-             backgroundColor: '#fff',
-             border: '1px solid #e5e7eb',
-             borderRadius: '8px',
-            }}
-           />
-           <Bar dataKey="count" fill="#14b8a6" radius={[8, 8, 0, 0]} />
-          </BarChart>
-         </ResponsiveContainer>
-        </div>
-       )}
-      </div>
-
-      {/* Equipment-Related Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-       {/* Equipment-Related Injuries */}
-       {analytics.equipmentInjuryBreakdown && analytics.equipmentInjuryBreakdown.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Equipment-Related Injuries
-          {analytics.equipmentRelatedCount && (
-           <span className="text-sm font-normal text-gray-500 ml-2">
-            ({analytics.equipmentRelatedCount} total)
-           </span>
+        {/* Trend Analysis */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">📈 Incident Trends Over Time</h2>
+              <p className="text-sm text-gray-600 mt-1">Historical trend analysis showing total, critical, and resolved cases</p>
+            </div>
+          </div>
+          {analytics.trendData && analytics.trendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <AreaChart data={analytics.trendData}>
+                <defs>
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS.danger} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={COLORS.danger} stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={COLORS.success} stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }}
+                  angle={-15}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Area 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke={COLORS.primary} 
+                  fill="url(#colorTotal)" 
+                  strokeWidth={2}
+                  name="Total Incidents" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="critical" 
+                  stroke={COLORS.danger} 
+                  fill="url(#colorCritical)" 
+                  strokeWidth={2}
+                  name="Critical" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="resolved" 
+                  stroke={COLORS.success} 
+                  fill="url(#colorResolved)" 
+                  strokeWidth={2}
+                  name="Resolved" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-96 text-gray-400">
+              <div className="text-center">
+                <div className="text-6xl mb-4">📉</div>
+                <div className="text-lg">No trend data available</div>
+              </div>
+            </div>
           )}
-         </h3>
-         <div className="group hover-legend-chart">
-          <style jsx>{`
-           .hover-legend-chart :global(.recharts-legend-wrapper) {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-           }
-           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-            opacity: 1;
-           }
-          `}</style>
-          <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={analytics.equipmentInjuryBreakdown.slice(0, 10)}>
-           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-           <XAxis dataKey="equipmentName" stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <Tooltip
-            contentStyle={{
-             backgroundColor: '#fff',
-             border: '1px solid #e5e7eb',
-             borderRadius: '8px',
-            }}
-           />
-           <Legend />
-           <Bar dataKey="count" fill="#f59e0b" name="Total" radius={[8, 8, 0, 0]} />
-           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
-          </BarChart>
-         </ResponsiveContainer>
-         </div>
         </div>
-       )}
 
-       {/* Equipment-Related Injuries by Zone */}
-       {analytics.equipmentInjuryByZone && analytics.equipmentInjuryByZone.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Equipment Injuries by Zone
-         </h3>
-         <div className="group hover-legend-chart">
-          <style jsx>{`
-           .hover-legend-chart :global(.recharts-legend-wrapper) {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-           }
-           .hover-legend-chart:hover :global(.recharts-legend-wrapper) {
-            opacity: 1;
-           }
-          `}</style>
-          <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={analytics.equipmentInjuryByZone}>
-           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-           <XAxis dataKey="zoneName" stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-           <Tooltip
-            contentStyle={{
-             backgroundColor: '#fff',
-             border: '1px solid #e5e7eb',
-             borderRadius: '8px',
-            }}
-           />
-           <Legend />
-           <Bar dataKey="count" fill="#10b981" name="Total" radius={[8, 8, 0, 0]} />
-           <Bar dataKey="critical" fill="#ef4444" name="Critical" radius={[8, 8, 0, 0]} />
-          </BarChart>
-         </ResponsiveContainer>
-         </div>
+        {/* Injuries by Class */}
+        {topClasses.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">🏫 Injuries by Class</h2>
+                <p className="text-sm text-gray-600 mt-1">Top classes with the highest incident rates</p>
+              </div>
+              <span className="text-4xl">📚</span>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={topClasses} layout="vertical" margin={{ left: 150 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" />
+                <YAxis dataKey="className" type="category" width={140} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill={COLORS.indigo} radius={[0, 8, 8, 0]}>
+                  {topClasses.map((_, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={index < 3 ? COLORS.danger : index < 6 ? COLORS.warning : COLORS.primary} 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Location & Equipment Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Injuries by Zone */}
+          {topZones.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">🗺️ Injuries by Zone</h2>
+                  <p className="text-sm text-gray-600 mt-1">Incidents per training zone</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={topZones} layout="vertical" margin={{ left: 100 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="zoneName" type="category" width={90} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" fill={COLORS.cyan} radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Equipment-Related Injuries */}
+          {topEquipment.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">🛠️ Equipment-Related Injuries</h2>
+                  <p className="text-sm text-gray-600 mt-1">Top equipment with incidents</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={topEquipment} layout="vertical" margin={{ left: 100 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="equipmentName" type="category" width={90} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" fill={COLORS.warning} radius={[0, 8, 8, 0]} stackId="a" name="Total"/>
+                  <Bar dataKey="critical" fill={COLORS.danger} radius={[0, 8, 8, 0]} stackId="a" name="Critical"/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-       )}
+
+        {/* Day of Week Pattern */}
+        {sortedDayData.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">📅 Incident Pattern by Day of Week</h2>
+                <p className="text-sm text-gray-600 mt-1">Identify high-risk days</p>
+              </div>
+              <span className="text-4xl">📆</span>
+            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={sortedDayData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="day" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={90}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill={COLORS.purple} radius={[8, 8, 0, 0]}>
+                  {sortedDayData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.count === Math.max(...sortedDayData.map(d => d.count)) 
+                        ? COLORS.danger 
+                        : COLORS.purple
+                      } 
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Venue Breakdown */}
+        {analytics.venueBreakdown && analytics.venueBreakdown.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">🏢 Injuries by Venue</h2>
+                <p className="text-sm text-gray-600 mt-1">Compare incident rates across venues</p>
+              </div>
+              <span className="text-4xl">🏛️</span>
+            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={analytics.venueBreakdown}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="venueName" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={90}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="count" fill={COLORS.cyan} radius={[8, 8, 0, 0]} name="Total Incidents" />
+                <Bar dataKey="critical" fill={COLORS.danger} radius={[8, 8, 0, 0]} name="Critical" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Program Breakdown */}
+        {analytics.gymsportBreakdown && analytics.gymsportBreakdown.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">🤸 Injuries by Program</h2>
+                <p className="text-sm text-gray-600 mt-1">Incident distribution across gym sports</p>
+              </div>
+              <span className="text-4xl">⭐</span>
+            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={analytics.gymsportBreakdown}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="gymsportName" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={90}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill={COLORS.pink} radius={[8, 8, 0, 0]}>
+                  {analytics.gymsportBreakdown.map((_, index) => {
+                    const colors = [COLORS.pink, COLORS.purple, COLORS.indigo, COLORS.cyan, COLORS.primary];
+                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
-
-      {/* Zone Breakdown - Grid Display */}
-      {analytics.zoneBreakdown && analytics.zoneBreakdown.length > 0 && (
-       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Injuries by Zone</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-         {analytics.zoneBreakdown.map((zone) => (
-          <div key={zone.zoneName} className="bg-gray-50 rounded-lg p-4 text-center">
-           <div className="text-2xl font-bold text-gray-900">{zone.count}</div>
-           <div className="text-sm text-gray-600 mt-1">{zone.zoneName}</div>
-          </div>
-         ))}
-        </div>
-       </div>
-      )}
-
-      {/* Monthly Incident Trends */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-       {/* Incident Trends by Zone */}
-       {monthlyDataByZone.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Zone</h2>
-          <p className="text-sm text-gray-600">Month-over-month incidents reported per zone (Last 6 months)</p>
-         </div>
-         <div className="relative group hover-legend-chart">
-          <style jsx>{`
-           .custom-legend {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 10;
-            pointer-events: none;
-           }
-           .hover-legend-chart:hover .custom-legend {
-            opacity: 1;
-           }
-          `}</style>
-          <ResponsiveContainer width="100%" height={400}>
-           <LineChart data={monthlyDataByZone}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-             dataKey="month" 
-             tick={{ fontSize: 12 }}
-             angle={-15}
-             textAnchor="end"
-             height={60}
-            />
-            <YAxis 
-             tick={{ fontSize: 12 }}
-             label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-             contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
-             labelStyle={{ fontWeight: 'bold' }}
-            />
-            {zoneNames.map((zoneName, index) => {
-             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-             return (
-              <Line
-               key={zoneName}
-               type="monotone"
-               dataKey={zoneName}
-               stroke={colors[index % colors.length]}
-               strokeWidth={2}
-               dot={{ r: 4 }}
-               activeDot={{ r: 6 }}
-              />
-             );
-            })}
-            <Line
-             type="monotone"
-             dataKey="total"
-             stroke="#1f2937"
-             strokeWidth={3}
-             strokeDasharray="5 5"
-             dot={{ r: 5 }}
-             activeDot={{ r: 7 }}
-             name="Total (All Zones)"
-            />
-           </LineChart>
-          </ResponsiveContainer>
-          <div className="custom-legend">
-           <div className="flex flex-wrap gap-4 justify-center items-center text-xs">
-            {zoneNames.map((zoneName, index) => {
-             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-             return (
-              <div key={zoneName} className="flex items-center gap-1">
-               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></div>
-               <span>{zoneName}</span>
-              </div>
-             );
-            })}
-            <div className="flex items-center gap-1">
-             <div className="w-3 h-0.5 bg-gray-800" style={{ borderTop: '2px dashed #1f2937', width: '12px' }}></div>
-             <span>Total (All Zones)</span>
-            </div>
-           </div>
-          </div>
-         </div>
-        </div>
-       )}
-
-       {/* Incident Trends by Venue */}
-       {monthlyDataByVenue.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Venue</h2>
-          <p className="text-sm text-gray-600">Month-over-month incidents reported per venue (Last 6 months)</p>
-         </div>
-         <div className="relative group hover-legend-chart">
-          <style jsx>{`
-           .custom-legend {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 10;
-            pointer-events: none;
-           }
-           .hover-legend-chart:hover .custom-legend {
-            opacity: 1;
-           }
-          `}</style>
-          <ResponsiveContainer width="100%" height={400}>
-           <LineChart data={monthlyDataByVenue}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-             dataKey="month" 
-             tick={{ fontSize: 12 }}
-             angle={-15}
-             textAnchor="end"
-             height={60}
-            />
-            <YAxis 
-             tick={{ fontSize: 12 }}
-             label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-             contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
-             labelStyle={{ fontWeight: 'bold' }}
-            />
-            {venueNames.map((venueName, index) => {
-             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-             return (
-              <Line
-               key={venueName}
-               type="monotone"
-               dataKey={venueName}
-               stroke={colors[index % colors.length]}
-               strokeWidth={2}
-               dot={{ r: 4 }}
-               activeDot={{ r: 6 }}
-              />
-             );
-            })}
-            <Line
-             type="monotone"
-             dataKey="total"
-             stroke="#1f2937"
-             strokeWidth={3}
-             strokeDasharray="5 5"
-             dot={{ r: 5 }}
-             activeDot={{ r: 7 }}
-             name="Total (All Venues)"
-            />
-           </LineChart>
-          </ResponsiveContainer>
-          <div className="custom-legend">
-           <div className="flex flex-wrap gap-4 justify-center items-center text-xs">
-            {venueNames.map((venueName, index) => {
-             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-             return (
-              <div key={venueName} className="flex items-center gap-1">
-               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></div>
-               <span>{venueName}</span>
-              </div>
-             );
-            })}
-            <div className="flex items-center gap-1">
-             <div className="w-3 h-0.5 bg-gray-800" style={{ borderTop: '2px dashed #1f2937', width: '12px' }}></div>
-             <span>Total (All Venues)</span>
-            </div>
-           </div>
-          </div>
-         </div>
-        </div>
-       )}
-
-       {/* Incident Trends by Program */}
-       {monthlyDataByProgram.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
-          <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
-         </div>
-         <div className="relative group hover-legend-chart">
-          <style jsx>{`
-           .custom-legend {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 10;
-            pointer-events: none;
-           }
-           .hover-legend-chart:hover .custom-legend {
-            opacity: 1;
-           }
-          `}</style>
-          <ResponsiveContainer width="100%" height={400}>
-           <LineChart data={monthlyDataByProgram}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-             dataKey="month" 
-             tick={{ fontSize: 12 }}
-             angle={-15}
-             textAnchor="end"
-             height={60}
-            />
-            <YAxis 
-             tick={{ fontSize: 12 }}
-             label={{ value: 'Number of Incidents', angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
-             contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
-             labelStyle={{ fontWeight: 'bold' }}
-            />
-            {programNames.map((programName, index) => {
-             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-             return (
-              <Line
-               key={programName}
-               type="monotone"
-               dataKey={programName}
-               stroke={colors[index % colors.length]}
-               strokeWidth={2}
-               dot={{ r: 4 }}
-               activeDot={{ r: 6 }}
-              />
-             );
-            })}
-            <Line
-             type="monotone"
-             dataKey="total"
-             stroke="#1f2937"
-             strokeWidth={3}
-             strokeDasharray="5 5"
-             dot={{ r: 5 }}
-             activeDot={{ r: 7 }}
-             name="Total (All Programs)"
-            />
-           </LineChart>
-          </ResponsiveContainer>
-          <div className="custom-legend">
-           <div className="flex flex-wrap gap-4 justify-center items-center text-xs">
-            {programNames.map((programName, index) => {
-             const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-             return (
-              <div key={programName} className="flex items-center gap-1">
-               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }}></div>
-               <span>{programName}</span>
-              </div>
-             );
-            })}
-            <div className="flex items-center gap-1">
-             <div className="w-3 h-0.5 bg-gray-800" style={{ borderTop: '2px dashed #1f2937', width: '12px' }}></div>
-             <span>Total (All Programs)</span>
-            </div>
-           </div>
-          </div>
-         </div>
-        </div>
-       )}
-      </div>
-     </div>
-    ) : (
-     <div className="text-center py-12">
-      <div className="text-gray-400 text-lg">No data available</div>
-     </div>
-    )}
-   </div>
-  </DashboardLayout>
- );
+    </DashboardLayout>
+  );
 }
