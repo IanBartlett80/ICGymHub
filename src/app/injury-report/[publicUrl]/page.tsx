@@ -53,6 +53,12 @@ interface Equipment {
   zoneId: string | null;
 }
 
+interface ClassTemplate {
+  id: string;
+  name: string;
+  venueId: string | null;
+}
+
 export default function PublicSubmissionForm() {
   const params = useParams();
   const publicUrl = params.publicUrl as string;
@@ -62,6 +68,7 @@ export default function PublicSubmissionForm() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [classTemplates, setClassTemplates] = useState<ClassTemplate[]>([]);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState(0);
@@ -81,12 +88,13 @@ export default function PublicSubmissionForm() {
       if (res.ok) {
         const data = await res.json();
         setTemplate(data.template);
-        // Load coaches, zones, and equipment for this club
+        // Load coaches, zones, equipment, and class templates for this club
         if (data.template.clubId) {
           await Promise.all([
             loadCoaches(data.template.clubId),
             loadZones(data.template.clubId),
-            loadEquipment(data.template.clubId)
+            loadEquipment(data.template.clubId),
+            loadClassTemplates(data.template.clubId)
           ]);
         }
       } else {
@@ -132,6 +140,18 @@ export default function PublicSubmissionForm() {
       }
     } catch (error) {
       console.error('Error loading equipment:', error);
+    }
+  };
+
+  const loadClassTemplates = async (clubId: string) => {
+    try {
+      const res = await fetch(`/api/classes/public/${clubId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setClassTemplates(data.classes || []);
+      }
+    } catch (error) {
+      console.error('Error loading class templates:', error);
     }
   };
 
@@ -340,6 +360,7 @@ export default function PublicSubmissionForm() {
         const isVenueField = field.label.includes('Venue') || field.label.includes('Location');
         const isZoneField = field.label.includes('Zone') || field.label.includes('Area');
         const isEquipmentField = field.label.includes('Equipment') || field.label.includes('Apparatus');
+        const isClassField = field.label.includes('Class') || field.label.includes('Program');
         
         // Venue dropdown - track selection for filtering zones
         if (isVenueField) {
@@ -433,6 +454,33 @@ export default function PublicSubmissionForm() {
               {filteredEquipment.map((equip) => (
                 <option key={equip.id} value={equip.id}>
                   {equip.name}{equip.serialNumber ? ` (${equip.serialNumber})` : ''}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        
+        // Class Template dropdown - filtered by selected venue
+        if (isClassField) {
+          const filteredClasses = selectedVenueId 
+            ? classTemplates.filter(c => c.venueId === selectedVenueId)
+            : classTemplates;
+          
+          return (
+            <select
+              value={value}
+              onChange={(e) => updateValue(e.target.value)}
+              className={commonInputClass}
+              disabled={!!(selectedVenueId && filteredClasses.length === 0)}
+            >
+              <option value="">
+                {selectedVenueId && filteredClasses.length === 0 
+                  ? 'No classes available for selected venue' 
+                  : 'Select a class...'}
+              </option>
+              {filteredClasses.map((classTemplate) => (
+                <option key={classTemplate.id} value={classTemplate.name}>
+                  {classTemplate.name}
                 </option>
               ))}
             </select>
