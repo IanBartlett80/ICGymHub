@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import axiosInstance from '@/lib/axios'
 
 interface UserData {
  id: string
@@ -20,6 +21,7 @@ export default function ProfilePage() {
  const [formData, setFormData] = useState({
   fullName: '',
   email: '',
+  username: '',
   currentPassword: '',
   newPassword: '',
   confirmPassword: ''
@@ -38,7 +40,8 @@ export default function ProfilePage() {
   setFormData(prev => ({
    ...prev,
    fullName: parsed.fullName,
-   email: parsed.email
+   email: parsed.email,
+   username: parsed.username
   }))
  }, [router])
 
@@ -48,13 +51,7 @@ export default function ProfilePage() {
   setMessage(null)
 
   try {
-   // Update basic info (placeholder - needs actual API endpoint)
-   const updateData: any = {
-    fullName: formData.fullName,
-    email: formData.email
-   }
-
-   // If password is being changed
+   // Validate password fields if changing password
    if (formData.newPassword) {
     if (formData.newPassword !== formData.confirmPassword) {
      setMessage({ type: 'error', text: 'New passwords do not match' })
@@ -66,40 +63,55 @@ export default function ProfilePage() {
      setLoading(false)
      return
     }
+    if (!formData.currentPassword) {
+     setMessage({ type: 'error', text: 'Current password is required to change password' })
+     setLoading(false)
+     return
+    }
+   }
+
+   // Build update data
+   const updateData: any = {
+    fullName: formData.fullName,
+    email: formData.email
+   }
+
+   // Include username if user is admin
+   if (user?.role === 'ADMIN') {
+    updateData.username = formData.username
+   }
+
+   // If password is being changed, include password fields
+   if (formData.newPassword) {
     updateData.currentPassword = formData.currentPassword
     updateData.newPassword = formData.newPassword
    }
 
-   // TODO: Implement actual API call
-   // const response = await fetch('/api/users/profile', {
-   //  method: 'PATCH',
-   //  headers: { 'Content-Type': 'application/json' },
-   //  body: JSON.stringify(updateData)
-   // })
+   // Call API to update profile
+   const response = await axiosInstance.patch('/api/users/profile', updateData)
 
-   // For now, just update localStorage
-   if (user) {
-    const updatedUser = {
-     ...user,
-     fullName: formData.fullName,
-     email: formData.email
-    }
-    localStorage.setItem('userData', JSON.stringify(updatedUser))
-    setUser(updatedUser)
+   if (response.data.user) {
+    // Update localStorage with new user data
+    localStorage.setItem('userData', JSON.stringify(response.data.user))
+    setUser(response.data.user)
+    
+    // Update form data with latest values
+    setFormData(prev => ({
+     ...prev,
+     fullName: response.data.user.fullName,
+     email: response.data.user.email,
+     username: response.data.user.username,
+     currentPassword: '',
+     newPassword: '',
+     confirmPassword: ''
+    }))
+
+    setMessage({ type: 'success', text: response.data.message || 'Profile updated successfully' })
    }
-
-   setMessage({ type: 'success', text: 'Profile updated successfully' })
-   
-   // Clear password fields
-   setFormData(prev => ({
-    ...prev,
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-   }))
-  } catch (error) {
+  } catch (error: any) {
    console.error('Update error:', error)
-   setMessage({ type: 'error', text: 'Failed to update profile' })
+   const errorMessage = error.response?.data?.error || 'Failed to update profile'
+   setMessage({ type: 'error', text: errorMessage })
   } finally {
    setLoading(false)
   }
@@ -166,20 +178,37 @@ export default function ProfilePage() {
       {/* Read-only fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
        <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+         Username
+         {user?.role === 'ADMIN' && (
+          <span className="ml-2 text-xs text-blue-600">(Editable for Admins)</span>
+         )}
+        </label>
         <input
          type="text"
-         value={user.username}
-         className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
-         disabled
+         id="username"
+         value={formData.username}
+         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+         className={`w-full px-4 py-2 border rounded-lg ${
+          user?.role === 'ADMIN'
+           ? 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+           : 'border-gray-200 bg-gray-50 text-gray-500'
+         }`}
+         disabled={user?.role !== 'ADMIN'}
+         required={user?.role === 'ADMIN'}
         />
+        {user?.role === 'ADMIN' && (
+         <p className="mt-1 text-xs text-gray-500">
+          Username must be unique across the platform
+         </p>
+        )}
        </div>
 
        <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
         <input
          type="text"
-         value={user.role}
+         value={user?.role || ''}
          className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
          disabled
         />
@@ -190,7 +219,7 @@ export default function ProfilePage() {
        <label className="block text-sm font-medium text-gray-700 mb-2">Club</label>
        <input
         type="text"
-        value={user.clubName}
+        value={user?.clubName || ''}
         className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
         disabled
        />

@@ -181,7 +181,7 @@ export default function DashboardPage() {
     <div className="bg-white rounded-xl border border-gray-200 p-6">
      <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-      <Link href="/dashboard/rosters" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+      <Link href="/dashboard/class-rostering" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
        <span className="text-3xl">📋</span>
        <div>
         <p className="font-medium text-gray-900">View Rosters</p>
