@@ -45,6 +45,7 @@ type ClassTemplate = {
  id: string
  name: string
  color: string | null
+ venueId: string | null
 }
 
 type CoachAllocation = {
@@ -600,11 +601,13 @@ export default function RosterReportsPage() {
          className="border rounded px-3 py-2"
 >
          <option value="all">All Classes</option>
-         {classTemplates.map((template) => (
-          <option key={template.id} value={template.id}>
-           {template.name}
-          </option>
-         ))}
+         {classTemplates
+          .filter(template => selectedVenueId === 'all' || template.venueId === selectedVenueId)
+          .map((template) => (
+           <option key={template.id} value={template.id}>
+            {template.name}
+           </option>
+          ))}
         </select>
        </div>
 

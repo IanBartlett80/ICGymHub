@@ -14,6 +14,7 @@ type ClassTemplate = {
  startTimeLocal: string
  endTimeLocal: string
  activeDays: string
+ venueId: string | null
  allowedZones: Array<{ zone: { id: string; name: string } }>
  defaultCoaches: Array<{ coach: { id: string; name: string } }>
 }
@@ -84,7 +85,28 @@ export default function RosterBuilderPage() {
 
  useEffect(() => {
   console.log('Selected venue changed:', selectedVenue)
- }, [selectedVenue])
+  // Clear selected classes that don't match the new venue
+  if (selectedVenue) {
+   const updatedSelectedClasses = new Set<string>()
+   selectedClasses.forEach(classId => {
+    const classTemplate = classes.find(c => c.id === classId)
+    if (classTemplate && classTemplate.venueId === selectedVenue) {
+     updatedSelectedClasses.add(classId)
+    }
+   })
+   if (updatedSelectedClasses.size !== selectedClasses.size) {
+    setSelectedClasses(updatedSelectedClasses)
+    // Also clear customizations for removed classes
+    const updatedCustomizations = new Map(customizations)
+    customizations.forEach((_, classId) => {
+     if (!updatedSelectedClasses.has(classId)) {
+      updatedCustomizations.delete(classId)
+     }
+    })
+    setCustomizations(updatedCustomizations)
+   }
+  }
+ }, [selectedVenue, classes])
 
  const fetchData = async () => {
   try {
@@ -384,9 +406,11 @@ export default function RosterBuilderPage() {
      <h2 className="text-xl font-semibold mb-4">Select Classes</h2>
      {classes.length === 0 ? (
       <p className="text-gray-500">No classes available. Please create classes first.</p>
+     ) : selectedVenue && classes.filter(c => c.venueId === selectedVenue).length === 0 ? (
+      <p className="text-gray-500">No classes available for the selected venue. Please create classes for this venue first.</p>
      ) : (
       <div className="space-y-4">
-       {classes.map((classTemplate) => {
+       {classes.filter(c => !selectedVenue || c.venueId === selectedVenue).map((classTemplate) => {
         const isSelected = selectedClasses.has(classTemplate.id)
         const custom = customizations.get(classTemplate.id) || {}
 
