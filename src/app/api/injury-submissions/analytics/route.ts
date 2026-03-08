@@ -65,12 +65,14 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            venueId: true,
           },
         },
         equipment: {
           select: {
             id: true,
             name: true,
+            venueId: true,
           },
         },
         data: {
@@ -246,7 +248,8 @@ export async function GET(request: NextRequest) {
 
     // Zone breakdown  
     const zoneData = filteredSubmissions.reduce((acc: any, sub) => {
-      if (sub.zone) {
+      // Only include zones that belong to the filtered venue (or all if no venue filter)
+      if (sub.zone && (!venueFilter || venueFilter === 'all' || sub.zone.venueId === venueFilter)) {
         const name = sub.zone.name;
         if (!acc[name]) acc[name] = 0;
         acc[name]++;
@@ -261,7 +264,8 @@ export async function GET(request: NextRequest) {
     // Equipment-related injuries
     const equipmentRelated = filteredSubmissions.filter(sub => sub.equipment || sub.equipmentId);
     const equipmentInjuryData = filteredSubmissions.reduce((acc: any, sub) => {
-      if (sub.equipment) {
+      // Only include equipment that belongs to the filtered venue (or all if no venue filter)
+      if (sub.equipment && (!venueFilter || venueFilter === 'all' || sub.equipment.venueId === venueFilter)) {
         const name = sub.equipment.name;
         if (!acc[name]) acc[name] = { count: 0, critical: 0 };
         acc[name].count++;
@@ -281,7 +285,9 @@ export async function GET(request: NextRequest) {
 
     // Equipment-related injuries by zone
     const equipmentByZoneData = filteredSubmissions.reduce((acc: any, sub) => {
-      if ((sub.equipment || sub.equipmentId) && sub.zone) {
+      // Only include equipment and zones that belong to the filtered venue (or all if no venue filter)
+      if ((sub.equipment || sub.equipmentId) && sub.zone && 
+          (!venueFilter || venueFilter === 'all' || sub.zone.venueId === venueFilter)) {
         const name = sub.zone.name;
         if (!acc[name]) acc[name] = { count: 0, critical: 0 };
         acc[name].count++;
