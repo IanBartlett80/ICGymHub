@@ -151,11 +151,15 @@ export default function AccessControlPage() {
           return;
         }
 
-        // Get current club ID
-        const sessionRes = await fetch('/api/auth/session');
-        const session = await sessionRes.json();
+        // Get current club ID from localStorage
+        const userData = localStorage.getItem('userData');
+        if (!userData) {
+          setPinError('Session error. Please refresh and try again.');
+          return;
+        }
         
-        if (!session?.user?.clubId) {
+        const user = JSON.parse(userData);
+        if (!user?.clubId) {
           setPinError('Session error. Please refresh and try again.');
           return;
         }
@@ -164,7 +168,7 @@ export default function AccessControlPage() {
         const verifyResponse = await fetch('/api/clubs/verify-qr-pin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clubId: session.user.clubId, pin: currentPin }),
+          body: JSON.stringify({ clubId: user.clubId, pin: currentPin }),
         });
 
         const verifyData = await verifyResponse.json();

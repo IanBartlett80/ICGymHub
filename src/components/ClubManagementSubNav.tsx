@@ -45,8 +45,8 @@ export default function ClubManagementSubNav() {
       icon: '🔔',
     },
     {
-      label: 'Roles & Permissions',
-      href: '/dashboard/admin-config/roles',
+      label: 'Access Control',
+      href: '/dashboard/admin-config/access-control',
       icon: '🔐',
     },
   ]
