@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import { format } from 'date-fns'
 import { showToast, confirmAndDelete, confirmDelete } from '@/lib/toast'
+import axiosInstance from '@/lib/axios'
 
 type Roster = {
  id: string
@@ -49,13 +50,8 @@ export default function RostersPage() {
 
  const fetchRosters = async () => {
   try {
-   const res = await fetch('/api/rosters')
-   if (res.ok) {
-    const data = await res.json()
-    setRosters(data.rosters)
-   } else {
-    setError('Failed to load rosters')
-   }
+   const res = await axiosInstance.get('/api/rosters')
+   setRosters(res.data.rosters)
   } catch (err) {
    setError('Failed to load rosters')
   } finally {

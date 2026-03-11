@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
+import axiosInstance from '@/lib/axios'
 
 type ClassTemplate = {
  id: string
@@ -111,24 +112,14 @@ export default function RosterBuilderPage() {
  const fetchData = async () => {
   try {
    const [classesRes, coachesRes, zonesRes] = await Promise.all([
-    fetch('/api/classes'),
-    fetch('/api/coaches'),
-    fetch('/api/zones'),
+    axiosInstance.get('/api/classes'),
+    axiosInstance.get('/api/coaches'),
+    axiosInstance.get('/api/zones'),
    ])
 
-   if (classesRes.ok) {
-    const data = await classesRes.json()
-    setClasses(data.classes)
-   }
-
-   if (coachesRes.ok) {
-    const data = await coachesRes.json()
-    setCoaches(data.coaches)
-   }
-
-   if (zonesRes.ok) {
-    const data = await zonesRes.json()
-    setZones(data.zones)
+   setClasses(classesRes.data.classes)
+   setCoaches(coachesRes.data.coaches)
+   setZones(zonesRes.data.zones)
    }
   } catch (err) {
    setError('Failed to load data')
@@ -235,34 +226,24 @@ export default function RosterBuilderPage() {
    })
 
    console.log('Creating roster template with venue:', selectedVenue)
-   const res = await fetch('/api/rosters/generate-from-template', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-     name: templateName,
-     venueId: selectedVenue,
-     startDate,
-     endDate,
-     activeDays: Array.from(selectedDays),
-     scope,
-     classTemplates: classTemplateConfigs,
-    }),
+   const res = await axiosInstance.post('/api/rosters/generate-from-template', {
+    name: templateName,
+    venueId: selectedVenue,
+    startDate,
+    endDate,
+    activeDays: Array.from(selectedDays),
+    scope,
+    classTemplates: classTemplateConfigs,
    })
 
-   const data = await res.json()
-
-   if (res.ok) {
-    setSuccess(
-     `Roster template "${templateName}" created successfully! ${data.rosters.length} roster(s) generated.`
-    )
-    
-    // Redirect to roster list after 2 seconds
-    setTimeout(() => {
-     router.push('/dashboard/rosters')
-    }, 2000)
-   } else {
-    setError(data.error || 'Failed to generate roster template')
-   }
+   setSuccess(
+    `Roster template "${templateName}" created successfully! ${res.data.rosters.length} roster(s) generated.`
+   )
+   
+   // Redirect to roster list after 2 seconds
+   setTimeout(() => {
+    router.push('/dashboard/rosters')
+   }, 2000)
   } catch (err) {
    setError('Failed to generate roster template')
   } finally {

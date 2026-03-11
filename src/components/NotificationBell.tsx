@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import axiosInstance from '@/lib/axios';
 
 interface Notification {
   id: string;
@@ -51,12 +52,9 @@ export default function NotificationBell() {
 
   const loadNotifications = async () => {
     try {
-      const res = await fetch('/api/notifications?limit=20');
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount);
-      }
+      const res = await axiosInstance.get('/api/notifications?limit=20');
+      setNotifications(res.data.notifications);
+      setUnreadCount(res.data.unreadCount);
     } catch (error) {
       console.error('Error loading notifications:', error);
     }
@@ -76,9 +74,7 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     setLoading(true);
     try {
-      await fetch('/api/notifications/mark-all-read', {
-        method: 'POST',
-      });
+      await axiosInstance.post('/api/notifications/mark-all-read');
       loadNotifications();
     } catch (error) {
       console.error('Error marking all as read:', error);

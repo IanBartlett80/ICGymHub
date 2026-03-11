@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
 import { showToast, confirmAndDelete } from '@/lib/toast'
+import axiosInstance from '@/lib/axios'
 
 interface Zone {
  id: string
@@ -37,11 +38,8 @@ export default function AdminZonesPage() {
 
  const fetchZones = async () => {
   try {
-   const res = await fetch('/api/zones')
-   if (res.ok) {
-    const data = await res.json()
-    setZones(data.zones)
-   }
+   const res = await axiosInstance.get('/api/zones')
+   setZones(res.data.zones)
   } catch (err) {
    setError('Failed to load zones')
   } finally {

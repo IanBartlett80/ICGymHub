@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { showToast, confirmAndDelete } from '@/lib/toast'
+import axiosInstance from '@/lib/axios'
 
 interface Venue {
  id: string
@@ -46,13 +47,8 @@ export default function AdminVenuesPage() {
 
  const fetchVenues = async () => {
   try {
-   const res = await fetch('/api/venues')
-   if (res.ok) {
-    const data = await res.json()
-    setVenues(data.venues || [])
-   } else {
-    showToast.error('Failed to load venues')
-   }
+   const res = await axiosInstance.get('/api/venues')
+   setVenues(res.data.venues || [])
   } catch (err) {
    showToast.error('Failed to load venues')
   } finally {
@@ -66,33 +62,24 @@ export default function AdminVenuesPage() {
 
   try {
    const url = editingId ? `/api/venues/${editingId}` : '/api/venues'
-   const method = editingId ? 'PATCH' : 'POST'
+   const method = editingId ? 'patch' : 'post'
 
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
+   await axiosInstance.request({ url, method, data: formData })
+
+   await fetchVenues()
+   setFormData({
+    name: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    phone: '',
+    timezone: 'Australia/Sydney',
+    active: true,
    })
-
-   if (res.ok) {
-    await fetchVenues()
-    setFormData({
-     name: '',
-     address: '',
-     city: '',
-     state: '',
-     postalCode: '',
-     phone: '',
-     timezone: 'Australia/Sydney',
-     active: true,
-    })
-    setEditingId(null)
-    setShowForm(false)
-    showToast.success(editingId ? 'Venue updated successfully' : 'Venue created successfully')
-   } else {
-    const data = await res.json()
-    showToast.error(data.error || 'Failed to save venue')
-   }
+   setEditingId(null)
+   setShowForm(false)
+   showToast.success(editingId ? 'Venue updated successfully' : 'Venue created successfully')
   } catch (err) {
    showToast.error('Failed to save venue')
   }
@@ -119,14 +106,9 @@ export default function AdminVenuesPage() {
 
   confirmAndDelete(venueName, async () => {
    try {
-    const res = await fetch(`/api/venues/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-     await fetchVenues()
-     showToast.success('Venue deleted successfully')
-    } else {
-     const data = await res.json()
-     showToast.error(data.error || 'Failed to delete venue')
-    }
+    await axiosInstance.delete(`/api/venues/${id}`)
+    await fetchVenues()
+    showToast.success('Venue deleted successfully')
    } catch (err) {
     showToast.error('Failed to delete venue')
    }
@@ -135,17 +117,9 @@ export default function AdminVenuesPage() {
 
  const handleSetDefault = async (id: string) => {
   try {
-   const res = await fetch(`/api/venues/${id}/set-default`, {
-    method: 'PATCH',
-   })
-
-   if (res.ok) {
-    await fetchVenues()
-    showToast.success('Default venue updated')
-   } else {
-    const data = await res.json()
-    showToast.error(data.error || 'Failed to set default venue')
-   }
+   await axiosInstance.patch(`/api/venues/${id}/set-default`)
+   await fetchVenues()
+   showToast.success('Default venue updated')
   } catch (err) {
    showToast.error('Failed to set default venue')
   }

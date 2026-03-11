@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
 import { confirmAndDelete, showToast } from '@/lib/toast'
+import axiosInstance from '@/lib/axios'
 import {
  Bar,
  BarChart,
@@ -152,9 +153,8 @@ export default function ComplianceManagerPage() {
  const loadMeta = useCallback(async () => {
   try {
    setLoadingMeta(true)
-   const response = await fetch('/api/compliance/meta')
-   if (!response.ok) throw new Error('Failed to load compliance metadata')
-   const data = await response.json()
+   const response = await axiosInstance.get('/api/compliance/meta')
+   const data = response.data
    setCategories(data.categories || [])
    setOwners(data.owners || [])
   } catch (error) {
@@ -183,18 +183,12 @@ export default function ComplianceManagerPage() {
    setLoading(true)
    const params = buildQueryParams()
    const [itemsResponse, analyticsResponse] = await Promise.all([
-    fetch(`/api/compliance/items?${params.toString()}`),
-    fetch(`/api/compliance/analytics?${params.toString()}`),
+    axiosInstance.get(`/api/compliance/items?${params.toString()}`),
+    axiosInstance.get(`/api/compliance/analytics?${params.toString()}`),
    ])
 
-   if (!itemsResponse.ok) throw new Error('Failed to load compliance items')
-   if (!analyticsResponse.ok) throw new Error('Failed to load compliance analytics')
-
-   const itemsData = await itemsResponse.json()
-   const analyticsData = await analyticsResponse.json()
-
-   setItems(itemsData.items || [])
-   setAnalytics(analyticsData)
+   setItems(itemsResponse.data.items || [])
+   setAnalytics(analyticsResponse.data)
   } catch (error) {
    console.error(error)
    showToast.error('Failed to load compliance dashboard data')
@@ -280,18 +274,13 @@ export default function ComplianceManagerPage() {
    const url = editingCategoryId
     ? `/api/compliance/categories/${editingCategoryId}`
     : '/api/compliance/categories'
-   const method = editingCategoryId ? 'PUT' : 'POST'
+   const method = editingCategoryId ? 'put' : 'post'
 
-   const response = await fetch(url, {
+   await axiosInstance.request({
+    url,
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(categoryForm),
+    data: categoryForm,
    })
-
-   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to save category')
-   }
 
    showToast.saveSuccess('Compliance category')
    setShowCategoryForm(false)
@@ -305,15 +294,7 @@ export default function ComplianceManagerPage() {
 
  const deleteCategory = async (category: ComplianceCategory) => {
   await confirmAndDelete(category.name, async () => {
-   const response = await fetch(`/api/compliance/categories/${category.id}`, {
-    method: 'DELETE',
-   })
-
-   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to delete category')
-   }
-
+   await axiosInstance.delete(`/api/compliance/categories/${category.id}`)
    await loadMeta()
   })
  }
@@ -344,18 +325,13 @@ export default function ComplianceManagerPage() {
    // else: keep the regular ownerId as is
 
    const url = editingItemId ? `/api/compliance/items/${editingItemId}` : '/api/compliance/items'
-   const method = editingItemId ? 'PUT' : 'POST'
+   const method = editingItemId ? 'put' : 'post'
 
-   const response = await fetch(url, {
+   await axiosInstance.request({
+    url,
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    data: payload,
    })
-
-   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'Failed to save compliance item')
-   }
 
    showToast.saveSuccess('Compliance item')
    setShowItemModal(false)
@@ -369,12 +345,7 @@ export default function ComplianceManagerPage() {
 
  const markCompleted = async (item: ComplianceItem) => {
   try {
-   const response = await fetch(`/api/compliance/items/${item.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: 'COMPLETED' }),
-   })
-   if (!response.ok) throw new Error('Failed to complete item')
+   await axiosInstance.put(`/api/compliance/items/${item.id}`, { status: 'COMPLETED' })
    showToast.success('Compliance item marked as completed')
    await loadData()
   } catch (error) {
@@ -385,10 +356,7 @@ export default function ComplianceManagerPage() {
 
  const deleteItem = async (item: ComplianceItem) => {
   await confirmAndDelete(item.title, async () => {
-   const response = await fetch(`/api/compliance/items/${item.id}`, {
-    method: 'DELETE',
-   })
-   if (!response.ok) throw new Error('Delete failed')
+   await axiosInstance.delete(`/api/compliance/items/${item.id}`)
    await loadData()
   })
  }

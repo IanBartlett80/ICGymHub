@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { showToast, confirmAndDelete } from '@/lib/toast'
+import axiosInstance from '@/lib/axios'
 
 type Gymsport = {
  id: string
@@ -70,19 +71,12 @@ export default function CoachesPage() {
  const fetchData = async () => {
   try {
    const [coachesRes, gymsportsRes] = await Promise.all([
-    fetch('/api/coaches'),
-    fetch('/api/gymsports'),
+    axiosInstance.get('/api/coaches'),
+    axiosInstance.get('/api/gymsports'),
    ])
 
-   if (coachesRes.ok) {
-    const data = await coachesRes.json()
-    setCoaches(data.coaches)
-   }
-
-   if (gymsportsRes.ok) {
-    const data = await gymsportsRes.json()
-    setGymsports(data.gymsports)
-   }
+   setCoaches(coachesRes.data.coaches)
+   setGymsports(gymsportsRes.data.gymsports)
   } catch (err) {
    setError('Failed to load data')
   } finally {

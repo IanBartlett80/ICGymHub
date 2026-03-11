@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import axiosInstance from '@/lib/axios'
 
 interface Venue {
   id: string
@@ -32,11 +33,8 @@ export default function VenueSelector({
   useEffect(() => {
     async function fetchVenues() {
       try {
-        const res = await fetch('/api/venues')
-        if (!res.ok) {
-          throw new Error('Failed to fetch venues')
-        }
-        const data = await res.json()
+        const res = await axiosInstance.get('/api/venues')
+        const data = res.data
         setVenues(data.venues || [])
         
         // If no value is set and there's a default venue, select it
