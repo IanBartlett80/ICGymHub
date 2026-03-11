@@ -3,6 +3,10 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { verifyAccessToken } from '@/lib/auth'
 
+// Force dynamic rendering and disable caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function getAccessToken(req: NextRequest): string | null {
   const headerToken = req.headers.get('authorization')
   if (headerToken?.startsWith('Bearer ')) {
@@ -35,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
 
     const gymsports = await prisma.gymsport.findMany({
-      where: { clubId: user.clubId, active: true },
+      where: { clubId: user.clubId },
       orderBy: [{ isPredefined: 'desc' }, { name: 'asc' }],
     })
 

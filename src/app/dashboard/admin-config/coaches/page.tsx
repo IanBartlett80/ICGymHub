@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { showToast, confirmAndDelete } from '@/lib/toast'
+import axiosInstance from '@/lib/axios'
 
 type Gymsport = {
  id: string
@@ -99,27 +100,19 @@ export default function CoachesPage() {
   setSuccess('')
 
   try {
-   const url = editingId ? `/api/coaches/${editingId}` : '/api/coaches'
-   const method = editingId ? 'PATCH' : 'POST'
-
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   })
-
-   if (res.ok) {
-    await fetchData()
-    setShowForm(false)
-    setEditingId(null)
-    resetForm()
-    setSuccess('Coach saved successfully')
+   if (editingId) {
+    await axiosInstance.patch(`/api/coaches/${editingId}`, formData)
    } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to save coach')
+    await axiosInstance.post('/api/coaches', formData)
    }
-  } catch (err) {
-   setError('Failed to save coach')
+
+   await fetchData()
+   setShowForm(false)
+   setEditingId(null)
+   resetForm()
+   setSuccess('Coach saved successfully')
+  } catch (err: any) {
+   setError(err.response?.data?.error || 'Failed to save coach')
   }
  }
 
@@ -161,35 +154,24 @@ export default function CoachesPage() {
   
   confirmAndDelete(coachName, async () => {
    try {
-    const res = await fetch(`/api/coaches/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-     await fetchData()
-    } else {
-     showToast.error('Failed to delete coach')
-    }
-   } catch (err) {
-    showToast.error('Failed to delete coach')
+    await axiosInstance.delete(`/api/coaches/${id}`)
+    await fetchData()
+   } catch (err: any) {
+    showToast.error(err.response?.data?.error || 'Failed to delete coach')
    }
   })
  }
 
  const handleToggleActive = async (id: string, currentActive: boolean) => {
   try {
-   const res = await fetch(`/api/coaches/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: !currentActive }),
+   await axiosInstance.patch(`/api/coaches/${id}`, {
+    active: !currentActive,
    })
 
-   if (res.ok) {
-    await fetchData()
-    setSuccess(`Coach ${!currentActive ? 'activated' : 'deactivated'} successfully`)
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to update coach status')
-   }
-  } catch (err) {
-   setError('Failed to update coach status')
+   await fetchData()
+   setSuccess(`Coach ${!currentActive ? 'activated' : 'deactivated'} successfully`)
+  } catch (err: any) {
+   setError(err.response?.data?.error || 'Failed to update coach status')
   }
  }
 

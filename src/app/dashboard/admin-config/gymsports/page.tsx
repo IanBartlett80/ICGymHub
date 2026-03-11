@@ -43,28 +43,19 @@ export default function AdminGymsportsPage() {
   setSuccess('')
 
   try {
-   const url = editingId ? `/api/gymsports/${editingId}` : '/api/gymsports'
-   const method = editingId ? 'PATCH' : 'POST'
-
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   })
-
-   const data = await res.json()
-
-   if (res.ok) {
-    await fetchGymsports()
-    setFormData({ name: '', active: true })
-    setEditingId(null)
-    setShowForm(false)
-    setSuccess(editingId ? 'Gymsport updated successfully' : 'Gymsport added successfully')
+   if (editingId) {
+    await axiosInstance.patch(`/api/gymsports/${editingId}`, formData)
    } else {
-    setError(data.error || 'Failed to save gymsport')
+    await axiosInstance.post('/api/gymsports', formData)
    }
-  } catch (err) {
-   setError('Failed to save gymsport')
+
+   await fetchGymsports()
+   setFormData({ name: '', active: true })
+   setEditingId(null)
+   setShowForm(false)
+   setSuccess(editingId ? 'Gymsport updated successfully' : 'Gymsport added successfully')
+  } catch (err: any) {
+   setError(err.response?.data?.error || 'Failed to save gymsport')
   }
  }
 
@@ -78,21 +69,14 @@ export default function AdminGymsportsPage() {
 
  const handleToggleActive = async (id: string, currentActive: boolean) => {
   try {
-   const res = await fetch(`/api/gymsports/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: !currentActive }),
+   const res = await axiosInstance.patch(`/api/gymsports/${id}`, {
+    active: !currentActive,
    })
 
-   if (res.ok) {
-    await fetchGymsports()
-    setSuccess('Gymsport status updated')
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to update gymsport')
-   }
-  } catch (err) {
-   setError('Failed to update gymsport')
+   await fetchGymsports()
+   setSuccess('Gymsport status updated')
+  } catch (err: any) {
+   setError(err.response?.data?.error || 'Failed to update gymsport')
   }
  }
 
@@ -102,16 +86,10 @@ export default function AdminGymsportsPage() {
   
   confirmAndDelete(gymsportName, async () => {
    try {
-    const res = await fetch(`/api/gymsports/${id}`, { method: 'DELETE' })
-    
-    if (res.ok) {
-     await fetchGymsports()
-    } else {
-     const data = await res.json()
-     showToast.error(data.error || 'Failed to delete gymsport')
-    }
-   } catch (err) {
-    showToast.error('Failed to delete gymsport')
+    await axiosInstance.delete(`/api/gymsports/${id}`)
+    await fetchGymsports()
+   } catch (err: any) {
+    showToast.error(err.response?.data?.error || 'Failed to delete gymsport')
    }
   })
  }
