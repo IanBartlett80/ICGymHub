@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import axiosInstance from '@/lib/axios'
 
 interface Gymsport {
  id: string
@@ -26,11 +27,8 @@ export default function GymsportsPage() {
 
  const fetchGymsports = async () => {
   try {
-   const res = await fetch('/api/gymsports')
-   if (res.ok) {
-    const data = await res.json()
-    setGymsports(data.gymsports)
-   }
+   const res = await axiosInstance.get('/api/gymsports')
+   setGymsports(res.data.gymsports)
   } catch (err) {
    setError('Failed to load gymsports')
   } finally {
@@ -44,26 +42,15 @@ export default function GymsportsPage() {
   setSuccess('')
 
   try {
-   const url = editingId ? `/api/gymsports/${editingId}` : '/api/gymsports'
-   const method = editingId ? 'PATCH' : 'POST'
+   const res = editingId
+    ? await axiosInstance.patch(`/api/gymsports/${editingId}`, formData)
+    : await axiosInstance.post('/api/gymsports', formData)
 
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   })
-
-   const data = await res.json()
-
-   if (res.ok) {
-    await fetchGymsports()
-    setFormData({ name: '', active: true })
-    setEditingId(null)
-    setShowForm(false)
-    setSuccess(editingId ? 'Gymsport updated successfully' : 'Gymsport added successfully')
-   } else {
-    setError(data.error || 'Failed to save gymsport')
-   }
+   await fetchGymsports()
+   setFormData({ name: '', active: true })
+   setEditingId(null)
+   setShowForm(false)
+   setSuccess(editingId ? 'Gymsport updated successfully' : 'Gymsport added successfully')
   } catch (err) {
    setError('Failed to save gymsport')
   }
@@ -79,18 +66,10 @@ export default function GymsportsPage() {
 
  const handleToggleActive = async (id: string, currentActive: boolean) => {
   try {
-   const res = await fetch(`/api/gymsports/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ active: !currentActive }),
-   })
+   const res = await axiosInstance.patch(`/api/gymsports/${id}`, { active: !currentActive })
 
-   if (res.ok) {
-    await fetchGymsports()
-    setSuccess('Gymsport status updated')
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to update gymsport')
+   await fetchGymsports()
+   setSuccess('Gymsport status updated')
    }
   } catch (err) {
    setError('Failed to update gymsport')
@@ -101,15 +80,11 @@ export default function GymsportsPage() {
   if (!deleteConfirmId) return
 
   try {
-   const res = await fetch(`/api/gymsports/${deleteConfirmId}`, { method: 'DELETE' })
+   const res = await axiosInstance.delete(`/api/gymsports/${deleteConfirmId}`)
    
-   if (res.ok) {
-    await fetchGymsports()
-    setDeleteConfirmId(null)
-    setSuccess('Gymsport deleted successfully')
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to delete gymsport')
+   await fetchGymsports()
+   setDeleteConfirmId(null)
+   setSuccess('Gymsport deleted successfully')
    }
   } catch (err) {
    setError('Failed to delete gymsport')

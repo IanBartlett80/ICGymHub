@@ -90,25 +90,15 @@ export default function CoachesPage() {
   setSuccess('')
 
   try {
-   const url = editingId ? `/api/coaches/${editingId}` : '/api/coaches'
-   const method = editingId ? 'PATCH' : 'POST'
+   const res = editingId
+    ? await axiosInstance.patch(`/api/coaches/${editingId}`, formData)
+    : await axiosInstance.post('/api/coaches', formData)
 
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   })
-
-   if (res.ok) {
-    await fetchData()
-    setShowForm(false)
-    setEditingId(null)
-    resetForm()
-    setSuccess('Coach saved successfully')
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to save coach')
-   }
+   await fetchData()
+   setShowForm(false)
+   setEditingId(null)
+   resetForm()
+   setSuccess('Coach saved successfully')
   } catch (err) {
    setError('Failed to save coach')
   }
@@ -150,12 +140,8 @@ export default function CoachesPage() {
   
   confirmAndDelete(coachName, async () => {
    try {
-    const res = await fetch(`/api/coaches/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-     await fetchData()
-    } else {
-     showToast.error('Failed to delete coach')
-    }
+    const res = await axiosInstance.delete(`/api/coaches/${id}`)
+    await fetchData()
    } catch (err) {
     showToast.error('Failed to delete coach')
    }
@@ -164,18 +150,16 @@ export default function CoachesPage() {
 
  const handleDownloadTemplate = async () => {
   try {
-   const res = await fetch('/api/coaches/template')
-   if (res.ok) {
-    const blob = await res.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'coach_import_template.csv'
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
-   }
+   const res = await axiosInstance.get('/api/coaches/template', { responseType: 'blob' })
+   const blob = res.data
+   const url = window.URL.createObjectURL(blob)
+   const a = document.createElement('a')
+   a.href = url
+   a.download = 'coach_import_template.csv'
+   document.body.appendChild(a)
+   a.click()
+   window.URL.revokeObjectURL(url)
+   document.body.removeChild(a)
   } catch (err) {
    setError('Failed to download template')
   }
@@ -193,21 +177,16 @@ export default function CoachesPage() {
    const formDataUpload = new FormData()
    formDataUpload.append('file', file)
 
-   const res = await fetch('/api/coaches/import', {
-    method: 'POST',
-    body: formDataUpload,
+   const res = await axiosInstance.post('/api/coaches/import', formDataUpload, {
+    headers: { 'Content-Type': 'multipart/form-data' },
    })
 
-   const data = await res.json()
+   const data = res.data
 
-   if (res.ok) {
-    await fetchData()
-    setSuccess(data.message)
-    if (data.errors) {
-     setError(`Import completed with errors:\n${data.errors.join('\n')}`)
-    }
-   } else {
-    setError(data.error || 'Failed to import coaches')
+   await fetchData()
+   setSuccess(data.message)
+   if (data.errors) {
+    setError(`Import completed with errors:\n${data.errors.join('\n')}`)
    }
   } catch (err) {
    setError('Failed to import coaches')
@@ -240,14 +219,9 @@ export default function CoachesPage() {
   if (!customGymsportName.trim()) return
 
   try {
-   const res = await fetch('/api/gymsports', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: customGymsportName.trim() }),
-   })
+   const res = await axiosInstance.post('/api/gymsports', { name: customGymsportName.trim() })
 
-   if (res.ok) {
-    const data = await res.json()
+   const data = res.data
     setGymsports([...gymsports, data.gymsport])
     setFormData((prev) => ({
      ...prev,

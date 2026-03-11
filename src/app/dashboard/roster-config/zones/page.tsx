@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
+import axiosInstance from '@/lib/axios'
 
 interface Zone {
  id: string
@@ -36,11 +37,8 @@ export default function ZonesPage() {
 
  const fetchZones = async () => {
   try {
-   const res = await fetch('/api/zones')
-   if (res.ok) {
-    const data = await res.json()
-    setZones(data.zones)
-   }
+   const res = await axiosInstance.get('/api/zones')
+   setZones(res.data.zones)
   } catch (err) {
    setError('Failed to load zones')
   } finally {
@@ -51,24 +49,15 @@ export default function ZonesPage() {
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
   try {
-   const url = editingId ? `/api/zones/${editingId}` : '/api/zones'
-   const method = editingId ? 'PATCH' : 'POST'
+   const res = editingId 
+    ? await axiosInstance.patch(`/api/zones/${editingId}`, formData)
+    : await axiosInstance.post('/api/zones', formData)
 
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   })
-
-   if (res.ok) {
-    await fetchZones()
-    setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
-    setEditingId(null)
-    setShowForm(false)
-    setSuccess('Zone saved successfully')
-   } else {
-    setError('Failed to save zone')
-   }
+   await fetchZones()
+   setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
+   setEditingId(null)
+   setShowForm(false)
+   setSuccess('Zone saved successfully')
   } catch (err) {
    setError('Failed to save zone')
   }
@@ -94,14 +83,10 @@ export default function ZonesPage() {
  const handleDelete = async () => {
   if (!deleteConfirmId) return
   try {
-   const res = await fetch(`/api/zones/${deleteConfirmId}`, { method: 'DELETE' })
-   if (res.ok) {
-    await fetchZones()
-    setDeleteConfirmId(null)
-    setSuccess('Zone deleted successfully')
-   } else {
-    setError('Failed to delete zone')
-   }
+   const res = await axiosInstance.delete(`/api/zones/${deleteConfirmId}`)
+   await fetchZones()
+   setDeleteConfirmId(null)
+   setSuccess('Zone deleted successfully')
   } catch (err) {
    setError('Failed to delete zone')
   }

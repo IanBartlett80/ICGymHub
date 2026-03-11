@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
+import axiosInstance from '@/lib/axios'
 
 type Zone = {
  id: string
@@ -113,33 +114,18 @@ export default function ClassesPage() {
  const fetchData = async () => {
   try {
    const [classesRes, zonesRes, gymsportsRes, coachesRes] = await Promise.all([
-    fetch('/api/classes'),
-    fetch('/api/zones'),
-    fetch('/api/gymsports'),
-    fetch('/api/coaches'),
+    axiosInstance.get('/api/classes'),
+    axiosInstance.get('/api/zones'),
+    axiosInstance.get('/api/gymsports'),
+    axiosInstance.get('/api/coaches'),
    ])
 
-   if (classesRes.ok) {
-    const data = await classesRes.json()
-    setClasses(data.classes)
-   }
-
-   if (zonesRes.ok) {
-    const data = await zonesRes.json()
-    setZones(data.zones)
-    setAllZones(data.zones)
-   }
-
-   if (gymsportsRes.ok) {
-    const data = await gymsportsRes.json()
-    setGymsports(data.gymsports)
-   }
-
-   if (coachesRes.ok) {
-    const data = await coachesRes.json()
-    setAllCoaches(data.coaches)
-    setCoaches(data.coaches)
-   }
+   setClasses(classesRes.data.classes)
+   setZones(zonesRes.data.zones)
+   setAllZones(zonesRes.data.zones)
+   setGymsports(gymsportsRes.data.gymsports)
+   setAllCoaches(coachesRes.data.coaches)
+   setCoaches(coachesRes.data.coaches)
   } catch (err) {
    setError('Failed to load data')
   } finally {
@@ -153,9 +139,6 @@ export default function ClassesPage() {
   setSuccess('')
 
   try {
-   const url = editingId ? `/api/classes/${editingId}` : '/api/classes'
-   const method = editingId ? 'PATCH' : 'POST'
-
    const payload = {
     ...formData,
     gymsportId: formData.gymsportId || undefined,
@@ -163,38 +146,31 @@ export default function ClassesPage() {
     level: formData.levels.join(','),
    }
 
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-   })
+   const res = editingId
+    ? await axiosInstance.patch(`/api/classes/${editingId}`, payload)
+    : await axiosInstance.post('/api/classes', payload)
 
-   if (res.ok) {
-    await fetchData()
-    setShowForm(false)
-    setEditingId(null)
-    setFormData({
-     name: '',
-     venueId: null,
-     gymsportId: '',
-     level: 'REC',
-     levels: [],
-     lengthMinutes: 60,
-     defaultRotationMinutes: 15,
-     allowOverlap: false,
-     activeDays: [],
-     startTimeLocal: '16:00',
-     endTimeLocal: '17:00',
-     notes: '',
-     color: '#3b82f6',
-     allowedZoneIds: [],
-     defaultCoachIds: [],
-    })
-    setSuccess('Class saved successfully')
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to save class')
-   }
+   await fetchData()
+   setShowForm(false)
+   setEditingId(null)
+   setFormData({
+    name: '',
+    venueId: null,
+    gymsportId: '',
+    level: 'REC',
+    levels: [],
+    lengthMinutes: 60,
+    defaultRotationMinutes: 15,
+    allowOverlap: false,
+    activeDays: [],
+    startTimeLocal: '16:00',
+    endTimeLocal: '17:00',
+    notes: '',
+    color: '#3b82f6',
+    allowedZoneIds: [],
+    defaultCoachIds: [],
+   })
+   setSuccess('Class saved successfully')
   } catch (err) {
    setError('Failed to save class')
   }
@@ -249,14 +225,10 @@ export default function ClassesPage() {
   if (!deleteConfirmId) return
 
   try {
-   const res = await fetch(`/api/classes/${deleteConfirmId}`, { method: 'DELETE' })
-   if (res.ok) {
-    await fetchData()
-    setSuccess('Class deleted successfully')
-    setDeleteConfirmId(null)
-   } else {
-    setError('Failed to delete class')
-   }
+   const res = await axiosInstance.delete(`/api/classes/${deleteConfirmId}`)
+   await fetchData()
+   setSuccess('Class deleted successfully')
+   setDeleteConfirmId(null)
   } catch (err) {
    setError('Failed to delete class')
   }

@@ -7,6 +7,7 @@ import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import VenueSelector from '@/components/VenueSelector';
 import { showToast } from '@/lib/toast';
+import axiosInstance from '@/lib/axios';
 
 interface EquipmentItem {
  id: string;
@@ -302,23 +303,19 @@ export default function MaintenanceDuePage() {
    let failCount = 0;
 
    for (const item of equipmentWithoutTasks) {
-    const response = await fetch('/api/maintenance-tasks', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({
-      equipmentId: item.id,
-      taskType: 'INSPECTION',
-      title: 'Initial maintenance inspection',
-      description: 'Initial scheduled maintenance inspection for this equipment record.',
-      dueDate: parsedDueDate.toISOString(),
-      priority: 'MEDIUM',
-      status: 'PENDING',
-     }),
-    });
+    try {
+     const response = await axiosInstance.post('/api/maintenance-tasks', {
+       equipmentId: item.id,
+       taskType: 'INSPECTION',
+       title: 'Initial maintenance inspection',
+       description: 'Initial scheduled maintenance inspection for this equipment record.',
+       dueDate: parsedDueDate.toISOString(),
+       priority: 'MEDIUM',
+       status: 'PENDING',
+     });
 
-    if (response.ok) {
      successCount += 1;
-    } else {
+    } catch (error) {
      failCount += 1;
     }
    }
