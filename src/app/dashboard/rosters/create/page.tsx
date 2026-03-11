@@ -120,7 +120,6 @@ export default function RosterBuilderPage() {
    setClasses(classesRes.data.classes)
    setCoaches(coachesRes.data.coaches)
    setZones(zonesRes.data.zones)
-   }
   } catch (err) {
    setError('Failed to load data')
   } finally {
