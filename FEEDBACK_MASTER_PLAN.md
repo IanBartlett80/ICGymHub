@@ -3,8 +3,8 @@
 **Project:** GymHub SaaS Platform  
 **Feedback Period:** March 2026 Beta Testing  
 **Date Compiled:** March 11, 2026  
-**Status:** ✅ Phase 0 In Progress - Authentication Fixes DEPLOYED  
-**Last Updated:** March 11, 2026 06:10 UTC  
+**Status:** ✅ Phase 0 50% Complete | 🔄 Phase 1 80% Complete - Club Management Quick Wins + Functional  
+**Last Updated:** March 11, 2026 07:05 UTC  
 
 ---
 
@@ -191,16 +191,84 @@
 
 ---
 
-### Phase 1: Quick Wins - UI/UX (Week 3) 🟢
-**Goal:** Improve user experience with low-risk changes
+### Club Management Quick Wins - COMPLETED March 11, 2026
+**Commits:** af746f9 (UI improvements), 9208f34 (active/inactive functionality)  
+**Files:** FEEDBACK_ClubManagement.md items #1-11, #13, #16
 
-**Club Management:**
-- [ ] Update page labels and headings
-- [ ] Add setup order indicators (1-6)
-- [ ] Add tooltips for unclear options
-- [ ] Add help text to GymSports, Zones, Coaches pages
-- [ ] Improve back navigation
-- [ ] Add setup completion guidance
+**Overview Page Enhancements (Commit: af746f9):**
+- ✅ Added numbered badges (1-6) to setup cards showing recommended order
+- ✅ Changed title to "Club Settings and Management"
+- ✅ Added "Currently Set Up" heading
+- ✅ Updated Gym Sports icon from 🏃 to 🤸 (more gymnastics-appropriate)
+- ✅ Enhanced all 6 card descriptions with specific use cases
+- ✅ Added "Setup Tips" guidance box with step-by-step flow
+
+**GymSports Page Improvements:**
+- ✅ Added help text explaining gymnastics disciplines
+- ✅ Examples provided: MAG, WAG, REC, ACRO, T&D, XCEL, Parkour, Ninja Warrior
+- ✅ Implemented status filter dropdown (All/Active/Inactive)
+- ✅ Added visual distinction for inactive items (gray background, gray text)
+- ✅ Enhanced empty state messages for different filter states
+- ✅ Fixed active/inactive toggle - deactivated items can now be reactivated
+
+**Gym Zones Page Improvements:**
+- ✅ Added help text explaining zones concept
+- ✅ Examples provided: Floor, Vault, Bars, Beam, Ballet Barre, Trampoline Area
+- ✅ Implemented combined venue + status filtering
+- ✅ Added tooltips with ℹ️ icons for all checkboxes:
+  - "Allow Overlap": Allow multiple gymsports allocated to same zone
+  - "Active": Show/hide zone in dropdowns and active lists
+  - "Priority First Zone": Mark as priority zone to be filled first
+- ✅ Added venue context in "Add New Zone" form header (shows selected venue name)
+- ✅ Visual distinction for inactive zones (gray background/text)
+
+**Coaches Page Improvements:**
+- ✅ Added comprehensive help text explaining coach management
+- ✅ Added CSV import instructions card with step-by-step guidance
+- ✅ Explained CSV format for gymsports and availability
+
+**Coach Active/Inactive Functionality (Commit: 9208f34):**
+- ✅ **Database Migration:** Added `active` BOOLEAN field to Coach model (default: true)
+- ✅ Migration applied to production: 20260311064057_add_coach_active_field
+- ✅ API updated to support active field in POST/PATCH endpoints
+- ✅ Status filter dropdown added (All/Active/Inactive, default: Active Only)
+- ✅ Activate/Deactivate button added to each coach row
+- ✅ Status column added to coaches table
+- ✅ Visual distinction for inactive coaches (gray background/text)
+- ✅ Enhanced empty state messages for filter combinations
+
+**Use Case Addressed:** Supports temporary deactivation (maternity leave, sabbatical) without deleting coach data, preserving historical records and allowing easy reactivation.
+
+**Impact:**
+- ✅ Improved user onboarding with clear setup flow
+- ✅ Reduced confusion with tooltips and help text
+- ✅ Better data management with active/inactive functionality
+- ✅ Zero data loss - coaches can be archived and restored
+
+**Files Modified:**
+- src/app/dashboard/admin-config/page.tsx (overview)
+- src/app/dashboard/admin-config/gymsports/page.tsx
+- src/app/dashboard/admin-config/zones/page.tsx
+- src/app/dashboard/admin-config/coaches/page.tsx
+- src/app/api/coaches/route.ts
+- src/app/api/coaches/[id]/route.ts
+- prisma/schema.prisma
+- prisma/migrations/20260311064057_add_coach_active_field/migration.sql
+
+---
+
+### Phase 1: Quick Wins - UI/UX (Week 3) 🟢
+**Goal:** Improve user experience with low-risk changes  
+**Status:** 🔄 Club Management COMPLETE | Equipment, Rosters, Injury, Compliance IN PROGRESS
+
+**✅ Club Management - COMPLETED March 11, 2026:**
+- ✅ Update page labels and headings (Main page: "Club Settings and Management")
+- ✅ Add setup order indicators (Numbered badges 1-6)
+- ✅ Add tooltips for unclear options (Zone checkboxes with ℹ️ icons)
+- ✅ Add help text to GymSports, Zones, Coaches pages (Examples and guidance)
+- ✅ Improve back navigation (Already handled by DashboardLayout)
+- ✅ Add setup completion guidance (Setup Tips box with step-by-step flow)
+- ✅ Add venue context to zone form (Shows selected venue name)
 
 **Rosters:**
 - [ ] Fix label inconsistency (Dashboard vs Class Rostering)
@@ -230,15 +298,16 @@
 ---
 
 ### Phase 2: Functional Improvements (Week 4-5) 🟡
-**Goal:** Fix workflows and add missing functionality
+**Goal:** Fix workflows and add missing functionality  
+**Status:** 🔄 Active/Inactive Toggle System 3/3 COMPLETE | Other improvements IN PROGRESS
 
-**Active/Inactive Toggle System (Cross-cutting):**
-- [ ] Fix GymSports active/inactive toggle
-- [ ] Fix Gym Zones active/inactive toggle
-- [ ] Fix Coaches active/inactive view
-- [ ] Add archive/inactive functionality
-- [ ] Add reactivation capability
-- [ ] Visual distinction for deactivated items
+**✅ Active/Inactive Toggle System (Cross-cutting) - COMPLETED March 11, 2026:**
+- ✅ Fix GymSports active/inactive toggle (Commit: af746f9)
+- ✅ Fix Gym Zones active/inactive toggle (Commit: af746f9)
+- ✅ Fix Coaches active/inactive view (Commit: 9208f34 - full DB migration)
+- ✅ Add archive/inactive functionality (All three modules support deactivation)
+- ✅ Add reactivation capability (Activate/Deactivate buttons added)
+- ✅ Visual distinction for deactivated items (Gray background, gray text across all)
 
 **Roster Improvements:**
 - [ ] Fix coach dropdown population
