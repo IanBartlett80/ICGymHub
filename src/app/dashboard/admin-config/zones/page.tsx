@@ -50,27 +50,36 @@ export default function AdminZonesPage() {
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
-  try {
-   const url = editingId ? `/api/zones/${editingId}` : '/api/zones'
-   const method = editingId ? 'PATCH' : 'POST'
+  setError('')
+  setSuccess('')
 
-   const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
+  try {
+   if (editingId) {
+    await axiosInstance.patch(`/api/zones/${editingId}`, formData)
+   } else {
+    await axiosInstance.post('/api/zones', formData)
+   }
+
+   await fetchZones()
+   setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
+   setEditingId(null)
+   setShowForm(false)
+   setSuccess(editingId ? 'Zone updated successfully' : 'Zone created successfully')
+  } catch (err: any) {
+   setError(err.response?.data?.error || 'Failed to save zone')
+  }
+ }
+
+ const handleToggleActive = async (id: string, currentActive: boolean) => {
+  try {
+   await axiosInstance.patch(`/api/zones/${id}`, {
+    active: !currentActive,
    })
 
-   if (res.ok) {
-    await fetchZones()
-    setFormData({ name: '', description: '', venueId: null, allowOverlap: false, active: true, isFirst: false })
-    setEditingId(null)
-    setShowForm(false)
-    setSuccess('Zone saved successfully')
-   } else {
-    setError('Failed to save zone')
-   }
-  } catch (err) {
-   setError('Failed to save zone')
+   await fetchZones()
+   setSuccess('Zone status updated')
+  } catch (err: any) {
+   setError(err.response?.data?.error || 'Failed to update zone')
   }
  }
 
@@ -106,14 +115,10 @@ export default function AdminZonesPage() {
   
   confirmAndDelete(zoneName, async () => {
    try {
-    const res = await fetch(`/api/zones/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-     await fetchZones()
-    } else {
-     showToast.error('Failed to delete zone')
-    }
-   } catch (err) {
-    showToast.error('Failed to delete zone')
+    await axiosInstance.delete(`/api/zones/${id}`)
+    await fetchZones()
+   } catch (err: any) {
+    showToast.error(err.response?.data?.error || 'Failed to delete zone')
    }
   })
  }
@@ -330,6 +335,16 @@ export default function AdminZonesPage() {
            </div>
           </td>
           <td className="px-6 py-4 whitespace-nowrap text-sm">
+           <button
+            onClick={() => handleToggleActive(zone.id, zone.active)}
+            className={`${
+             zone.active
+              ? 'text-yellow-600 hover:text-yellow-800'
+              : 'text-green-600 hover:text-green-800'
+            } mr-3`}
+>
+            {zone.active ? 'Deactivate' : 'Activate'}
+           </button>
            <button
             onClick={() => handleEdit(zone)}
             className="text-blue-600 hover:text-blue-800 mr-3"

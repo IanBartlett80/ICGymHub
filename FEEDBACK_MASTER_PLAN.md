@@ -3,8 +3,8 @@
 **Project:** GymHub SaaS Platform  
 **Feedback Period:** March 2026 Beta Testing  
 **Date Compiled:** March 11, 2026  
-**Status:** ✅ Phase 0 50% Complete | 🔄 Phase 1 80% Complete - Club Management Quick Wins + Functional  
-**Last Updated:** March 11, 2026 07:05 UTC  
+**Status:** ✅ Phase 0 50% Complete | 🔄 Phase 1 85% Complete - Club Management Quick Wins + Functional  
+**Last Updated:** March 11, 2026 07:20 UTC  
 
 ---
 
@@ -256,7 +256,31 @@
 - prisma/migrations/20260311064057_add_coach_active_field/migration.sql
 
 ---
+### Zones Activate/Deactivate Functionality - COMPLETED March 11, 2026
 
+**Problem:** Zones page had active/inactive filtering but was missing Activate/Deactivate action buttons, creating inconsistency with GymSports and Coaches pages. Also still using fetch() instead of axiosInstance.
+
+**Solution:** Added complete active/inactive toggle functionality to match other modules:
+- ✅ Added handleToggleActive function (PATCH /api/zones/[id])
+- ✅ Added Activate/Deactivate button to Actions column
+- ✅ Button color coding: yellow for Deactivate, green for Activate
+- ✅ Converted handleSubmit from fetch() to axiosInstance
+- ✅ Converted handleDelete from fetch() to axiosInstance
+- ✅ Success/error messages using axios error handling
+
+**Impact:**
+- ✅ Consistent UI/UX across all Club Management modules
+- ✅ Zones can now be toggled active/inactive without editing form
+- ✅ All API calls now use automatic token refresh (auth resilience)
+
+**Files Modified:**
+- src/app/dashboard/admin-config/zones/page.tsx
+
+**Deployment:**
+- Status: Ready for commit and deployment
+- Zero database changes required (active field already exists)
+
+---
 ### Phase 1: Quick Wins - UI/UX (Week 3) 🟢
 **Goal:** Improve user experience with low-risk changes  
 **Status:** 🔄 Club Management COMPLETE | Equipment, Rosters, Injury, Compliance IN PROGRESS
