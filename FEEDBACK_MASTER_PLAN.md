@@ -3,8 +3,8 @@
 **Project:** GymHub SaaS Platform  
 **Feedback Period:** March 2026 Beta Testing  
 **Date Compiled:** March 11, 2026  
-**Status:** ✅ Phase 0 50% Complete | 🔄 Phase 1 85% Complete - Club Management Quick Wins + Functional  
-**Last Updated:** March 11, 2026 07:20 UTC  
+**Status:** ✅ Phase 0 50% Complete | 🔄 Phase 1 90% Complete - Club Management Complete  
+**Last Updated:** March 11, 2026 07:35 UTC  
 
 ---
 
@@ -279,6 +279,68 @@
 **Deployment:**
 - Status: Ready for commit and deployment
 - Zero database changes required (active field already exists)
+
+---
+
+### Next.js 15 API Route Caching Fix - COMPLETED March 11, 2026
+
+**Problem:** MAG gymsport deactivation persisted in database but UI showed stale cached data. Next.js 15 has aggressive route caching on API responses.
+
+**Solution:** Added cache-control directives to all Club Management API routes:
+- ✅ Added `export const dynamic = 'force-dynamic'` to force dynamic rendering
+- ✅ Added `export const revalidate = 0` to prevent static optimization
+- ✅ Converted remaining fetch() calls to axiosInstance in coaches/gymsports pages
+
+**Affected Routes:**
+- /api/gymsports (GET/POST)
+- /api/gymsports/[id] (PATCH/DELETE)
+- /api/zones (GET/POST)  
+- /api/zones/[id] (GET/PATCH/DELETE)
+- /api/coaches (GET/POST)
+- /api/coaches/[id] (GET/PATCH/DELETE)
+
+**Impact:**
+- ✅ Real-time data updates for all active/inactive toggles
+- ✅ No more stale cached API responses
+- ✅ All CRUD operations reflect immediately
+
+**Files Modified:**
+- src/app/api/gymsports/route.ts
+- src/app/api/gymsports/[id]/route.ts
+- src/app/api/zones/route.ts
+- src/app/api/zones/[id]/route.ts
+- src/app/api/coaches/route.ts
+- src/app/api/coaches/[id]/route.ts
+- src/app/dashboard/admin-config/coaches/page.tsx
+- src/app/dashboard/admin-config/gymsports/page.tsx
+
+**Deployment:**
+- Commit: 872ea1d
+- Status: Deployed to production
+
+---
+
+### Zones PATCH API Validation Fix - COMPLETED March 11, 2026
+
+**Problem:** Deactivate button in Gym Zones was failing with 400 Bad Request. The zoneSchema required 'name' field, but toggle action only sends `{ active: true/false }`.
+
+**Solution:** Fixed validation schema to support partial updates:
+- ✅ Made all fields optional in zoneSchema (matches coach API pattern)
+- ✅ Added missing venueId field to schema
+- ✅ Updated duplicate name check to only run when name is provided
+- ✅ Changed Prisma update to use spread operators for partial updates
+
+**Impact:**
+- ✅ Activate/Deactivate buttons now work correctly
+- ✅ Partial updates work for all zone fields
+- ✅ Consistent validation pattern across all APIs
+
+**Files Modified:**
+- src/app/api/zones/[id]/route.ts
+
+**Deployment:**
+- Commit: bde541e
+- Status: Deployed to production
 
 ---
 ### Phase 1: Quick Wins - UI/UX (Week 3) 🟢
