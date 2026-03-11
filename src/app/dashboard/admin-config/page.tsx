@@ -1,17 +1,52 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { Wand2 } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
+import ConfigWizard from '@/components/ConfigWizard/ConfigWizard'
 
 export default function AdminConfigPage() {
+ const [showWizard, setShowWizard] = useState(false)
+
  return (
   <DashboardLayout title="Club Settings and Management" showClubManagementNav={true}>
    <div className="p-6 max-w-7xl mx-auto">
-    <div className="mb-6">
-     <h2 className="text-2xl font-bold text-gray-900 mb-2">Currently Set Up</h2>
-     <p className="text-gray-600">
-      Manage club-wide settings and master data that are used across all features in the application. 
-      Complete setup in numerical order for best results.
+    <div className="mb-6 flex justify-between items-start">
+     <div className="flex-1">
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">Currently Set Up</h2>
+      <p className="text-gray-600">
+       Manage club-wide settings and master data that are used across all features in the application. 
+       Complete setup in numerical order for best results.
+      </p>
+     </div>
+     
+     {/* Run Setup Wizard Button */}
+     <button
+      onClick={() => setShowWizard(true)}
+      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+     >
+      <Wand2 className="w-5 h-5" />
+      Run Setup Wizard
+     </button>
+    </div>
+
+    {/* Setup Tips */}
+    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+     <h3 className="font-semibold text-blue-900 mb-2">Setup Tips</h3>
+     <p className="text-sm text-blue-800 mb-2">
+      For first-time setup, we recommend following this order:
+     </p>
+     <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+      <li><strong>Venues</strong> → Set up your physical locations first</li>
+      <li><strong>Gym Sports</strong> → Define which disciplines you offer</li>
+      <li><strong>Gym Zones</strong> → Create training areas for each venue</li>
+      <li><strong>Coaches</strong> → Add your coaching staff</li>
+      <li><strong>Notifications</strong> → Configure how your club receives alerts</li>
+      <li><strong>Roles & Permissions</strong> → Set up access levels for your team</li>
+     </ol>
+     <p className="text-sm text-blue-800 mt-2">
+      💡 <strong>New to GymHub?</strong> Click "<strong>Run Setup Wizard</strong>" above for guided step-by-step configuration!
      </p>
     </div>
 
@@ -155,6 +190,14 @@ export default function AdminConfigPage() {
      </div>
     </div>
    </div>
+
+   {/* Configuration Wizard */}
+   {showWizard && (
+    <ConfigWizard
+     isOpen={showWizard}
+     onClose={() => setShowWizard(false)}
+    />
+   )}
   </DashboardLayout>
  )
 }

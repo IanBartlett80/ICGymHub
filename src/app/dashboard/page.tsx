@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
+import ConfigWizard from '@/components/ConfigWizard/ConfigWizard'
 import axiosInstance from '@/lib/axios'
 import { 
  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
@@ -83,6 +84,7 @@ export default function DashboardPage() {
  const [stats, setStats] = useState<DashboardStats | null>(null)
  const [complianceTrend, setComplianceTrend] = useState<ComplianceTrend[]>([])
  const [analyticsError, setAnalyticsError] = useState<string | null>(null)
+ const [showWizard, setShowWizard] = useState(false)
 
  useEffect(() => {
   const userData = localStorage.getItem('userData')
@@ -94,6 +96,45 @@ export default function DashboardPage() {
   }
   setLoading(false)
  }, [router])
+
+ // Auto-launch Configuration Wizard for new admins
+ useEffect(() => {
+  const checkAndLaunchWizard = async () => {
+   if (!user) return
+   
+   // Only auto-launch for admins
+   if (user.role !== 'ADMIN') return
+   
+   // Check if wizard was recently completed or dismissed
+   const completed = localStorage.getItem('gymhub_wizard_completed')
+   const dismissed = localStorage.getItem('gymhub_wizard_dismissed')
+   
+   if (completed) return
+   
+   if (dismissed) {
+    const dismissedAt = localStorage.getItem('gymhub_wizard_dismissed_at')
+    if (dismissedAt) {
+     const dismissedDate = new Date(dismissedAt)
+     const hoursSinceDismissed = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60)
+     // Don't auto-launch if dismissed within last 24 hours
+     if (hoursSinceDismissed < 24) return
+    }
+   }
+   
+   try {
+    // Check if venues exist (indicates if club is configured)
+    const venuesRes = await axiosInstance.get('/api/venues')
+    if (venuesRes.data.venues?.length === 0) {
+     // No venues = new/unconfigured club, launch wizard
+     setShowWizard(true)
+    }
+   } catch (err) {
+    console.error('Failed to check venues for wizard auto-launch', err)
+   }
+  }
+  
+  checkAndLaunchWizard()
+ }, [user])
 
  const fetchDashboardStats = async () => {
   try {
@@ -598,6 +639,14 @@ export default function DashboardPage() {
      </div>
     </div>
    </div>
+
+   {/* Configuration Wizard - Auto-launch for new admins */}
+   {showWizard && (
+    <ConfigWizard
+     isOpen={showWizard}
+     onClose={() => setShowWizard(false)}
+    />
+   )}
   </DashboardLayout>
  )
 }
