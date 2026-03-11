@@ -84,7 +84,6 @@ export default function GymsportsPage() {
    await fetchGymsports()
    setDeleteConfirmId(null)
    setSuccess('Gymsport deleted successfully')
-   }
   } catch (err) {
    setError('Failed to delete gymsport')
   }
