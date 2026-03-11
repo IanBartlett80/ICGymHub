@@ -28,6 +28,7 @@ type Coach = {
  email: string | null
  phone: string | null
  importedFromCsv: boolean
+ active: boolean
  gymsports: CoachGymsport[]
  availability: CoachAvailability[]
 }
@@ -53,6 +54,7 @@ export default function CoachesPage() {
  const [importing, setImporting] = useState(false)
  const [showCustomGymsport, setShowCustomGymsport] = useState(false)
  const [customGymsportName, setCustomGymsportName] = useState('')
+ const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
  const [formData, setFormData] = useState({
   name: '',
   accreditationLevel: '',
@@ -61,6 +63,7 @@ export default function CoachesPage() {
   phone: '',
   gymsportIds: [] as string[],
   availability: [] as CoachAvailability[],
+  active: true,
  })
 
  useEffect(() => {
@@ -129,6 +132,7 @@ export default function CoachesPage() {
    phone: '',
    gymsportIds: [],
    availability: [],
+   active: true,
   })
  }
 
@@ -145,6 +149,7 @@ export default function CoachesPage() {
     startTimeLocal: a.startTimeLocal,
     endTimeLocal: a.endTimeLocal,
    })),
+   active: coach.active,
   })
   setEditingId(coach.id)
   setShowForm(true)
@@ -166,6 +171,26 @@ export default function CoachesPage() {
     showToast.error('Failed to delete coach')
    }
   })
+ }
+
+ const handleToggleActive = async (id: string, currentActive: boolean) => {
+  try {
+   const res = await fetch(`/api/coaches/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ active: !currentActive }),
+   })
+
+   if (res.ok) {
+    await fetchData()
+    setSuccess(`Coach ${!currentActive ? 'activated' : 'deactivated'} successfully`)
+   } else {
+    const data = await res.json()
+    setError(data.error || 'Failed to update coach status')
+   }
+  } catch (err) {
+   setError('Failed to update coach status')
+  }
  }
 
  const handleDownloadTemplate = async () => {
@@ -301,6 +326,13 @@ export default function CoachesPage() {
   }))
  }
 
+ // Filter coaches based on status
+ const filteredCoaches = coaches.filter(coach => {
+  if (statusFilter === 'active') return coach.active
+  if (statusFilter === 'inactive') return !coach.active
+  return true // 'all'
+ })
+
  if (loading) return (
   <DashboardLayout title="Coaches" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
    <div className="p-8">Loading...</div>
@@ -330,7 +362,20 @@ export default function CoachesPage() {
      </div>
 
      <div className="flex justify-between items-center mb-6">
-      <h2 className="text-2xl font-bold text-gray-900">Manage Coaches</h2>
+      <div className="flex items-center gap-4">
+       <h2 className="text-2xl font-bold text-gray-900">Manage Coaches</h2>
+       <div className="w-48">
+        <select
+         value={statusFilter}
+         onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+         className="w-full border rounded px-3 py-2 text-sm"
+        >
+         <option value="active">Active Only</option>
+         <option value="inactive">Inactive Only</option>
+         <option value="all">All Coaches</option>
+        </select>
+       </div>
+      </div>
       <div className="flex gap-2">
       <button
        onClick={handleDownloadTemplate}
@@ -570,15 +615,20 @@ export default function CoachesPage() {
          Availability
         </th>
         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+         Status
+        </th>
+        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
          Actions
         </th>
        </tr>
       </thead>
       <tbody className="bg-white divide-y divide-gray-200">
-       {coaches.map((coach) => (
-        <tr key={coach.id}>
-         <td className="px-6 py-4 whitespace-nowrap font-medium">
-          {coach.name}
+       {filteredCoaches.map((coach) => (
+        <tr key={coach.id} className={!coach.active ? 'bg-gray-50' : ''}>
+         <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`font-medium ${!coach.active ? 'text-gray-500' : ''}`}>
+           {coach.name}
+          </span>
           {coach.importedFromCsv && (
            <span className="ml-2 text-xs text-gray-500">(Imported)</span>
           )}
@@ -614,7 +664,28 @@ export default function CoachesPage() {
            '-'
           )}
          </td>
+         <td className="px-6 py-4">
+          {coach.active ? (
+           <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+            Active
+           </span>
+          ) : (
+           <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+            Inactive
+           </span>
+          )}
+         </td>
          <td className="px-6 py-4 whitespace-nowrap text-sm">
+          <button
+           onClick={() => handleToggleActive(coach.id, coach.active)}
+           className={`${
+            coach.active
+             ? 'text-yellow-600 hover:text-yellow-800'
+             : 'text-green-600 hover:text-green-800'
+           } mr-3`}
+          >
+           {coach.active ? 'Deactivate' : 'Activate'}
+          </button>
           <button
            onClick={() => handleEdit(coach)}
            className="text-blue-600 hover:text-blue-800 mr-3"
@@ -634,6 +705,15 @@ export default function CoachesPage() {
      </table>
      {coaches.length === 0 && (
       <div className="text-center py-8 text-gray-500">No coaches added yet.</div>
+     )}
+     {coaches.length > 0 && filteredCoaches.length === 0 && (
+      <div className="text-center py-8 text-gray-500">
+       {statusFilter === 'inactive'
+        ? 'No inactive coaches. All coaches are currently active.'
+        : statusFilter === 'active'
+        ? 'No active coaches. All coaches are currently inactive.'
+        : 'No coaches found.'}
+      </div>
      )}
     </div>
    </div>

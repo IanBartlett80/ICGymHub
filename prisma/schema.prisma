@@ -345,6 +345,7 @@ model Coach {
   email              String?
   phone              String?
   importedFromCsv    Boolean             @default(false)
+  active             Boolean             @default(true)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   club               Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)

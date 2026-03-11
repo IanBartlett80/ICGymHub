@@ -60,6 +60,7 @@ const coachSchema = z.object({
   membershipNumber: z.string().max(100).optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
+  active: z.boolean().optional(),
   gymsportIds: z.array(z.string()).optional(),
   availability: z.array(z.object({
     dayOfWeek: z.enum(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']),
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
         email: email || null,
         phone: phone || null,
         importedFromCsv: false,
+        ...(parsed.data.active !== undefined && { active: parsed.data.active }),
       },
     })
 

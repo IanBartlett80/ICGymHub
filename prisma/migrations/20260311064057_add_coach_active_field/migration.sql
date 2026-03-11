@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Coach" ADD COLUMN "active" BOOLEAN NOT NULL DEFAULT true;
