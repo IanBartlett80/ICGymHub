@@ -146,22 +146,21 @@ export default function AdminConfigPage() {
       </div>
      </Link>
 
-     {/* Roles & Permissions Card (Placeholder) */}
-     <Link href="/dashboard/admin-config/roles">
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition cursor-pointer opacity-75 relative">
-       <div className="absolute top-3 right-3 bg-gray-400 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+     {/* Roles & Permissions Card */}
+     <Link href="/dashboard/admin-config/access-control">
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition cursor-pointer relative">
+       <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
         6
        </div>
        <div className="flex items-center gap-3 mb-3">
         <span className="text-3xl">🔐</span>
-        <h2 className="text-xl font-bold text-gray-900">Roles & Permissions</h2>
-        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Coming Soon</span>
+        <h2 className="text-xl font-bold text-gray-900">Access Control</h2>
        </div>
        <p className="text-gray-600 text-sm">
-        Manage user roles and permissions across the application.
+        Secure your QR codes with a PIN and manage access permissions for staff members.
        </p>
-       <div className="mt-4 text-gray-400 text-sm font-medium">
-        Coming Soon →
+       <div className="mt-4 text-blue-600 text-sm font-medium">
+        Configure →
        </div>
       </div>
      </Link>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ExclamationTriangleIcon, CubeIcon, PlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import MobileEquipmentForm from '@/components/MobileEquipmentForm';
+import PINVerificationModal, { useQRPINVerification } from '@/components/PINVerificationModal';
 
 interface Zone {
   id: string;
@@ -44,6 +45,10 @@ export default function PublicZoneReportPage() {
   const [showAddEquipment, setShowAddEquipment] = useState(false);
   const [checkingEquipment, setCheckingEquipment] = useState<string | null>(null);
 
+  // PIN Verification
+  const { isVerified, isChecking, markAsVerified } = useQRPINVerification(zone?.club.id || null);
+  const [showPINModal, setShowPINModal] = useState(false);
+
   const [formData, setFormData] = useState({
     issueType: 'CRITICAL',
     title: '',
@@ -56,6 +61,13 @@ export default function PublicZoneReportPage() {
   useEffect(() => {
     loadData();
   }, [publicId]);
+
+  // Show PIN modal after zone data loads if not verified
+  useEffect(() => {
+    if (!loading && zone && !isChecking && !isVerified) {
+      setShowPINModal(true);
+    }
+  }, [loading, zone, isChecking, isVerified]);
 
   const loadData = async () => {
     try {
@@ -548,6 +560,18 @@ export default function PublicZoneReportPage() {
             zoneName={zone.name}
             onSubmit={handleAddEquipmentSuccess}
             onCancel={() => setShowAddEquipment(false)}
+          />
+        )}
+
+        {/* PIN Verification Modal */}
+        {showPINModal && zone && (
+          <PINVerificationModal
+            clubId={zone.club.id}
+            clubName={zone.club.name}
+            onVerified={() => {
+              markAsVerified();
+              setShowPINModal(false);
+            }}
           />
         )}
       </div>

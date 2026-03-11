@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CubeIcon, MapPinIcon, PlusIcon } from '@heroicons/react/24/outline';
 import MobileEquipmentForm from '@/components/MobileEquipmentForm';
+import PINVerificationModal, { useQRPINVerification } from '@/components/PINVerificationModal';
 
 interface Venue {
   id: string;
@@ -35,9 +36,20 @@ export default function PublicVenuePage() {
   const [loading, setLoading] = useState(true);
   const [showAddEquipment, setShowAddEquipment] = useState(false);
 
+  // PIN Verification
+  const { isVerified, isChecking, markAsVerified } = useQRPINVerification(venue?.club.id || null);
+  const [showPINModal, setShowPINModal] = useState(false);
+
   useEffect(() => {
     loadData();
   }, [publicId]);
+
+  // Show PIN modal after venue data loads if not verified
+  useEffect(() => {
+    if (!loading && venue && !isChecking && !isVerified) {
+      setShowPINModal(true);
+    }
+  }, [loading, venue, isChecking, isVerified]);
 
   const loadData = async () => {
     try {
@@ -193,6 +205,18 @@ export default function PublicVenuePage() {
           venueName={venue.name}
           onSubmit={handleAddEquipmentSuccess}
           onCancel={() => setShowAddEquipment(false)}
+        />
+      )}
+
+      {/* PIN Verification Modal */}
+      {showPINModal && venue && (
+        <PINVerificationModal
+          clubId={venue.club.id}
+          clubName={venue.club.name}
+          onVerified={() => {
+            markAsVerified();
+            setShowPINModal(false);
+          }}
         />
       )}
     </div>

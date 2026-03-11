@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import PINVerificationModal, { useQRPINVerification } from '@/components/PINVerificationModal';
 
 interface Field {
   id: string;
@@ -78,9 +79,20 @@ export default function PublicSubmissionForm() {
   const [thankYouMessage, setThankYouMessage] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // PIN Verification
+  const { isVerified, isChecking, markAsVerified } = useQRPINVerification(template?.clubId || null);
+  const [showPINModal, setShowPINModal] = useState(false);
+
   useEffect(() => {
     loadTemplate();
   }, [publicUrl]);
+
+  // Show PIN modal after template data loads if not verified
+  useEffect(() => {
+    if (!loading && template && !isChecking && !isVerified) {
+      setShowPINModal(true);
+    }
+  }, [loading, template, isChecking, isVerified]);
 
   const loadTemplate = async () => {
     try {
@@ -674,6 +686,18 @@ export default function PublicSubmissionForm() {
           )}
         </div>
       </div>
+
+      {/* PIN Verification Modal */}
+      {showPINModal && template && (
+        <PINVerificationModal
+          clubId={template.clubId}
+          clubName={template.name}
+          onVerified={() => {
+            markAsVerified();
+            setShowPINModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

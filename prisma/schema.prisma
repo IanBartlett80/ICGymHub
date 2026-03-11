@@ -8,50 +8,54 @@ datasource db {
 }
 
 model Club {
-  id                   String               @id @default(cuid())
-  name                 String               @unique
-  slug                 String               @unique
-  abn                  String?              @unique
-  domain               String               @unique
-  status               String               @default("PENDING_VERIFICATION")
-  timezone             String               @default("Australia/Sydney")
-  address              String?
-  city                 String?
-  state                String?
-  postalCode           String?
-  phone                String?
-  website              String?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  auditLogs            AuditLog[]
-  classSessions        ClassSession[]
-  classTemplates       ClassTemplate[]
-  clubDomains          ClubDomain[]
-  services             ClubService[]
-  coaches              Coach[]
-  coachImportJobs      CoachImportJob[]
-  complianceCategories ComplianceCategory[]
-  complianceItems      ComplianceItem[]
-  emailVerifications   EmailVerification[]
-  equipment            Equipment[]
-  equipmentCategories  EquipmentCategory[]
-  equipmentUsage       EquipmentUsage[]
-  gymsports            Gymsport[]
-  injuryFormTemplates  InjuryFormTemplate[]
-  injuryNotifications  InjuryNotification[]
-  injurySubmissions    InjurySubmission[]
-  maintenanceLogs      MaintenanceLog[]
-  maintenanceTasks     MaintenanceTask[]
-  repairQuoteRequests  RepairQuoteRequest[]
-  rosters              Roster[]
-  rosterExports        RosterExport[]
-  rosterSlots          RosterSlot[]
-  rosterTemplates      RosterTemplate[]
-  safetyIssues         SafetyIssue[]
-  sessions             Session[]
-  users                User[]
-  venues               Venue[]
-  zones                Zone[]
+  id                    String               @id @default(cuid())
+  name                  String               @unique
+  slug                  String               @unique
+  abn                   String?              @unique
+  domain                String               @unique
+  status                String               @default("PENDING_VERIFICATION")
+  timezone              String               @default("Australia/Sydney")
+  address               String?
+  city                  String?
+  state                 String?
+  postalCode            String?
+  phone                 String?
+  website               String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  qrAccessPin           String?
+  qrPinResetToken       String?              @unique
+  qrPinResetTokenExpiry DateTime?
+  qrPinUpdatedAt        DateTime?
+  auditLogs             AuditLog[]
+  classSessions         ClassSession[]
+  classTemplates        ClassTemplate[]
+  clubDomains           ClubDomain[]
+  services              ClubService[]
+  coaches               Coach[]
+  coachImportJobs       CoachImportJob[]
+  complianceCategories  ComplianceCategory[]
+  complianceItems       ComplianceItem[]
+  emailVerifications    EmailVerification[]
+  equipment             Equipment[]
+  equipmentCategories   EquipmentCategory[]
+  equipmentUsage        EquipmentUsage[]
+  gymsports             Gymsport[]
+  injuryFormTemplates   InjuryFormTemplate[]
+  injuryNotifications   InjuryNotification[]
+  injurySubmissions     InjurySubmission[]
+  maintenanceLogs       MaintenanceLog[]
+  maintenanceTasks      MaintenanceTask[]
+  repairQuoteRequests   RepairQuoteRequest[]
+  rosters               Roster[]
+  rosterExports         RosterExport[]
+  rosterSlots           RosterSlot[]
+  rosterTemplates       RosterTemplate[]
+  safetyIssues          SafetyIssue[]
+  sessions              Session[]
+  users                 User[]
+  venues                Venue[]
+  zones                 Zone[]
 
   @@index([status])
   @@index([domain])
@@ -75,7 +79,6 @@ model Venue {
   clubId               String
   name                 String
   slug                 String
-  publicId             String?              @unique
   address              String?
   city                 String?
   state                String?
@@ -86,6 +89,7 @@ model Venue {
   active               Boolean              @default(true)
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
+  publicId             String?              @unique
   classSessions        ClassSession[]
   classTemplates       ClassTemplate[]
   complianceCategories ComplianceCategory[]
@@ -296,24 +300,24 @@ model AuditLog {
 }
 
 model Zone {
-  id               String                @id @default(cuid())
-  clubId           String
-  name             String
-  description      String?
-  allowOverlap     Boolean               @default(false)
-  active           Boolean               @default(true)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  isFirst          Boolean               @default(false)
-  publicId         String?               @unique
-  venueId          String?
-  equipment        Equipment[]
+  id                String                @id @default(cuid())
+  clubId            String
+  name              String
+  description       String?
+  allowOverlap      Boolean               @default(false)
+  active            Boolean               @default(true)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  isFirst           Boolean               @default(false)
+  publicId          String?               @unique
+  venueId           String?
+  equipment         Equipment[]
   injurySubmissions InjurySubmission[]
-  rosterSlots      RosterSlot[]
-  sessionsAllowed  SessionAllowedZone[]
-  templatesAllowed TemplateAllowedZone[]
-  club             Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  venue            Venue?                @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  rosterSlots       RosterSlot[]
+  sessionsAllowed   SessionAllowedZone[]
+  templatesAllowed  TemplateAllowedZone[]
+  club              Club                  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  venue             Venue?                @relation(fields: [venueId], references: [id], onDelete: Cascade)
 
   @@unique([clubId, name])
   @@index([clubId])
@@ -345,9 +349,9 @@ model Coach {
   email              String?
   phone              String?
   importedFromCsv    Boolean             @default(false)
-  active             Boolean             @default(true)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  active             Boolean             @default(true)
   club               Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
   availability       CoachAvailability[]
   gymsports          CoachGymsport[]
@@ -674,18 +678,18 @@ model InjurySubmission {
   submittedAt                  DateTime                  @default(now())
   updatedAt                    DateTime                  @updatedAt
   venueId                      String?
+  templateName                 String?
   zoneId                       String?
   equipmentId                  String?
   equipmentMaintenanceSnapshot String?
   equipmentSafetySnapshot      String?
-  templateName                 String?
   notifications                InjuryNotification[]
   assignedTo                   User?                     @relation("AssignedInjurySubmissions", fields: [assignedToUserId], references: [id])
   club                         Club                      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  equipment                    Equipment?                @relation(fields: [equipmentId], references: [id])
   template                     InjuryFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
   venue                        Venue?                    @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  zone                         Zone?                     @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  equipment                    Equipment?                @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  zone                         Zone?                     @relation(fields: [zoneId], references: [id])
   auditLog                     InjurySubmissionAudit[]
   comments                     InjurySubmissionComment[]
   data                         InjurySubmissionData[]
@@ -838,8 +842,8 @@ model Equipment {
   club                Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
   venue               Venue?               @relation(fields: [venueId], references: [id], onDelete: Cascade)
   zone                Zone?                @relation(fields: [zoneId], references: [id])
-  injurySubmissions   InjurySubmission[]
   usageHistory        EquipmentUsage[]
+  injurySubmissions   InjurySubmission[]
   maintenanceLogs     MaintenanceLog[]
   maintenanceTasks    MaintenanceTask[]
   repairQuoteRequests RepairQuoteRequest[]
