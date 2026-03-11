@@ -41,6 +41,9 @@ const coachSchema = z.object({
   })).optional(),
 })
 
+// For PATCH operations, allow partial updates
+const coachUpdateSchema = coachSchema.partial()
+
 // GET /api/coaches/[id] - Get a specific coach
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -91,7 +94,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await req.json()
-    const parsed = coachSchema.safeParse(body)
+    const parsed = coachUpdateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
@@ -109,16 +112,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
+    // Build update data object with only provided fields
+    const updateData: any = {}
+    if (name !== undefined) updateData.name = name
+    if (accreditationLevel !== undefined) updateData.accreditationLevel = accreditationLevel || null
+    if (membershipNumber !== undefined) updateData.membershipNumber = membershipNumber || null
+    if (email !== undefined) updateData.email = email || null
+    if (phone !== undefined) updateData.phone = phone || null
+    if (parsed.data.active !== undefined) updateData.active = parsed.data.active
+
     await prisma.coach.update({
       where: { id },
-      data: {
-        name,
-        accreditationLevel: accreditationLevel || null,
-        membershipNumber: membershipNumber || null,
-        email: email || null,
-        phone: phone || null,
-        ...(parsed.data.active !== undefined && { active: parsed.data.active }),
-      },
+      data: updateData,
     })
 
     // Update gymsports
