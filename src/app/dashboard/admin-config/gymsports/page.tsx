@@ -20,6 +20,7 @@ export default function AdminGymsportsPage() {
  const [showForm, setShowForm] = useState(false)
  const [editingId, setEditingId] = useState<string | null>(null)
  const [formData, setFormData] = useState({ name: '', active: true })
+ const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
 
  useEffect(() => {
   fetchGymsports()
@@ -115,6 +116,13 @@ export default function AdminGymsportsPage() {
   })
  }
 
+ // Filter gymsports based on status
+ const filteredGymsports = gymsports.filter(gymsport => {
+  if (statusFilter === 'active') return gymsport.active
+  if (statusFilter === 'inactive') return !gymsport.active
+  return true // 'all'
+ })
+
  if (loading) {
   return (
    <DashboardLayout title="Gymsports" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
@@ -127,6 +135,17 @@ export default function AdminGymsportsPage() {
   <DashboardLayout title="Gymsports" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
    <div className="p-8">
     <div className="max-w-6xl mx-auto">
+     {/* Help/Guidance Section */}
+     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <h3 className="text-lg font-semibold text-blue-900 mb-2">About Gymsports</h3>
+      <p className="text-sm text-blue-800 mb-2">
+       Gymsports define the gymnastics disciplines your club offers. These are used throughout the system for coach accreditations, class categorization, and zone allocation.
+      </p>
+      <p className="text-sm text-blue-800">
+       <strong>Examples:</strong> MAG (Men's Artistic Gymnastics), WAG (Women's Artistic Gymnastics), REC (Recreational), ACRO (Acrobatics), T&D (Tumbling & Double Mini), XCEL, Parkour, Ninja Warrior, Freestyle
+      </p>
+     </div>
+
      <div className="flex justify-between items-center mb-6">
       <h2 className="text-2xl font-bold text-gray-900">Manage Gymsports</h2>
       <button
@@ -191,14 +210,36 @@ export default function AdminGymsportsPage() {
 
      <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-       <h3 className="text-lg font-semibold text-gray-900">Gymsports ({gymsports.length})</h3>
-       <p className="text-sm text-gray-600 mt-1">
-        Manage which gymsports your club offers. Predefined gymsports can be toggled active/inactive.
-       </p>
+       <div className="flex justify-between items-center">
+        <div>
+         <h3 className="text-lg font-semibold text-gray-900">Gymsports ({filteredGymsports.length})</h3>
+         <p className="text-sm text-gray-600 mt-1">
+          Manage which gymsports your club offers. Predefined gymsports can be toggled active/inactive.
+         </p>
+        </div>
+        <div className="w-48">
+         <label className="block text-xs font-medium text-gray-700 mb-1">Show:</label>
+         <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+          className="w-full border rounded px-3 py-2 text-sm"
+         >
+          <option value="active">Active Only</option>
+          <option value="inactive">Inactive Only</option>
+          <option value="all">All Gymsports</option>
+         </select>
+        </div>
+       </div>
       </div>
 
-      {gymsports.length === 0 ? (
-       <div className="text-center py-8 text-gray-500">No gymsports configured yet.</div>
+      {filteredGymsports.length === 0 ? (
+       <div className="text-center py-8 text-gray-500">
+        {statusFilter === 'inactive' && gymsports.length > 0
+         ? 'No inactive gymsports. All gymsports are currently active.'
+         : statusFilter === 'active' && gymsports.length > 0
+         ? 'No active gymsports. All gymsports are currently inactive.'
+         : 'No gymsports configured yet.'}
+       </div>
       ) : (
        <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
@@ -209,11 +250,11 @@ export default function AdminGymsportsPage() {
          </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-         {gymsports.map((gymsport) => (
-          <tr key={gymsport.id}>
+         {filteredGymsports.map((gymsport) => (
+          <tr key={gymsport.id} className={!gymsport.active ? 'bg-gray-50' : ''}>
            <td className="px-6 py-4 whitespace-nowrap">
             <div className="flex items-center gap-2">
-             <span className="font-medium">{gymsport.name}</span>
+             <span className={`font-medium ${!gymsport.active ? 'text-gray-500' : ''}`}>{gymsport.name}</span>
              {gymsport.isPredefined && (
               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                Predefined

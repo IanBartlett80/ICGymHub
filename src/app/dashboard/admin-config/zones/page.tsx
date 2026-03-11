@@ -30,6 +30,7 @@ export default function AdminZonesPage() {
  const [editingId, setEditingId] = useState<string | null>(null)
  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
  const [filterVenueId, setFilterVenueId] = useState<string | null>(null)
+ const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
  const [formData, setFormData] = useState({ name: '', description: '', venueId: null as string | null, allowOverlap: false, active: true, isFirst: false })
 
  useEffect(() => {
@@ -86,9 +87,18 @@ export default function AdminZonesPage() {
   setShowForm(true)
  }
 
- const filteredZones = filterVenueId
-  ? zones.filter(zone => zone.venueId === filterVenueId)
-  : zones
+ const filteredZones = zones.filter(zone => {
+  // Filter by venue
+  const venueMatch = !filterVenueId || zone.venueId === filterVenueId
+  
+  // Filter by status
+  const statusMatch = 
+   statusFilter === 'all' ? true :
+   statusFilter === 'active' ? zone.active :
+   !zone.active // inactive
+  
+  return venueMatch && statusMatch
+ })
 
  const handleDelete = async (id: string) => {
   const zone = zones.find(z => z.id === id)
@@ -120,6 +130,17 @@ export default function AdminZonesPage() {
   <DashboardLayout title="Gym Zones" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
    <div className="p-8">
     <div className="max-w-6xl mx-auto">
+     {/* Help/Guidance Section */}
+     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <h3 className="text-lg font-semibold text-blue-900 mb-2">About Gym Zones</h3>
+      <p className="text-sm text-blue-800 mb-2">
+       Gym Zones define specific training areas and equipment zones within each venue. These help organize classes, allocate equipment, and manage space efficiently.
+      </p>
+      <p className="text-sm text-blue-800">
+       <strong>Examples:</strong> Floor, Vault, Uneven Bars, Parallel Bars, Beam, Pommel Horse, Rings, Tumble Track, Ballet Barre, Rec Beams, Foam Pit, Trampoline Area
+      </p>
+     </div>
+
      <div className="mb-6">
       <div className="flex justify-between items-center mb-4">
        <h2 className="text-2xl font-bold text-gray-900">Manage Gym Zones</h2>
@@ -135,13 +156,27 @@ export default function AdminZonesPage() {
        </button>
       </div>
       <div className="bg-white p-4 rounded-lg shadow">
-       <div className="max-w-xs">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Venue</label>
-        <VenueSelector
-         value={filterVenueId}
-         onChange={setFilterVenueId}
-         showAllOption={true}
-        />
+       <div className="flex gap-4 items-end">
+        <div className="flex-1 max-w-xs">
+         <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Venue</label>
+         <VenueSelector
+          value={filterVenueId}
+          onChange={setFilterVenueId}
+          showAllOption={true}
+         />
+        </div>
+        <div className="flex-1 max-w-xs">
+         <label className="block text-sm font-medium text-gray-700 mb-2">Show:</label>
+         <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+          className="w-full border rounded px-3 py-2 text-sm"
+         >
+          <option value="active">Active Only</option>
+          <option value="inactive">Inactive Only</option>
+          <option value="all">All Zones</option>
+         </select>
+        </div>
        </div>
       </div>
      </div>
@@ -160,7 +195,14 @@ export default function AdminZonesPage() {
 
      {showForm && (
       <div className="bg-white p-6 rounded-lg shadow mb-6">
-       <h2 className="text-xl font-semibold mb-4">{editingId ? 'Edit Zone' : 'Add New Zone'}</h2>
+       <h2 className="text-xl font-semibold mb-4">
+        {editingId ? 'Edit Zone' : 'Add New Zone'}
+        {filterVenueId && zones.find(z => z.venueId === filterVenueId) && (
+         <span className="text-sm font-normal text-gray-600 ml-2">
+          for {zones.find(z => z.venueId === filterVenueId)?.venue?.name}
+         </span>
+        )}
+       </h2>
        <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
          <div>
@@ -198,7 +240,7 @@ export default function AdminZonesPage() {
         </div>
 
         <div className="flex gap-4">
-         <label className="flex items-center gap-2">
+         <label className="flex items-center gap-2 group relative">
           <input
            type="checkbox"
            checked={formData.allowOverlap}
@@ -206,9 +248,10 @@ export default function AdminZonesPage() {
            className="rounded"
           />
           <span className="text-sm">Allow Overlap</span>
+          <span className="text-gray-400 cursor-help" title="Allow multiple gymsports to be allocated to this zone at the same time">ℹ️</span>
          </label>
 
-         <label className="flex items-center gap-2">
+         <label className="flex items-center gap-2 group relative">
           <input
            type="checkbox"
            checked={formData.active}
@@ -216,9 +259,10 @@ export default function AdminZonesPage() {
            className="rounded"
           />
           <span className="text-sm">Active</span>
+          <span className="text-gray-400 cursor-help" title="Show/hide this zone in dropdowns and active lists throughout the system">ℹ️</span>
          </label>
 
-         <label className="flex items-center gap-2">
+         <label className="flex items-center gap-2 group relative">
           <input
            type="checkbox"
            checked={formData.isFirst}
@@ -226,6 +270,7 @@ export default function AdminZonesPage() {
            className="rounded"
           />
           <span className="text-sm">Priority First Zone</span>
+          <span className="text-gray-400 cursor-help" title="Mark this zone as a priority zone that should be filled/allocated first">ℹ️</span>
          </label>
         </div>
 
@@ -249,14 +294,18 @@ export default function AdminZonesPage() {
        </thead>
        <tbody className="bg-white divide-y divide-gray-200">
         {filteredZones.map((zone) => (
-         <tr key={zone.id}>          <td className="px-6 py-4 whitespace-nowrap">
+         <tr key={zone.id} className={!zone.active ? 'bg-gray-50' : ''}>          <td className="px-6 py-4 whitespace-nowrap">
            {zone.venue ? (
-            <span className="text-sm font-medium text-gray-900">{zone.venue.name}</span>
+            <span className={`text-sm font-medium ${!zone.active ? 'text-gray-500' : 'text-gray-900'}`}>{zone.venue.name}</span>
            ) : (
             <span className="text-sm text-gray-400 italic">No venue</span>
            )}
-          </td>          <td className="px-6 py-4 whitespace-nowrap font-medium">{zone.name}</td>
-          <td className="px-6 py-4">{zone.description || '-'}</td>
+          </td>          <td className="px-6 py-4 whitespace-nowrap">
+           <span className={`font-medium ${!zone.active ? 'text-gray-500' : ''}`}>{zone.name}</span>
+          </td>
+          <td className="px-6 py-4">
+           <span className={!zone.active ? 'text-gray-500' : ''}>{zone.description || '-'}</span>
+          </td>
           <td className="px-6 py-4">
            <div className="flex gap-2 flex-wrap">
             {zone.isFirst && (
@@ -301,8 +350,20 @@ export default function AdminZonesPage() {
       {zones.length === 0 && (
        <div className="text-center py-8 text-gray-500">No zones configured yet.</div>
       )}
-      {zones.length> 0 && filteredZones.length === 0 && (
-       <div className="text-center py-8 text-gray-500">No zones found for the selected venue.</div>
+      {zones.length > 0 && filteredZones.length === 0 && (
+       <div className="text-center py-8 text-gray-500">
+        {statusFilter === 'inactive' && filterVenueId
+         ? 'No inactive zones for the selected venue.'
+         : statusFilter === 'inactive'
+         ? 'No inactive zones. All zones are currently active.'
+         : statusFilter === 'active' && filterVenueId
+         ? 'No active zones for the selected venue.'
+         : statusFilter === 'active'
+         ? 'No active zones. All zones are currently inactive.'
+         : filterVenueId
+         ? 'No zones found for the selected venue.'
+         : 'No zones found.'}
+       </div>
       )}
      </div>
     </div>

@@ -311,6 +311,24 @@ export default function CoachesPage() {
   <DashboardLayout title="Coaches" backTo={{ label: 'Back to Club Management', href: '/dashboard/admin-config' }} showClubManagementNav={true}>
    <div className="p-8">
     <div className="max-w-7xl mx-auto">
+     {/* Help/Guidance Section */}
+     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <h3 className="text-lg font-semibold text-blue-900 mb-2">About Coaches</h3>
+      <p className="text-sm text-blue-800 mb-2">
+       Manage your coaching staff, assign gymsport accreditations, and set weekly availability. Coaches can be added individually or imported in bulk via CSV.
+      </p>
+      <div className="mt-3 bg-white border border-blue-200 rounded p-3">
+       <p className="text-sm text-blue-900 font-medium mb-2">📝 CSV Import Instructions:</p>
+       <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+        <li>Click "Download Template" to get a CSV file with example coach data</li>
+        <li>Fill in your coach details following the template format</li>
+        <li>Use "Import CSV" to upload your completed file</li>
+        <li>Gymsports should be comma-separated (e.g., "MAG,WAG,REC")</li>
+        <li>Availability format: "DAY:START-END" (e.g., "MON:16:00-20:00,TUE:16:00-19:00")</li>
+       </ol>
+      </div>
+     </div>
+
      <div className="flex justify-between items-center mb-6">
       <h2 className="text-2xl font-bold text-gray-900">Manage Coaches</h2>
       <div className="flex gap-2">
