@@ -222,18 +222,14 @@ export default function CoachesPage() {
    const res = await axiosInstance.post('/api/gymsports', { name: customGymsportName.trim() })
 
    const data = res.data
-    setGymsports([...gymsports, data.gymsport])
-    setFormData((prev) => ({
-     ...prev,
-     gymsportIds: [...prev.gymsportIds, data.gymsport.id],
-    }))
-    setCustomGymsportName('')
-    setShowCustomGymsport(false)
-    setSuccess('Custom gymsport added successfully')
-   } else {
-    const data = await res.json()
-    setError(data.error || 'Failed to add custom gymsport')
-   }
+   setGymsports([...gymsports, data.gymsport])
+   setFormData((prev) => ({
+    ...prev,
+    gymsportIds: [...prev.gymsportIds, data.gymsport.id],
+   }))
+   setCustomGymsportName('')
+   setShowCustomGymsport(false)
+   setSuccess('Custom gymsport added successfully')
   } catch (err) {
    setError('Failed to add custom gymsport')
   }

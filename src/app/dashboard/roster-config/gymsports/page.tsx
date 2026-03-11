@@ -70,7 +70,6 @@ export default function GymsportsPage() {
 
    await fetchGymsports()
    setSuccess('Gymsport status updated')
-   }
   } catch (err) {
    setError('Failed to update gymsport')
   }
