@@ -31,11 +31,12 @@ async function getAuthenticatedUser(req: NextRequest) {
 }
 
 const zoneSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
   allowOverlap: z.boolean().optional(),
   active: z.boolean().optional(),
   isFirst: z.boolean().optional(),
+  venueId: z.string().nullable().optional(),
 })
 
 // GET /api/zones/[id] - Get a specific zone
@@ -85,10 +86,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ errors: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, allowOverlap, active, isFirst } = parsed.data
+    const { name, description, allowOverlap, active, isFirst, venueId } = parsed.data
 
-    // Check for duplicate name (excluding current zone)
-    if (name !== zone.name) {
+    // Check for duplicate name (only if name is being updated)
+    if (name && name !== zone.name) {
       const existing = await prisma.zone.findFirst({
         where: { clubId: user.clubId, name, id: { not: id } },
       })
@@ -101,11 +102,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updated = await prisma.zone.update({
       where: { id },
       data: {
-        name,
-        description: description || null,
-        allowOverlap: allowOverlap ?? zone.allowOverlap,
-        active: active ?? zone.active,
-        isFirst: isFirst ?? zone.isFirst,
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description: description || null }),
+        ...(allowOverlap !== undefined && { allowOverlap }),
+        ...(active !== undefined && { active }),
+        ...(isFirst !== undefined && { isFirst }),
+        ...(venueId !== undefined && { venueId }),
       },
     })
 
