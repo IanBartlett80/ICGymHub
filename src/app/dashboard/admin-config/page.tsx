@@ -165,29 +165,6 @@ export default function AdminConfigPage() {
       </div>
      </Link>
     </div>
-
-    {/* Info Box */}
-    <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-     <div className="flex gap-3">
-      <span className="text-2xl">💡</span>
-      <div>
-       <h3 className="font-semibold text-blue-900 mb-1">Setup Tips</h3>
-       <p className="text-sm text-blue-800 mb-2">
-        Follow the numbered order above for best results. Changes made here affect all features across the application.
-       </p>
-       <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
-        <li>Start with <strong>Venues</strong> to define your physical locations</li>
-        <li>Add <strong>Gym Sports</strong> (MAG, WAG, REC, etc.) next</li>
-        <li>Create <strong>Gym Zones</strong> for equipment areas</li>
-        <li>Import or add <strong>Coaches</strong> with their availability</li>
-        <li>Configure <strong>Notifications</strong> for automated alerts</li>
-       </ul>
-       <p className="text-xs text-blue-700 mt-3">
-        <strong>Note:</strong> These settings are also accessible from feature-specific pages (e.g., Roster Configuration) and are synchronized automatically.
-       </p>
-      </div>
-     </div>
-    </div>
    </div>
 
    {/* Configuration Wizard */}
