@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { CalendarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 interface AnalyticsData {
   totalSubmissions: number;
@@ -205,58 +207,60 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-900">Analytics Filters</h2>
-            <button
-              onClick={() => {
-                setVenueId(null);
-                setDateRange('30');
-                setStatusFilter('all');
-              }}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Reset Filters
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <VenueSelector
-              value={venueId}
-              onChange={setVenueId}
-              showAllOption={true}
-              showLabel={true}
-            />
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Time Period</label>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-                <option value="180">Last 6 months</option>
-                <option value="365">Last year</option>
-                <option value="all">All time</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Status Filter</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Statuses</option>
-                <option value="NEW">New</option>
-                <option value="UNDER_REVIEW">Under Review</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="CLOSED">Closed</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <IntelligenceFilter
+          title="Injury Analytics Filters"
+          subtitle="Customize your injury report analytics view"
+          variant="gradient"
+          filters={[
+            {
+              type: 'custom',
+              label: 'Venue',
+              value: venueId,
+              onChange: setVenueId,
+              customComponent: (
+                <VenueSelector
+                  value={venueId}
+                  onChange={setVenueId}
+                  showAllOption={true}
+                />
+              ),
+            },
+            {
+              type: 'select',
+              label: 'Time Period',
+              value: dateRange,
+              onChange: setDateRange,
+              icon: <CalendarIcon className="h-4 w-4" />,
+              options: [
+                { value: '7', label: 'Last 7 days' },
+                { value: '30', label: 'Last 30 days' },
+                { value: '90', label: 'Last 90 days' },
+                { value: '180', label: 'Last 6 months' },
+                { value: '365', label: 'Last year' },
+                { value: 'all', label: 'All time' },
+              ],
+            },
+            {
+              type: 'select',
+              label: 'Status Filter',
+              value: statusFilter,
+              onChange: setStatusFilter,
+              icon: <CheckCircleIcon className="h-4 w-4" />,
+              options: [
+                { value: 'all', label: 'All Statuses' },
+                { value: 'NEW', label: 'New' },
+                { value: 'UNDER_REVIEW', label: 'Under Review' },
+                { value: 'RESOLVED', label: 'Resolved' },
+                { value: 'CLOSED', label: 'Closed' },
+              ],
+            },
+          ]}
+          onReset={() => {
+            setVenueId(null);
+            setDateRange('30');
+            setStatusFilter('all');
+          }}
+        />
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

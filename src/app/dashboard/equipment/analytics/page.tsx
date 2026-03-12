@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import axiosInstance from '@/lib/axios';
 import {
   LineChart,
@@ -27,6 +28,7 @@ import {
   WrenchScrewdriverIcon,
   CubeIcon,
   ShieldExclamationIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 
 interface OverviewStats {
@@ -176,26 +178,42 @@ export default function EquipmentAnalyticsPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Venue</label>
-              <VenueSelector value={venueId} onChange={setVenueId} showAllOption={true} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(Number(e.target.value))}
-                className="border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value={3}>Last 3 Months</option>
-                <option value={6}>Last 6 Months</option>
-                <option value={12}>Last 12 Months</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <IntelligenceFilter
+          title="Analytics Filters"
+          subtitle="Customize your equipment and safety analytics view"
+          variant="gradient"
+          filters={[
+            {
+              type: 'custom',
+              label: 'Venue',
+              value: venueId,
+              onChange: setVenueId,
+              customComponent: (
+                <VenueSelector
+                  value={venueId}
+                  onChange={setVenueId}
+                  showAllOption={true}
+                />
+              ),
+            },
+            {
+              type: 'select',
+              label: 'Time Range',
+              value: String(timeRange),
+              onChange: (val) => setTimeRange(Number(val)),
+              icon: <ClockIcon className="h-4 w-4" />,
+              options: [
+                { value: '3', label: 'Last 3 Months' },
+                { value: '6', label: 'Last 6 Months' },
+                { value: '12', label: 'Last 12 Months' },
+              ],
+            },
+          ]}
+          onReset={() => {
+            setVenueId(null);
+            setTimeRange(3);
+          }}
+        />
 
         {/* Overview Stats Cards */}
         {overviewStats && (

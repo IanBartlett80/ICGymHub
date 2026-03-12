@@ -6,12 +6,16 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
 import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
+import IntelligenceFilter, { FilterConfig } from '@/components/IntelligenceFilter';
 import axiosInstance from '@/lib/axios';
 import { 
  PlusIcon,
  XMarkIcon,
- FunnelIcon,
  EyeIcon,
+ ExclamationTriangleIcon,
+ FlagIcon,
+ CheckCircleIcon,
+ BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
 
 interface SafetyIssue {
@@ -246,64 +250,75 @@ export default function SafetyIssuesPage() {
     </div>
 
     {/* Filters */}
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-     <div className="flex items-center gap-2 mb-4">
-      <FunnelIcon className="h-5 w-5 text-gray-600" />
-      <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-     </div>
-     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-       <VenueSelector
-        value={venueId}
-        onChange={setVenueId}
-        showAllOption={true}
-       />
-      </div>
-      <div>
-       <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-       <select
-        value={filterStatus}
-        onChange={(e) => setFilterStatus(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2"
->
-        <option value="all">All Statuses</option>
-        <option value="OPEN">Open</option>
-        <option value="IN_PROGRESS">In Progress</option>
-        <option value="RESOLVED">Resolved</option>
-        <option value="CLOSED">Closed</option>
-       </select>
-      </div>
-      <div>
-       <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-       <select
-        value={filterPriority}
-        onChange={(e) => setFilterPriority(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2"
->
-        <option value="all">All Priorities</option>
-        <option value="CRITICAL">Critical</option>
-        <option value="HIGH">High</option>
-        <option value="MEDIUM">Medium</option>
-        <option value="LOW">Low</option>
-       </select>
-      </div>
-      <div>
-       <label className="block text-sm font-medium text-gray-700 mb-2">Issue Type</label>
-       <select
-        value={filterIssueType}
-        onChange={(e) => setFilterIssueType(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2"
->
-        <option value="all">All Types</option>
-        <option value="CRITICAL">Critical</option>
-        <option value="NON_CRITICAL">Non-Critical</option>
-        <option value="NON_CONFORMANCE">Non-Conformance</option>
-        <option value="RECOMMENDATION">Recommendation</option>
-        <option value="INFORMATIONAL">Informational</option>
-       </select>
-      </div>
-     </div>
-    </div>
+    <IntelligenceFilter
+      title="Safety Issue Filters"
+      subtitle="Filter and refine safety issues view"
+      variant="gradient"
+      filters={[
+        {
+          type: 'custom',
+          label: 'Venue',
+          value: venueId,
+          onChange: setVenueId,
+          customComponent: (
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
+          ),
+        },
+        {
+          type: 'select',
+          label: 'Status',
+          value: filterStatus,
+          onChange: setFilterStatus,
+          icon: <CheckCircleIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Statuses' },
+            { value: 'OPEN', label: 'Open' },
+            { value: 'IN_PROGRESS', label: 'In Progress' },
+            { value: 'RESOLVED', label: 'Resolved' },
+            { value: 'CLOSED', label: 'Closed' },
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Priority',
+          value: filterPriority,
+          onChange: setFilterPriority,
+          icon: <FlagIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Priorities' },
+            { value: 'CRITICAL', label: 'Critical' },
+            { value: 'HIGH', label: 'High' },
+            { value: 'MEDIUM', label: 'Medium' },
+            { value: 'LOW', label: 'Low' },
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Issue Type',
+          value: filterIssueType,
+          onChange: setFilterIssueType,
+          icon: <ExclamationTriangleIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Types' },
+            { value: 'CRITICAL', label: 'Critical' },
+            { value: 'NON_CRITICAL', label: 'Non-Critical' },
+            { value: 'NON_CONFORMANCE', label: 'Non-Conformance' },
+            { value: 'RECOMMENDATION', label: 'Recommendation' },
+            { value: 'INFORMATIONAL', label: 'Informational' },
+          ],
+        },
+      ]}
+      onReset={() => {
+        setVenueId(null);
+        setFilterStatus('all');
+        setFilterPriority('all');
+        setFilterIssueType('all');
+      }}
+    />
 
     {/* Add/Edit Form */}
     {showForm && (

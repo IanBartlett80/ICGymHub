@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
+import IntelligenceFilter from '@/components/IntelligenceFilter'
 import { confirmAndDelete, showToast } from '@/lib/toast'
 import axiosInstance from '@/lib/axios'
 import {
@@ -17,6 +18,13 @@ import {
  XAxis,
  YAxis,
 } from 'recharts'
+import {
+ CheckCircleIcon,
+ UserIcon,
+ FolderIcon,
+ ClockIcon,
+ CalendarIcon,
+} from '@heroicons/react/24/outline'
 
 interface ComplianceCategory {
  id: string
@@ -523,81 +531,127 @@ export default function ComplianceManagerPage() {
      </>
     )}
 
-    <div className="rounded-lg border border-gray-200 bg-white p-4 print:hidden">
-     <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-8">
-      <VenueSelector
-       value={venueId}
-       onChange={setVenueId}
-       showAllOption={true}
-      />
-      <input
-       type="text"
-       placeholder="Search item title, description, notes"
-       value={search}
-       onChange={(event) => setSearch(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-      <select
-       value={categoryFilter}
-       onChange={(event) => setCategoryFilter(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
->
-       <option value="all">All Categories</option>
-       {categories.map((category) => (
-        <option key={category.id} value={category.id}>{category.name}</option>
-       ))}
-      </select>
-      <select
-       value={ownerFilter}
-       onChange={(event) => setOwnerFilter(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
->
-       <option value="all">All Owners</option>
-       <option value="none">Unassigned</option>
-       {owners.map((owner) => (
-        <option key={owner.id} value={owner.id}>{owner.fullName}</option>
-       ))}
-      </select>
-      <select
-       value={statusFilter}
-       onChange={(event) => setStatusFilter(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
->
-       <option value="all">All Statuses</option>
-       <option value="OPEN">Open</option>
-       <option value="IN_PROGRESS">In Progress</option>
-       <option value="COMPLETED">Completed</option>
-       <option value="OVERDUE">Overdue</option>
-      </select>
-      <select
-       value={dueWithinFilter}
-       onChange={(event) => setDueWithinFilter(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
->
-       <option value="all">All Deadlines</option>
-       <option value="7">Due in 7 days</option>
-       <option value="30">Due in 30 days</option>
-       <option value="90">Due in 90 days</option>
-       <option value="overdue">Overdue</option>
-      </select>
-      <input
-       type="date"
-       value={startDate}
-       onChange={(event) => setStartDate(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-      <input
-       type="date"
-       value={endDate}
-       onChange={(event) => setEndDate(event.target.value)}
-       className="rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-     </div>
-     <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
-      <span>Showing {items.length} compliance item{items.length === 1 ? '' : 's'}</span>
-      <button onClick={clearFilters} className="rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50">Clear filters</button>
-     </div>
-    </div>
+    <IntelligenceFilter
+      title="Compliance Item Filters"
+      subtitle="Filter and search compliance items"
+      variant="gradient"
+      filters={[
+        {
+          type: 'custom',
+          label: 'Venue',
+          value: venueId,
+          onChange: setVenueId,
+          customComponent: (
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
+          ),
+        },
+        {
+          type: 'search',
+          label: 'Search',
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search item title, description, notes',
+        },
+        {
+          type: 'select',
+          label: 'Category',
+          value: categoryFilter,
+          onChange: setCategoryFilter,
+          icon: <FolderIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Categories' },
+            ...categories.map((category) => ({
+              value: category.id,
+              label: category.name,
+            })),
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Owner',
+          value: ownerFilter,
+          onChange: setOwnerFilter,
+          icon: <UserIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Owners' },
+            { value: 'none', label: 'Unassigned' },
+            ...owners.map((owner) => ({
+              value: owner.id,
+              label: owner.fullName,
+            })),
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Status',
+          value: statusFilter,
+          onChange: setStatusFilter,
+          icon: <CheckCircleIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Statuses' },
+            { value: 'OPEN', label: 'Open' },
+            { value: 'IN_PROGRESS', label: 'In Progress' },
+            { value: 'COMPLETED', label: 'Completed' },
+            { value: 'OVERDUE', label: 'Overdue' },
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Deadline',
+          value: dueWithinFilter,
+          onChange: setDueWithinFilter,
+          icon: <ClockIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Deadlines' },
+            { value: '7', label: 'Due in 7 days' },
+            { value: '30', label: 'Due in 30 days' },
+            { value: '90', label: 'Due in 90 days' },
+            { value: 'overdue', label: 'Overdue' },
+          ],
+        },
+        {
+          type: 'custom',
+          label: 'Start Date',
+          value: startDate,
+          onChange: setStartDate,
+          customComponent: (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+          ),
+        },
+        {
+          type: 'custom',
+          label: 'End Date',
+          value: endDate,
+          onChange: setEndDate,
+          customComponent: (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+          ),
+        },
+      ]}
+      onReset={clearFilters}
+      filterCount={items.length}
+      filterCountLabel="compliance items"
+    />
 
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
      <div className="overflow-x-auto">

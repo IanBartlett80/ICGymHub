@@ -6,8 +6,10 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import { showToast } from '@/lib/toast';
 import axiosInstance from '@/lib/axios';
+import { MagnifyingGlassIcon, WrenchScrewdriverIcon, CheckCircleIcon, FlagIcon, ClipboardDocumentListIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface EquipmentItem {
  id: string;
@@ -370,90 +372,119 @@ export default function MaintenanceDuePage() {
      </div>
     </div>
 
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
-     <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-      <VenueSelector
-       value={venueId}
-       onChange={setVenueId}
-       showAllOption={true}
-      />
-
-      <input
-       type="text"
-       placeholder="Search tasks, equipment, assignee"
-       value={searchTerm}
-       onChange={(e) => setSearchTerm(e.target.value)}
-       className="md:col-span-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-      />
-
-      <select
-       value={equipmentFilter}
-       onChange={(e) => setEquipmentFilter(e.target.value)}
-       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-       <option value="">All Equipment</option>
-       {equipment.map((item) => (
-        <option key={item.id} value={item.id}>
-         {item.name}
-        </option>
-       ))}
-      </select>
-
-      <select
-       value={statusFilter}
-       onChange={(e) => setStatusFilter(e.target.value)}
-       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-       <option value="">All Statuses</option>
-       <option value="PENDING">Pending</option>
-       <option value="IN_PROGRESS">In Progress</option>
-       <option value="COMPLETED">Completed</option>
-       <option value="CANCELLED">Cancelled</option>
-      </select>
-
-      <select
-       value={priorityFilter}
-       onChange={(e) => setPriorityFilter(e.target.value)}
-       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-       <option value="">All Priorities</option>
-       <option value="HIGH">High</option>
-       <option value="MEDIUM">Medium</option>
-       <option value="LOW">Low</option>
-      </select>
-
-      <select
-       value={taskTypeFilter}
-       onChange={(e) => setTaskTypeFilter(e.target.value)}
-       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-       <option value="">All Types</option>
-       <option value="ROUTINE">Routine</option>
-       <option value="INSPECTION">Inspection</option>
-       <option value="REPAIR">Repair</option>
-       <option value="REPLACEMENT">Replacement</option>
-       <option value="CLEANING">Cleaning</option>
-      </select>
-     </div>
-
-     <div className="mt-3 flex items-center gap-4">
-      <label className="inline-flex items-center text-sm text-gray-700">
-       <input
-        type="checkbox"
-        checked={overdueOnly}
-        onChange={(e) => setOverdueOnly(e.target.checked)}
-        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
-       />
-       Overdue only
-      </label>
-      <button
-       onClick={refreshTasks}
-       className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
->
-       Refresh
-      </button>
-     </div>
-    </div>
+    <IntelligenceFilter
+      title="Maintenance Task Filters"
+      subtitle="Filter and search maintenance tasks"
+      variant="gradient"
+      filters={[
+        {
+          type: 'custom',
+          label: 'Venue',
+          value: venueId,
+          onChange: setVenueId,
+          customComponent: (
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
+          ),
+        },
+        {
+          type: 'search',
+          label: 'Search',
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: 'Search tasks, equipment, assignee',
+        },
+        {
+          type: 'select',
+          label: 'Equipment',
+          value: equipmentFilter,
+          onChange: setEquipmentFilter,
+          icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
+          options: [
+            { value: '', label: 'All Equipment' },
+            ...equipment.map((item) => ({
+              value: item.id,
+              label: item.name,
+            })),
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Status',
+          value: statusFilter,
+          onChange: setStatusFilter,
+          icon: <CheckCircleIcon className="h-4 w-4" />,
+          options: [
+            { value: '', label: 'All Statuses' },
+            { value: 'PENDING', label: 'Pending' },
+            { value: 'IN_PROGRESS', label: 'In Progress' },
+            { value: 'COMPLETED', label: 'Completed' },
+            { value: 'CANCELLED', label: 'Cancelled' },
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Priority',
+          value: priorityFilter,
+          onChange: setPriorityFilter,
+          icon: <FlagIcon className="h-4 w-4" />,
+          options: [
+            { value: '', label: 'All Priorities' },
+            { value: 'HIGH', label: 'High' },
+            { value: 'MEDIUM', label: 'Medium' },
+            { value: 'LOW', label: 'Low' },
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Task Type',
+          value: taskTypeFilter,
+          onChange: setTaskTypeFilter,
+          icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+          options: [
+            { value: '', label: 'All Types' },
+            { value: 'ROUTINE', label: 'Routine' },
+            { value: 'INSPECTION', label: 'Inspection' },
+            { value: 'REPAIR', label: 'Repair' },
+            { value: 'REPLACEMENT', label: 'Replacement' },
+            { value: 'CLEANING', label: 'Cleaning' },
+          ],
+        },
+        {
+          type: 'toggle',
+          label: 'Overdue only',
+          value: overdueOnly,
+          onChange: setOverdueOnly,
+        },
+        {
+          type: 'custom',
+          label: ' ',
+          value: '',
+          onChange: () => {},
+          customComponent: (
+            <button
+              onClick={refreshTasks}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <ArrowPathIcon className="h-4 w-4" />
+              Refresh
+            </button>
+          ),
+        },
+      ]}
+      onReset={() => {
+        setVenueId(null);
+        setSearchTerm('');
+        setEquipmentFilter('');
+        setStatusFilter('');
+        setPriorityFilter('');
+        setTaskTypeFilter('');
+        setOverdueOnly(false);
+      }}
+    />
 
     {loading ? (
      <div className="flex justify-center items-center h-56 bg-white border border-gray-200 rounded-lg">

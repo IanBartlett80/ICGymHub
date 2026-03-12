@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import { showToast } from '@/lib/toast';
 import axiosInstance from '@/lib/axios';
 import {
@@ -14,6 +15,7 @@ import {
  XCircleIcon,
  ClockIcon,
  DocumentTextIcon,
+ FlagIcon,
 } from '@heroicons/react/24/outline';
 
 interface RepairQuoteRequest {
@@ -277,84 +279,99 @@ export default function RepairQuotesPage() {
 
     {/* Filters and View Toggle */}
     <div className="bg-white border border-gray-200 rounded-lg p-4">
-     <div className="flex flex-wrap items-center gap-4">
-      {/* Venue Selector */}
-      <div className="min-w-[200px]">
-       <VenueSelector
-        value={venueId}
-        onChange={setVenueId}
-        showAllOption={true}
-       />
-      </div>
-
-      {/* Search */}
-      <div className="flex-1 min-w-[250px]">
-       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <input
-         type="text"
-         placeholder="Search equipment, description, contact..."
-         value={searchTerm}
-         onChange={(e) => setSearchTerm(e.target.value)}
-         className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-       </div>
-      </div>
-
-      {/* Status Filter */}
-      <select
-       value={statusFilter}
-       onChange={(e) => setStatusFilter(e.target.value)}
-       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-       <option value="">All Statuses</option>
-       {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-        <option key={key} value={key}>
-         {config.label}
-        </option>
-       ))}
-      </select>
-
-      {/* Urgency Filter */}
-      <select
-       value={urgencyFilter}
-       onChange={(e) => setUrgencyFilter(e.target.value)}
-       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-       <option value="">All Urgencies</option>
-       {Object.entries(URGENCY_CONFIG).map(([key, config]) => (
-        <option key={key} value={key}>
-         {config.label}
-        </option>
-       ))}
-      </select>
-
-      {/* View Toggle */}
-      <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-       <button
-        onClick={() => setViewMode('table')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-         viewMode === 'table'
-          ? 'bg-white text-gray-900 shadow-sm'
-          : 'text-gray-600 hover:text-gray-900'
-        }`}
->
-        <TableCellsIcon className="h-5 w-5" />
-        Table
-       </button>
-       <button
-        onClick={() => setViewMode('kanban')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-         viewMode === 'kanban'
-          ? 'bg-white text-gray-900 shadow-sm'
-          : 'text-gray-600 hover:text-gray-900'
-        }`}
->
-        <Squares2X2Icon className="h-5 w-5" />
-        Kanban
-       </button>
-      </div>
-     </div>
+     <IntelligenceFilter
+      title="Repair Quote Filters"
+      subtitle="Filter and search repair quote requests"
+      variant="gradient"
+      filters={[
+        {
+          type: 'custom',
+          label: 'Venue',
+          value: venueId,
+          onChange: setVenueId,
+          customComponent: (
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
+          ),
+        },
+        {
+          type: 'search',
+          label: 'Search',
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: 'Search equipment, description, contact...',
+        },
+        {
+          type: 'select',
+          label: 'Status',
+          value: statusFilter,
+          onChange: setStatusFilter,
+          icon: <CheckCircleIcon className="h-4 w-4" />,
+          options: [
+            { value: '', label: 'All Statuses' },
+            ...Object.entries(STATUS_CONFIG).map(([key, config]) => ({
+              value: key,
+              label: config.label,
+            })),
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Urgency',
+          value: urgencyFilter,
+          onChange: setUrgencyFilter,
+          icon: <FlagIcon className="h-4 w-4" />,
+          options: [
+            { value: '', label: 'All Urgencies' },
+            ...Object.entries(URGENCY_CONFIG).map(([key, config]) => ({
+              value: key,
+              label: config.label,
+            })),
+          ],
+        },
+        {
+          type: 'custom',
+          label: 'View Mode',
+          value: viewMode,
+          onChange: setViewMode,
+          customComponent: (
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <TableCellsIcon className="h-5 w-5" />
+                Table
+              </button>
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'kanban'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Squares2X2Icon className="h-5 w-5" />
+                Kanban
+              </button>
+            </div>
+          ),
+        },
+      ]}
+      onReset={() => {
+        setVenueId(null);
+        setSearchTerm('');
+        setStatusFilter('');
+        setUrgencyFilter('');
+      }}
+    />
     </div>
 
     {/* Table View */}
