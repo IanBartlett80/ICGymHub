@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zone, Venue } from '@prisma/client';
-import { QrCodeIcon, PrinterIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon, PrinterIcon, MinusIcon, PlusIcon, BuildingOfficeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axiosInstance from '@/lib/axios';
 
@@ -414,45 +415,47 @@ export default function EquipmentPage() {
     </div>
 
     {/* Filter Bar */}
-    <div className="flex items-center justify-between gap-4">
-     <div className="flex items-center gap-4">
-      <div>
-       <label htmlFor="venue-filter" className="text-sm font-medium text-gray-700 mr-2">
-        Filter by Venue:
-       </label>
-       <select
-        id="venue-filter"
-        value={venueFilter}
-        onChange={(e) => setVenueFilter(e.target.value)}
-        className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-        <option value="all">All Venues</option>
-        {venues.map(venue => (
-         <option key={venue.id} value={venue.id}>
-          {venue.name}
-         </option>
-        ))}
-       </select>
-      </div>
-      <div>
-       <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mr-2">
-        Filter by Status:
-       </label>
-       <select
-        id="status-filter"
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-        <option value="all">All Zones</option>
-        <option value="NO_DEFECTS">No Defects</option>
-        <option value="NON_CRITICAL_ISSUES">Non-Critical Issues</option>
-        <option value="REQUIRES_ATTENTION">Requires Attention</option>
-        <option value="CRITICAL_DEFECTS">Critical Defects</option>
-       </select>
-      </div>
-     </div>
-    </div>
+    <IntelligenceFilter
+      title="Equipment Overview Filters"
+      subtitle="Filter zones by venue and status"
+      variant="gradient"
+      filters={[
+        {
+          type: 'select',
+          label: 'Venue',
+          value: venueFilter,
+          onChange: setVenueFilter,
+          icon: <BuildingOfficeIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Venues' },
+            ...venues.map(venue => ({
+              value: venue.id,
+              label: venue.name,
+            })),
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Zone Status',
+          value: statusFilter,
+          onChange: setStatusFilter,
+          icon: <ShieldCheckIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Zones' },
+            { value: 'NO_DEFECTS', label: 'No Defects' },
+            { value: 'NON_CRITICAL_ISSUES', label: 'Non-Critical Issues' },
+            { value: 'REQUIRES_ATTENTION', label: 'Requires Attention' },
+            { value: 'CRITICAL_DEFECTS', label: 'Critical Defects' },
+          ],
+        },
+      ]}
+      onReset={() => {
+        setVenueFilter('all');
+        setStatusFilter('all');
+      }}
+      filterCount={filteredZones.length}
+      filterCountLabel="zones"
+    />
 
     {/* Monthly Safety Issues Charts */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

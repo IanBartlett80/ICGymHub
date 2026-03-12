@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Equipment, Zone, Venue } from '@prisma/client';
-import { PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import { showToast, confirmAndDelete } from '@/lib/toast';
 import axiosInstance from '@/lib/axios';
 
@@ -331,65 +332,70 @@ export default function AllEquipmentPage() {
      </div>
 
      {/* Search and Filters */}
-     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-      {/* Venue Selector */}
-      <div>
-       <VenueSelector
-        value={venueId}
-        onChange={setVenueId}
-        showAllOption={true}
-       />
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-       <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-       <input
-        type="text"
-        placeholder="Search equipment..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-       />
-      </div>
-
-      {/* Category Filter */}
-      <div>
-       <select
-        value={categoryFilter}
-        onChange={(e) => setCategoryFilter(e.target.value)}
-        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-        <option value="all">All Categories</option>
-        {categories.map(category => (
-         <option key={category} value={category!}>
-          {category}
-         </option>
-        ))}
-       </select>
-      </div>
-
-      {/* Condition Filter */}
-      <div>
-       <select
-        value={conditionFilter}
-        onChange={(e) => setConditionFilter(e.target.value)}
-        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-        <option value="all">All Conditions</option>
-        <option value="Excellent">Excellent</option>
-        <option value="Good">Good</option>
-        <option value="Fair">Fair</option>
-        <option value="Poor">Poor</option>
-        <option value="Out of Service">Out of Service</option>
-       </select>
-      </div>
-
-      {/* Stats */}
-      <div className="text-sm text-gray-600 flex items-center justify-end">
-       Showing {filteredEquipment.length} of {equipment.length} items
-      </div>
-     </div>
+     <IntelligenceFilter
+      title="Equipment Filters"
+      subtitle="Search and filter all equipment inventory"
+      variant="gradient"
+      filters={[
+        {
+          type: 'custom',
+          label: 'Venue',
+          value: venueId,
+          onChange: setVenueId,
+          customComponent: (
+            <VenueSelector
+              value={venueId}
+              onChange={setVenueId}
+              showAllOption={true}
+            />
+          ),
+        },
+        {
+          type: 'search',
+          label: 'Search',
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: 'Search equipment...',
+        },
+        {
+          type: 'select',
+          label: 'Category',
+          value: categoryFilter,
+          onChange: setCategoryFilter,
+          icon: <FolderIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Categories' },
+            ...categories.map(category => ({
+              value: category!,
+              label: category!,
+            })),
+          ],
+        },
+        {
+          type: 'select',
+          label: 'Condition',
+          value: conditionFilter,
+          onChange: setConditionFilter,
+          icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Conditions' },
+            { value: 'Excellent', label: 'Excellent' },
+            { value: 'Good', label: 'Good' },
+            { value: 'Fair', label: 'Fair' },
+            { value: 'Poor', label: 'Poor' },
+            { value: 'Out of Service', label: 'Out of Service' },
+          ],
+        },
+      ]}
+      onReset={() => {
+        setSearchTerm('');
+        setCategoryFilter('all');
+        setConditionFilter('all');
+        setVenueId(null);
+      }}
+      filterCount={filteredEquipment.length}
+      filterCountLabel={`of ${equipment.length} items`}
+    />
     </div>
 
     {/* Equipment List */}
