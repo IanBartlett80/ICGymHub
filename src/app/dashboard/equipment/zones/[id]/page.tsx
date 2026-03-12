@@ -102,7 +102,7 @@ export default function ZoneDetailPage() {
     axiosInstance.get(`/api/zones/${zoneId}/generate-qr`), // Load QR code together with other data
    ]);
 
-   setZone(zoneRes.data);
+   setZone(zoneRes.data.zone);
    setEquipment(equipmentRes.data.equipment || equipmentRes.data);
    setSafetyIssues(issuesRes.data.issues || issuesRes.data);
    
