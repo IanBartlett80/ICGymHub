@@ -11,7 +11,6 @@ import axiosInstance from '@/lib/axios';
 import { 
  ArrowLeftIcon,
  ExclamationTriangleIcon,
- WrenchScrewdriverIcon,
  CubeIcon,
  QrCodeIcon,
  PrinterIcon,
@@ -81,10 +80,8 @@ export default function ZoneDetailPage() {
  const [zone, setZone] = useState<Zone | null>(null);
  const [equipment, setEquipment] = useState<Equipment[]>([]);
  const [safetyIssues, setSafetyIssues] = useState<SafetyIssue[]>([]);
- const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([]);
  const [loading, setLoading] = useState(true);
- const [activeTab, setActiveTab] = useState<'equipment' | 'safety' | 'tasks'>('equipment');
- const [statusFilter, setStatusFilter] = useState<string>('all');
+ const [activeTab, setActiveTab] = useState<'equipment' | 'safety'>('equipment');
  const [zoneStatus, setZoneStatus] = useState<any>(null);
  const [generatingQR, setGeneratingQR] = useState(false);
  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
@@ -97,11 +94,10 @@ export default function ZoneDetailPage() {
  const loadData = async () => {
   try {
    setLoading(true);
-   const [zoneRes, equipmentRes, issuesRes, tasksRes, statusRes, qrRes] = await Promise.all([
+   const [zoneRes, equipmentRes, issuesRes, statusRes, qrRes] = await Promise.all([
     axiosInstance.get(`/api/zones/${zoneId}`),
     axiosInstance.get(`/api/equipment?zoneId=${zoneId}`),
     axiosInstance.get(`/api/safety-issues?zoneId=${zoneId}`),
-    axiosInstance.get(`/api/maintenance-tasks?zoneId=${zoneId}`),
     axiosInstance.get(`/api/equipment/analytics/zone-status`),
     axiosInstance.get(`/api/zones/${zoneId}/generate-qr`), // Load QR code together with other data
    ]);
@@ -109,7 +105,6 @@ export default function ZoneDetailPage() {
    setZone(zoneRes.data);
    setEquipment(equipmentRes.data.equipment || equipmentRes.data);
    setSafetyIssues(issuesRes.data.issues || issuesRes.data);
-   setMaintenanceTasks(tasksRes.data.tasks || tasksRes.data);
    
    // data is an array of zone statuses, not wrapped in .zones
    const thisZoneStatus = Array.isArray(statusRes.data) ? statusRes.data.find((z: any) => z.zoneId === zoneId) : null;
@@ -273,14 +268,6 @@ export default function ZoneDetailPage() {
   return new Date(dateString).toLocaleDateString();
  };
 
- const filteredIssues = statusFilter === 'all' 
-  ? safetyIssues 
-  : safetyIssues.filter(i => i.status === statusFilter);
-
- const filteredTasks = statusFilter === 'all'
-  ? maintenanceTasks
-  : maintenanceTasks.filter(t => t.status === statusFilter);
-
  if (loading) {
   return (
    <DashboardLayout>
@@ -304,7 +291,7 @@ export default function ZoneDetailPage() {
  }
 
  const openIssues = safetyIssues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS');
- const pendingTasks = maintenanceTasks.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS');
+ const resolvedIssues = safetyIssues.filter(i => i.status === 'RESOLVED' || i.status === 'CLOSED');
 
  return (
   <DashboardLayout>
@@ -320,7 +307,7 @@ export default function ZoneDetailPage() {
        <ArrowLeftIcon className="h-6 w-6" />
       </button>
       <div>
-       <h1 className="text-2xl font-bold text-gray-900">{zone.name}</h1>
+       <h1 className="text-2xl font-bold text-gray-900">{zone.name} Zone Details</h1>
        {zone.description && (
         <p className="text-sm text-gray-500">{zone.description}</p>
        )}
@@ -377,12 +364,12 @@ export default function ZoneDetailPage() {
       <div className="p-5">
        <div className="flex items-center">
         <div className="flex-shrink-0">
-         <WrenchScrewdriverIcon className="h-6 w-6 text-yellow-400" />
+         <ExclamationTriangleIcon className="h-6 w-6 text-green-400" />
         </div>
         <div className="ml-5 w-0 flex-1">
          <dl>
-          <dt className="text-sm font-medium text-gray-500 truncate">Pending Maintenance</dt>
-          <dd className="text-lg font-medium text-gray-900">{pendingTasks.length}</dd>
+          <dt className="text-sm font-medium text-gray-500 truncate">Resolved Issues</dt>
+          <dd className="text-lg font-medium text-gray-900">{resolvedIssues.length}</dd>
          </dl>
         </div>
        </div>
@@ -465,7 +452,7 @@ export default function ZoneDetailPage() {
           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
 >
-        Equipment ({equipment.length})
+        Linked Equipment ({equipment.length})
        </button>
        <button
         onClick={() => setActiveTab('safety')}
@@ -475,47 +462,19 @@ export default function ZoneDetailPage() {
           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
 >
-        Safety Issues ({safetyIssues.length})
-       </button>
-       <button
-        onClick={() => setActiveTab('tasks')}
-        className={`${
-         activeTab === 'tasks'
-          ? 'border-indigo-500 text-indigo-600'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
->
-        Maintenance Tasks ({maintenanceTasks.length})
+        Zone Safety Issues ({openIssues.length})
        </button>
       </nav>
      </div>
 
      <div className="p-6">
-      {/* Filter */}
-      {(activeTab === 'safety' || activeTab === 'tasks') && (
-       <div className="mb-4">
-        <select
-         value={statusFilter}
-         onChange={(e) => setStatusFilter(e.target.value)}
-         className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
->
-         <option value="all">All Status</option>
-         <option value="OPEN">Open</option>
-         <option value="IN_PROGRESS">In Progress</option>
-         <option value="PENDING">Pending</option>
-         <option value="COMPLETED">Completed</option>
-         <option value="RESOLVED">Resolved</option>
-        </select>
-       </div>
-      )}
-
-      {/* Safety Issues Tab */}
+      {/* Safety Issues Tab - Only Active Issues */}
       {activeTab === 'safety' && (
        <div className="space-y-4">
-        {filteredIssues.length === 0 ? (
-         <p className="text-gray-500 text-center py-8">No safety issues found</p>
+        {openIssues.length === 0 ? (
+         <p className="text-gray-500 text-center py-8">No active safety issues</p>
         ) : (
-         filteredIssues.map(issue => (
+         openIssues.map(issue => (
           <div key={issue.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
            <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -582,45 +541,6 @@ export default function ZoneDetailPage() {
            />
           );
          })
-        )}
-       </div>
-      )}
-
-      {/* Maintenance Tasks Tab */}
-      {activeTab === 'tasks' && (
-       <div className="space-y-4">
-        {filteredTasks.length === 0 ? (
-         <p className="text-gray-500 text-center py-8">No maintenance tasks found</p>
-        ) : (
-         filteredTasks.map(task => (
-          <div key={task.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-           <div className="flex items-start justify-between">
-            <div className="flex-1">
-             <div className="flex items-center space-x-2 mb-2">
-              <Link
-               href={`/dashboard/equipment/items/${task.equipment.id}`}
-               className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
->
-               {task.equipment.name}
-              </Link>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(task.status)}`}>
-               {task.status.replace('_', ' ')}
-              </span>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-               {task.priority}
-              </span>
-             </div>
-             <h4 className="text-sm font-semibold text-gray-900">{task.title}</h4>
-             <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-             <div className="mt-2 text-xs text-gray-500">
-              {task.taskType} 
-              {task.dueDate && ` • Due: ${formatDate(task.dueDate)}`}
-              {task.assignedTo && ` • Assigned to: ${task.assignedTo}`}
-             </div>
-            </div>
-           </div>
-          </div>
-         ))
         )}
        </div>
       )}
