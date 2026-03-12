@@ -60,6 +60,7 @@ export default function SafetyIssueReviewModal({ issueId, onClose, onUpdate }: S
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
+  const [selectedIssueType, setSelectedIssueType] = useState('');
 
   useEffect(() => {
     loadIssue();
@@ -72,6 +73,7 @@ export default function SafetyIssueReviewModal({ issueId, onClose, onUpdate }: S
       setIssue(response.data.issue);
       setSelectedStatus(response.data.issue.status);
       setSelectedPriority(response.data.issue.priority);
+      setSelectedIssueType(response.data.issue.issueType);
     } catch (error) {
       console.error('Failed to load safety issue:', error);
       showToast.error('Failed to load safety issue details');
@@ -88,6 +90,7 @@ export default function SafetyIssueReviewModal({ issueId, onClose, onUpdate }: S
       await axiosInstance.put(`/api/safety-issues/${issue.id}`, {
         status: selectedStatus,
         priority: selectedPriority,
+        issueType: selectedIssueType,
       });
       showToast.success('Safety issue updated successfully');
       await loadIssue();
@@ -344,7 +347,7 @@ export default function SafetyIssueReviewModal({ issueId, onClose, onUpdate }: S
           {!issue.resolvedAt && (
             <div className="bg-indigo-50 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-indigo-900 mb-3">Update Issue</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-indigo-800 mb-2">Status</label>
                   <select
@@ -371,14 +374,28 @@ export default function SafetyIssueReviewModal({ issueId, onClose, onUpdate }: S
                     <option value="CRITICAL">Critical</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-indigo-800 mb-2">Issue Type</label>
+                  <select
+                    value={selectedIssueType}
+                    onChange={(e) => setSelectedIssueType(e.target.value)}
+                    className="w-full border border-indigo-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="CRITICAL">Critical - Immediate Safety Concern</option>
+                    <option value="NON_CRITICAL">Non-Critical - Needs Attention</option>
+                    <option value="NON_CONFORMANCE">Non-Conformance</option>
+                    <option value="RECOMMENDATION">Recommendation</option>
+                    <option value="INFORMATIONAL">Informational</option>
+                  </select>
+                </div>
               </div>
-              {(selectedStatus !== issue.status || selectedPriority !== issue.priority) && (
+              {(selectedStatus !== issue.status || selectedPriority !== issue.priority || selectedIssueType !== issue.issueType) && (
                 <button
                   onClick={handleUpdateStatus}
                   disabled={actionInProgress}
                   className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  Update Status/Priority
+                  Update Issue
                 </button>
               )}
             </div>

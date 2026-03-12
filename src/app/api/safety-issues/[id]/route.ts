@@ -78,6 +78,7 @@ export async function PUT(
 
     if (body.status !== undefined) updateData.status = body.status;
     if (body.priority !== undefined) updateData.priority = body.priority;
+    if (body.issueType !== undefined) updateData.issueType = body.issueType;
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.photos !== undefined) {
