@@ -103,6 +103,7 @@ export async function PUT(
       installationDate,
       supplier,
       invoiceRef,
+      invoiceFileUrl,
       warrantyExpiryDate,
       endOfLifeDate,
     } = body;
@@ -200,6 +201,7 @@ export async function PUT(
     if (installationDate !== undefined) updateData.installationDate = installationDate ? new Date(installationDate) : null;
     if (supplier !== undefined) updateData.supplier = supplier || null;
     if (invoiceRef !== undefined) updateData.invoiceRef = invoiceRef || null;
+    if (invoiceFileUrl !== undefined) updateData.invoiceFileUrl = invoiceFileUrl || null;
     if (warrantyExpiryDate !== undefined) updateData.warrantyExpiryDate = warrantyExpiryDate ? new Date(warrantyExpiryDate) : null;
     if (endOfLifeDate !== undefined) updateData.endOfLifeDate = endOfLifeDate ? new Date(endOfLifeDate) : null;
 

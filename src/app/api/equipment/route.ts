@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
       installationDate,
       supplier,
       invoiceRef,
+      invoiceFileUrl,
       warrantyExpiryDate,
       endOfLifeDate,
     } = body;
@@ -189,6 +190,7 @@ export async function POST(request: NextRequest) {
         installationDate: installationDate ? new Date(installationDate) : null,
         supplier: supplier || null,
         invoiceRef: invoiceRef || null,
+        invoiceFileUrl: invoiceFileUrl || null,
         warrantyExpiryDate: warrantyExpiryDate ? new Date(warrantyExpiryDate) : null,
         endOfLifeDate: endOfLifeDate ? new Date(endOfLifeDate) : null,
         active: true,

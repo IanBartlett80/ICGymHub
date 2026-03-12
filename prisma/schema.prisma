@@ -842,6 +842,7 @@ model Equipment {
   installationDate    DateTime?
   supplier            String?
   invoiceRef          String?
+  invoiceFileUrl      String?
   warrantyExpiryDate  DateTime?
   endOfLifeDate       DateTime?
   club                Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)

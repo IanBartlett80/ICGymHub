@@ -22,6 +22,7 @@ interface EquipmentFormData {
   installationDate?: string;
   supplier?: string;
   invoiceRef?: string;
+  invoiceFileUrl?: string;
   warrantyExpiryDate?: string;
   endOfLifeDate?: string;
 }
@@ -58,6 +59,7 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
     installationDate: (equipment as any)?.installationDate ? new Date((equipment as any).installationDate).toISOString().split('T')[0] : '',
     supplier: (equipment as any)?.supplier || '',
     invoiceRef: (equipment as any)?.invoiceRef || '',
+    invoiceFileUrl: (equipment as any)?.invoiceFileUrl || '',
     warrantyExpiryDate: (equipment as any)?.warrantyExpiryDate ? new Date((equipment as any).warrantyExpiryDate).toISOString().split('T')[0] : '',
     endOfLifeDate: (equipment as any)?.endOfLifeDate ? new Date((equipment as any).endOfLifeDate).toISOString().split('T')[0] : '',
   });
@@ -65,6 +67,7 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoPreview, setPhotoPreview] = useState<string>(equipment?.photoUrl || '');
+  const [invoiceFileName, setInvoiceFileName] = useState<string>((equipment as any)?.invoiceFileUrl ? 'Invoice file attached' : '');
 
   useEffect(() => {
     loadCategories();
@@ -204,6 +207,44 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
   const handleRemovePhoto = () => {
     setFormData(prev => ({ ...prev, photoUrl: '' }));
     setPhotoPreview('');
+  };
+
+  const handleInvoiceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (allow PDF, images, common document types)
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors(prev => ({ ...prev, invoice: 'Please select a PDF or image file' }));
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, invoice: 'File must be less than 10MB' }));
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({ ...prev, invoiceFileUrl: base64String }));
+      setInvoiceFileName(file.name);
+      // Clear invoice error
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.invoice;
+        return newErrors;
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveInvoiceFile = () => {
+    setFormData(prev => ({ ...prev, invoiceFileUrl: '' }));
+    setInvoiceFileName('');
   };
 
   return (
@@ -536,6 +577,54 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                   onChange={(e) => handleChange('endOfLifeDate', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              {/* Invoice File Upload */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Invoice File
+                </label>
+                {formData.invoiceFileUrl ? (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-300 rounded-lg">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{invoiceFileName}</p>
+                      <p className="text-xs text-gray-500">Invoice file attached</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveInvoiceFile}
+                      className="px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      id="invoice-upload"
+                      accept="application/pdf,image/jpeg,image/png,image/jpg"
+                      onChange={handleInvoiceFileChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="invoice-upload"
+                      className="cursor-pointer flex items-center gap-3"
+                    >
+                      <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Click to upload invoice</span>
+                        <p className="text-xs text-gray-500 mt-1">PDF or image up to 10MB</p>
+                      </div>
+                    </label>
+                  </div>
+                )}
+                {errors.invoice && <p className="mt-1 text-sm text-red-600">{errors.invoice}</p>}
               </div>
             </div>
           </div>
