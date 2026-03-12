@@ -43,7 +43,13 @@ export async function GET(req: NextRequest) {
           _count: {
             select: {
               maintenanceLogs: true,
-              safetyIssues: true,
+              safetyIssues: {
+                where: {
+                  status: {
+                    notIn: ['RESOLVED', 'CLOSED']
+                  }
+                }
+              },
               usageHistory: true,
             },
           },

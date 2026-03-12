@@ -40,6 +40,11 @@ export async function GET(
           },
         },
         safetyIssues: {
+          where: {
+            status: {
+              notIn: ['RESOLVED', 'CLOSED']
+            }
+          },
           orderBy: { createdAt: 'desc' },
         },
         maintenanceTasks: {
@@ -49,7 +54,13 @@ export async function GET(
           select: {
             maintenanceLogs: true,
             usageHistory: true,
-            safetyIssues: true,
+            safetyIssues: {
+              where: {
+                status: {
+                  notIn: ['RESOLVED', 'CLOSED']
+                }
+              }
+            },
             maintenanceTasks: true,
           },
         },

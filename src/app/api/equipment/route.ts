@@ -56,7 +56,13 @@ export async function GET(request: NextRequest) {
             select: {
               maintenanceLogs: true,
               usageHistory: true,
-              safetyIssues: true,
+              safetyIssues: {
+                where: {
+                  status: {
+                    notIn: ['RESOLVED', 'CLOSED']
+                  }
+                }
+              },
             },
           },
         },

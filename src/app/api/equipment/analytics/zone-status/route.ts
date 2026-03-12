@@ -23,7 +23,13 @@ export async function GET(request: NextRequest) {
               active: true,
             },
             include: {
-              safetyIssues: true,
+              safetyIssues: {
+                where: {
+                  status: {
+                    notIn: ['RESOLVED', 'CLOSED']
+                  }
+                }
+              },
               maintenanceTasks: true,
             },
           },
