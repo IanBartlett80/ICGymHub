@@ -279,6 +279,18 @@ export default function ZoneDetailPage() {
   );
  }
 
+ if (loading) {
+  return (
+   <DashboardLayout>
+    <EquipmentManagementSubNav />
+    <div className="text-center py-12">
+     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+     <p className="text-gray-500 mt-4">Loading zone details...</p>
+    </div>
+   </DashboardLayout>
+  );
+ }
+
  if (!zone) {
   return (
    <DashboardLayout>
@@ -298,28 +310,30 @@ export default function ZoneDetailPage() {
    <EquipmentManagementSubNav />
    <div className="space-y-6">
     {/* Header */}
-    <div className="flex items-center justify-between">
-     <div className="flex items-center space-x-4">
+    <div className="relative">
+     <div className="absolute left-0 top-0">
       <button
        onClick={() => router.push('/dashboard/equipment')}
        className="text-gray-400 hover:text-gray-600"
->
+      >
        <ArrowLeftIcon className="h-6 w-6" />
       </button>
-      <div>
-       <h1 className="text-2xl font-bold text-gray-900">{zone.name} Zone Details</h1>
-       {zone.description && (
-        <p className="text-sm text-gray-500">{zone.description}</p>
-       )}
-      </div>
      </div>
-     <div className="flex items-center space-x-3">
+     
+     <div className="text-center">
+      <h1 className="text-2xl font-bold text-gray-900">{zone.name}</h1>
+      {zone.description && (
+       <p className="text-sm text-gray-500 mt-1">{zone.description}</p>
+      )}
+     </div>
+
+     <div className="absolute right-0 top-0 flex items-center space-x-3">
       {getZoneStatusBadge()}
       <button
        onClick={handleGenerateQR}
        disabled={generatingQR}
        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
->
+      >
        <QrCodeIcon className="h-5 w-5 mr-2" />
        {generatingQR ? 'Generating...' : zone.publicId ? 'Regenerate QR Code' : 'Generate QR Code'}
       </button>
