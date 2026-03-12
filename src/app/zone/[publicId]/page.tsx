@@ -358,13 +358,14 @@ export default function PublicZoneReportPage() {
                 <input
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   multiple
                   onChange={handlePhotoUpload}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                   disabled={photos.length >= 3}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Upload up to 3 photos of the issue (max 5MB each)
+                  Tap to take a photo or choose from your device (max 3 photos, 5MB each)
                 </p>
                 
                 {photos.length > 0 && (
