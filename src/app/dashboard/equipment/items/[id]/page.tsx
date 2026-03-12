@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
+import axiosInstance from '@/lib/axios';
 import { 
  ArrowLeftIcon, 
  WrenchScrewdriverIcon,
@@ -103,30 +104,16 @@ export default function EquipmentDetailPage() {
   try {
    setLoading(true);
    const [equipmentRes, issuesRes, tasksRes, logsRes] = await Promise.all([
-    fetch(`/api/equipment/${equipmentId}`),
-    fetch(`/api/safety-issues?equipmentId=${equipmentId}`),
-    fetch(`/api/maintenance-tasks?equipmentId=${equipmentId}`),
-    fetch(`/api/equipment/${equipmentId}/maintenance-logs`),
+    axiosInstance.get(`/api/equipment/${equipmentId}`),
+    axiosInstance.get(`/api/safety-issues?equipmentId=${equipmentId}`),
+    axiosInstance.get(`/api/maintenance-tasks?equipmentId=${equipmentId}`),
+    axiosInstance.get(`/api/equipment/${equipmentId}/maintenance-logs`),
    ]);
 
-   if (equipmentRes.ok) {
-    setEquipment(await equipmentRes.json());
-   }
-
-   if (issuesRes.ok) {
-    const data = await issuesRes.json();
-    setSafetyIssues(data.issues || data);
-   }
-
-   if (tasksRes.ok) {
-    const data = await tasksRes.json();
-    setMaintenanceTasks(data.tasks || data);
-   }
-
-   if (logsRes.ok) {
-    const data = await logsRes.json();
-    setMaintenanceLogs(data.logs || data);
-   }
+   setEquipment(equipmentRes.data);
+   setSafetyIssues(issuesRes.data.issues || issuesRes.data);
+   setMaintenanceTasks(tasksRes.data.tasks || tasksRes.data);
+   setMaintenanceLogs(logsRes.data.logs || logsRes.data);
   } catch (error) {
    console.error('Failed to load equipment details:', error);
    alert('Failed to load equipment details');

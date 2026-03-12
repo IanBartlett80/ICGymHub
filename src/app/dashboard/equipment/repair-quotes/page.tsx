@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
 import { showToast } from '@/lib/toast';
+import axiosInstance from '@/lib/axios';
 import {
  MagnifyingGlassIcon,
  TableCellsIcon,
@@ -123,13 +124,10 @@ export default function RepairQuotesPage() {
    if (urgencyFilter) params.set('urgency', urgencyFilter);
    params.set('limit', '200');
 
-   const res = await fetch(`/api/repair-quotes?${params.toString()}`);
-   if (!res.ok) throw new Error('Failed to load repair quote requests');
-
-   const data = await res.json();
-   setRequests(data.requests || []);
+   const data = await axiosInstance.get(`/api/repair-quotes?${params.toString()}`);
+   setRequests(data.data.requests || []);
   } catch (error: any) {
-   showToast.error(error.message || 'Failed to load repair quote requests');
+   showToast.error(error.response?.data?.error || error.message || 'Failed to load repair quote requests');
   } finally {
    setLoading(false);
   }

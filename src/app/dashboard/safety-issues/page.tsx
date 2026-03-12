@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import axiosInstance from '@/lib/axios';
 import { 
  PlusIcon,
  PencilIcon,
@@ -79,19 +80,12 @@ export default function SafetyIssuesPage() {
    if (filterIssueType !== 'all') params.append('issueType', filterIssueType);
 
    const [issuesRes, equipmentRes] = await Promise.all([
-    fetch(`/api/safety-issues?${params.toString()}`),
-    fetch(`/api/equipment?${venueId && venueId !== 'all' ? `venueId=${venueId}` : ''}`),
+    axiosInstance.get(`/api/safety-issues?${params.toString()}`),
+    axiosInstance.get(`/api/equipment?${venueId && venueId !== 'all' ? `venueId=${venueId}` : ''}`),
    ]);
 
-   if (issuesRes.ok) {
-    const data = await issuesRes.json();
-    setIssues(data.issues || []);
-   }
-
-   if (equipmentRes.ok) {
-    const data = await equipmentRes.json();
-    setEquipment(data.equipment || []);
-   }
+   setIssues(issuesRes.data.issues || []);
+   setEquipment(equipmentRes.data.equipment || []);
   } catch (error) {
    console.error('Failed to load data:', error);
    alert('Failed to load safety issues');
@@ -104,20 +98,10 @@ export default function SafetyIssuesPage() {
   e.preventDefault();
 
   try {
-   const url = editingIssue 
-    ? `/api/safety-issues/${editingIssue.id}`
-    : '/api/safety-issues';
-   
-   const method = editingIssue ? 'PUT' : 'POST';
-
-   const response = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   });
-
-   if (!response.ok) {
-    throw new Error('Failed to save safety issue');
+   if (editingIssue) {
+    await axiosInstance.put(`/api/safety-issues/${editingIssue.id}`, formData);
+   } else {
+    await axiosInstance.post('/api/safety-issues', formData);
    }
 
    alert(`Safety issue ${editingIssue ? 'updated' : 'created'} successfully!`);
@@ -152,14 +136,7 @@ export default function SafetyIssuesPage() {
   }
 
   try {
-   const response = await fetch(`/api/safety-issues/${id}`, {
-    method: 'DELETE',
-   });
-
-   if (!response.ok) {
-    throw new Error('Failed to delete safety issue');
-   }
-
+   await axiosInstance.delete(`/api/safety-issues/${id}`);
    alert('Safety issue deleted successfully!');
    loadData();
   } catch (error) {

@@ -3,6 +3,10 @@ import { authenticateRequest } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 import { getDerivedComplianceStatus, parseJsonArray } from '@/lib/compliance'
 
+// Force dynamic rendering (disable caching)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface MonthBucket {
   month: string
   created: number

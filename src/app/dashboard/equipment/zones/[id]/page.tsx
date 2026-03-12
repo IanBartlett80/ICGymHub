@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import Link from 'next/link';
+import axiosInstance from '@/lib/axios';
 import { 
  ArrowLeftIcon,
  ExclamationTriangleIcon,
@@ -87,47 +88,26 @@ export default function ZoneDetailPage() {
   try {
    setLoading(true);
    const [zoneRes, equipmentRes, issuesRes, tasksRes, statusRes, qrRes] = await Promise.all([
-    fetch(`/api/zones/${zoneId}`),
-    fetch(`/api/equipment?zoneId=${zoneId}`),
-    fetch(`/api/safety-issues?zoneId=${zoneId}`),
-    fetch(`/api/maintenance-tasks?zoneId=${zoneId}`),
-    fetch(`/api/equipment/analytics/zone-status`),
-    fetch(`/api/zones/${zoneId}/generate-qr`), // Load QR code together with other data
+    axiosInstance.get(`/api/zones/${zoneId}`),
+    axiosInstance.get(`/api/equipment?zoneId=${zoneId}`),
+    axiosInstance.get(`/api/safety-issues?zoneId=${zoneId}`),
+    axiosInstance.get(`/api/maintenance-tasks?zoneId=${zoneId}`),
+    axiosInstance.get(`/api/equipment/analytics/zone-status`),
+    axiosInstance.get(`/api/zones/${zoneId}/generate-qr`), // Load QR code together with other data
    ]);
 
-   if (zoneRes.ok) {
-    const zoneData = await zoneRes.json();
-    setZone(zoneData);
-   }
-
-   if (equipmentRes.ok) {
-    const data = await equipmentRes.json();
-    setEquipment(data.equipment || data);
-   }
-
-   if (issuesRes.ok) {
-    const data = await issuesRes.json();
-    setSafetyIssues(data.issues || data);
-   }
-
-   if (tasksRes.ok) {
-    const data = await tasksRes.json();
-    setMaintenanceTasks(data.tasks || data);
-   }
-
-   if (statusRes.ok) {
-    const data = await statusRes.json();
-    // data is an array of zone statuses, not wrapped in .zones
-    const thisZoneStatus = Array.isArray(data) ? data.find((z: any) => z.zoneId === zoneId) : null;
-    setZoneStatus(thisZoneStatus);
-   }
+   setZone(zoneRes.data);
+   setEquipment(equipmentRes.data.equipment || equipmentRes.data);
+   setSafetyIssues(issuesRes.data.issues || issuesRes.data);
+   setMaintenanceTasks(tasksRes.data.tasks || tasksRes.data);
+   
+   // data is an array of zone statuses, not wrapped in .zones
+   const thisZoneStatus = Array.isArray(statusRes.data) ? statusRes.data.find((z: any) => z.zoneId === zoneId) : null;
+   setZoneStatus(thisZoneStatus);
 
    // Load existing QR code if available
-   if (qrRes.ok) {
-    const qrData = await qrRes.json();
-    if (qrData.hasQRCode) {
-     setQrCodeDataUrl(qrData.qrCodeDataUrl);
-    }
+   if (qrRes.data.hasQRCode) {
+    setQrCodeDataUrl(qrRes.data.qrCodeDataUrl);
    }
   } catch (error) {
    console.error('Failed to load zone details:', error);
@@ -193,18 +173,10 @@ export default function ZoneDetailPage() {
  const handleGenerateQR = async () => {
   try {
    setGeneratingQR(true);
-   const response = await fetch(`/api/zones/${zoneId}/generate-qr`, {
-    method: 'POST',
-   });
-
-   if (!response.ok) {
-    throw new Error('Failed to generate QR code');
-   }
-
-   const data = await response.json();
+   const data = await axiosInstance.post(`/api/zones/${zoneId}/generate-qr`);
    
    // Store QR code data for display
-   setQrCodeDataUrl(data.qrCodeDataUrl);
+   setQrCodeDataUrl(data.data.qrCodeDataUrl);
    
    // Reload zone data to get the publicId
    await loadData();

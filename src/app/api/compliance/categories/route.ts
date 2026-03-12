@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authenticateRequest } from '@/lib/apiAuth'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering (disable caching)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function canManageCompliance(role: string): boolean {
   return role === 'ADMIN'
 }

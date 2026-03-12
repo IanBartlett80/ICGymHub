@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/apiAuth';
 
+// Force dynamic rendering (disable caching)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // GET /api/safety-issues - List all safety issues for a club
 export async function GET(request: NextRequest) {
   try {

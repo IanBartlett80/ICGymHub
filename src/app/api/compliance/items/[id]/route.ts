@@ -11,6 +11,10 @@ import {
   parseJsonArray,
 } from '@/lib/compliance'
 
+// Force dynamic rendering (disable caching)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function canManageCompliance(role: string): boolean {
   return role === 'ADMIN'
 }
@@ -204,17 +208,18 @@ export async function PUT(
       )
       
       if (recurringSchedule !== 'NONE') {
-        // Recurring item: update deadline and reset to OPEN
+        // Recurring item: update deadline to next occurrence and reset to OPEN
+        // This preserves the recurring item while moving to next deadline
         const newDeadline = calculateNextDeadline(nextDeadlineDate, recurringSchedule)
         updateData.deadlineDate = newDeadline
         updateData.status = 'OPEN'
-        updateData.completedAt = null
-        updateData.completedById = null
+        updateData.completedAt = new Date() // Track when this instance was completed
+        updateData.completedById = user.id
         updateData.nextReminderDate = calculateNextReminderDate(newDeadline, reminderSchedule)
         updateData.lastReminderSent = null
         updateData.remindersSent = null
       } else {
-        // Non-recurring item: mark as completed
+        // Non-recurring item: mark as completed permanently
         updateData.completedAt = body.completedAt ? new Date(body.completedAt) : new Date()
         updateData.completedById = user.id
         updateData.nextReminderDate = null

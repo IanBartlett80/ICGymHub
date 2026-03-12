@@ -10,6 +10,7 @@ import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
 import VenueSelector from '@/components/VenueSelector';
 import { showToast, confirmAndDelete } from '@/lib/toast';
+import axiosInstance from '@/lib/axios';
 
 interface EquipmentWithRelations extends Equipment {
  zone?: (Zone & { venue?: Venue | null }) | null;
@@ -49,19 +50,12 @@ export default function AllEquipmentPage() {
    }
    
    const [equipmentRes, zonesRes] = await Promise.all([
-    fetch(`/api/equipment?${params.toString()}`),
-    fetch(`/api/zones?${params.toString()}`),
+    axiosInstance.get(`/api/equipment?${params.toString()}`),
+    axiosInstance.get(`/api/zones?${params.toString()}`),
    ]);
 
-   if (equipmentRes.ok) {
-    const data = await equipmentRes.json();
-    setEquipment(data.equipment || data);
-   }
-
-   if (zonesRes.ok) {
-    const data = await zonesRes.json();
-    setZones(data.zones || data);
-   }
+   setEquipment(equipmentRes.data.equipment || equipmentRes.data);
+   setZones(zonesRes.data.zones || zonesRes.data);
   } catch (error) {
    console.error('Failed to load data:', error);
    alert('Failed to load equipment data');
@@ -72,18 +66,10 @@ export default function AllEquipmentPage() {
 
  const handleSubmit = async (formData: any) => {
   try {
-   const url = editingEquipment ? `/api/equipment/${editingEquipment.id}` : '/api/equipment';
-   const method = editingEquipment ? 'PUT' : 'POST';
-
-   const response = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-   });
-
-   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to save equipment');
+   if (editingEquipment) {
+    await axiosInstance.put(`/api/equipment/${editingEquipment.id}`, formData);
+   } else {
+    await axiosInstance.post('/api/equipment', formData);
    }
 
    await loadData();
@@ -91,7 +77,7 @@ export default function AllEquipmentPage() {
    setEditingEquipment(null);
    showToast.saveSuccess('Equipment');
   } catch (error: any) {
-   showToast.error(error.message);
+   showToast.error(error.response?.data?.error || error.message);
   }
  };
 
@@ -101,14 +87,7 @@ export default function AllEquipmentPage() {
   
   confirmAndDelete(equipmentName, async () => {
    try {
-    const response = await fetch(`/api/equipment/${id}`, {
-     method: 'DELETE',
-    });
-
-    if (!response.ok) {
-     throw new Error('Failed to delete equipment');
-    }
-
+    await axiosInstance.delete(`/api/equipment/${id}`);
     await loadData();
    } catch (error) {
     showToast.error('Failed to delete equipment');
@@ -123,41 +102,21 @@ export default function AllEquipmentPage() {
 
  const handleCheckout = async (id: string) => {
   try {
-   const response = await fetch(`/api/equipment/${id}/checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
-   });
-
-   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to checkout equipment');
-   }
-
+   await axiosInstance.post(`/api/equipment/${id}/checkout`, {});
    await loadData();
    showToast.success('Equipment checked out successfully');
   } catch (error: any) {
-   showToast.error(error.message);
+   showToast.error(error.response?.data?.error || error.message);
   }
  };
 
  const handleCheckin = async (id: string) => {
   try {
-   const response = await fetch(`/api/equipment/${id}/checkin`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
-   });
-
-   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to checkin equipment');
-   }
-
+   await axiosInstance.post(`/api/equipment/${id}/checkin`, {});
    await loadData();
    showToast.success('Equipment checked in successfully');
   } catch (error: any) {
-   showToast.error(error.message);
+   showToast.error(error.response?.data?.error || error.message);
   }
  };
 

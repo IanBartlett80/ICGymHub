@@ -7,6 +7,7 @@ import { QrCodeIcon, PrinterIcon, MinusIcon, PlusIcon } from '@heroicons/react/2
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import axiosInstance from '@/lib/axios';
 
 interface ZoneStatus {
  zoneId: string;
@@ -78,61 +79,32 @@ export default function EquipmentPage() {
   try {
    setLoading(true);
    const [zonesRes, venuesRes, statsRes, statusRes, monthlyRes, monthlyByVenueRes] = await Promise.all([
-    fetch('/api/zones'),
-    fetch('/api/venues'),
-    fetch('/api/equipment/analytics/overview'),
-    fetch('/api/equipment/analytics/zone-status'),
-    fetch('/api/equipment/analytics/safety-issues-monthly?months=6'),
-    fetch('/api/equipment/analytics/safety-issues-monthly-by-venue?months=6'),
+    axiosInstance.get('/api/zones'),
+    axiosInstance.get('/api/venues'),
+    axiosInstance.get('/api/equipment/analytics/overview'),
+    axiosInstance.get('/api/equipment/analytics/zone-status'),
+    axiosInstance.get('/api/equipment/analytics/safety-issues-monthly?months=6'),
+    axiosInstance.get('/api/equipment/analytics/safety-issues-monthly-by-venue?months=6'),
    ]);
 
-   let zonesData: Zone[] = [];
-   let venuesData: Venue[] = [];
-   let statusData: ZoneStatus[] = [];
+   const zonesData: Zone[] = zonesRes.data.zones || zonesRes.data;
+   const venuesData: Venue[] = venuesRes.data.venues || venuesRes.data;
+   const statusData: ZoneStatus[] = Array.isArray(statusRes.data) ? statusRes.data : [];
 
-   if (zonesRes.ok) {
-    const data = await zonesRes.json();
-    zonesData = data.zones || data;
-   }
+   setVenues(venuesData);
+   setStats({
+    total: statsRes.data.totalCount || 0,
+    inUse: statsRes.data.inUseCount || 0,
+    maintenanceDue: statsRes.data.maintenanceDueCount || 0,
+    needsAttention: statsRes.data.needsAttentionCount || 0,
+   });
+   console.log('[equipment-page] Zone status data:', statusData);
 
-   if (venuesRes.ok) {
-    const data = await venuesRes.json();
-    venuesData = data.venues || data;
-    setVenues(venuesData);
-   }
+   setMonthlyData(monthlyRes.data.data || []);
+   setZoneNames(monthlyRes.data.zones || []);
 
-   if (statsRes.ok) {
-    const data = await statsRes.json();
-    setStats({
-     total: data.totalCount || 0,
-     inUse: data.inUseCount || 0,
-     maintenanceDue: data.maintenanceDueCount || 0,
-     needsAttention: data.needsAttentionCount || 0,
-    });
-   }
-
-   if (statusRes.ok) {
-    const data = await statusRes.json();
-    // API returns array directly, not wrapped in .zones
-    statusData = Array.isArray(data) ? data : [];
-    console.log('[equipment-page] Zone status data:', statusData);
-   } else {
-    const errorData = await statusRes.json().catch(() => ({ error: 'Unknown error' }));
-    console.error('[equipment-page] Zone status fetch failed:', statusRes.status, statusRes.statusText);
-    console.error('[equipment-page] Error details:', errorData);
-   }
-
-   if (monthlyRes.ok) {
-    const data = await monthlyRes.json();
-    setMonthlyData(data.data || []);
-    setZoneNames(data.zones || []);
-   }
-
-   if (monthlyByVenueRes.ok) {
-    const data = await monthlyByVenueRes.json();
-    setMonthlyDataByVenue(data.data || []);
-    setVenueNames(data.venues || []);
-   }
+   setMonthlyDataByVenue(monthlyByVenueRes.data.data || []);
+   setVenueNames(monthlyByVenueRes.data.venues || []);
 
    // Merge zone data with status info
    const zonesWithStatus = zonesData.map(zone => ({
@@ -183,21 +155,15 @@ export default function EquipmentPage() {
    }
 
    const [monthlyRes, monthlyByVenueRes] = await Promise.all([
-    fetch(`/api/equipment/analytics/safety-issues-monthly?${params.toString()}`),
-    fetch(`/api/equipment/analytics/safety-issues-monthly-by-venue?${params.toString()}`),
+    axiosInstance.get(`/api/equipment/analytics/safety-issues-monthly?${params.toString()}`),
+    axiosInstance.get(`/api/equipment/analytics/safety-issues-monthly-by-venue?${params.toString()}`),
    ]);
 
-   if (monthlyRes.ok) {
-    const data = await monthlyRes.json();
-    setMonthlyData(data.data || []);
-    setZoneNames(data.zones || []);
-   }
+   setMonthlyData(monthlyRes.data.data || []);
+   setZoneNames(monthlyRes.data.zones || []);
 
-   if (monthlyByVenueRes.ok) {
-    const data = await monthlyByVenueRes.json();
-    setMonthlyDataByVenue(data.data || []);
-    setVenueNames(data.venues || []);
-   }
+   setMonthlyDataByVenue(monthlyByVenueRes.data.data || []);
+   setVenueNames(monthlyByVenueRes.data.venues || []);
   } catch (error) {
    console.error('Failed to load graph data:', error);
   }
@@ -208,15 +174,12 @@ export default function EquipmentPage() {
   
   for (const zone of zonesWithPublicIds) {
    try {
-    const response = await fetch(`/api/zones/${zone.id}/generate-qr`);
-    if (response.ok) {
-     const data = await response.json();
-     if (data.hasQRCode) {
-      setZoneQRCodes(prev => ({
-       ...prev,
-       [zone.id]: data.qrCodeDataUrl,
-      }));
-     }
+    const data = await axiosInstance.get(`/api/zones/${zone.id}/generate-qr`);
+    if (data.data.hasQRCode) {
+     setZoneQRCodes(prev => ({
+      ...prev,
+      [zone.id]: data.data.qrCodeDataUrl,
+     }));
     }
    } catch (error) {
     console.error(`Failed to load QR code for zone ${zone.id}:`, error);
@@ -226,13 +189,10 @@ export default function EquipmentPage() {
 
  const loadExistingVenueQRCodes = async () => {
   try {
-   const response = await fetch('/api/venues/generate-qr');
-   if (response.ok) {
-    const data = await response.json();
-    if (data.venueQRCodes && data.venueQRCodes.length > 0) {
-     setVenueQRCodes(data.venueQRCodes);
-     setShowVenueQRs(true);
-    }
+   const data = await axiosInstance.get('/api/venues/generate-qr');
+   if (data.data.venueQRCodes && data.data.venueQRCodes.length > 0) {
+    setVenueQRCodes(data.data.venueQRCodes);
+    setShowVenueQRs(true);
    }
   } catch (error) {
    console.error('Failed to load venue QR codes:', error);
@@ -277,20 +237,12 @@ export default function EquipmentPage() {
  const handleGenerateZoneQR = async (zoneId: string) => {
   try {
    setGeneratingQRForZone(zoneId);
-   const response = await fetch(`/api/zones/${zoneId}/generate-qr`, {
-    method: 'POST',
-   });
-
-   if (!response.ok) {
-    throw new Error('Failed to generate QR code');
-   }
-
-   const data = await response.json();
+   const data = await axiosInstance.post(`/api/zones/${zoneId}/generate-qr`);
    
    // Store the QR code data URL for this zone
    setZoneQRCodes(prev => ({
     ...prev,
-    [zoneId]: data.qrCodeDataUrl,
+    [zoneId]: data.data.qrCodeDataUrl,
    }));
   } catch (error) {
    console.error('Failed to generate QR code:', error);
@@ -305,27 +257,20 @@ export default function EquipmentPage() {
    setGeneratingVenueQRs(true);
    
    // First try to GET existing QR codes
-   const getResponse = await fetch('/api/venues/generate-qr');
-   if (getResponse.ok) {
-    const getData = await getResponse.json();
-    if (getData.venueQRCodes && getData.venueQRCodes.length > 0) {
-     setVenueQRCodes(getData.venueQRCodes);
+   try {
+    const getData = await axiosInstance.get('/api/venues/generate-qr');
+    if (getData.data.venueQRCodes && getData.data.venueQRCodes.length > 0) {
+     setVenueQRCodes(getData.data.venueQRCodes);
      setShowVenueQRs(true);
      return;
     }
+   } catch (error) {
+    // No existing QR codes, continue to generate new ones
    }
 
    // If no existing QR codes, generate new ones
-   const response = await fetch('/api/venues/generate-qr', {
-    method: 'POST',
-   });
-
-   if (!response.ok) {
-    throw new Error('Failed to generate venue QR codes');
-   }
-
-   const data = await response.json();
-   setVenueQRCodes(data.venueQRCodes);
+   const data = await axiosInstance.post('/api/venues/generate-qr');
+   setVenueQRCodes(data.data.venueQRCodes);
    setShowVenueQRs(true);
   } catch (error) {
    console.error('Failed to generate venue QR codes:', error);

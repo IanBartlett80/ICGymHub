@@ -10,6 +10,10 @@ import {
   parseJsonArray,
 } from '@/lib/compliance'
 
+// Force dynamic rendering (disable caching)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function canManageCompliance(role: string): boolean {
   return role === 'ADMIN'
 }
@@ -59,7 +63,14 @@ export async function GET(request: NextRequest) {
     if (ownerId && ownerId !== 'all') {
       where.ownerId = ownerId === 'none' ? null : ownerId
     }
-    if (venueId && venueId !== 'all') where.venueId = venueId
+    
+    // Venue filter: include items for specific venue OR items for "All Venues" (venueId = null)
+    if (venueId && venueId !== 'all') {
+      where.OR = [
+        { venueId: venueId },
+        { venueId: null }
+      ]
+    }
 
     if (status && !['all', 'OVERDUE'].includes(status)) {
       where.status = status
@@ -79,11 +90,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (search && search.trim()) {
-      where.OR = [
+      const searchConditions = [
         { title: { contains: search.trim() } },
         { description: { contains: search.trim() } },
         { notes: { contains: search.trim() } },
       ]
+      
+      // If we already have OR for venue filter, combine with AND
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions }
+        ]
+        delete where.OR
+      } else {
+        where.OR = searchConditions
+      }
     }
 
     const records = await prisma.complianceItem.findMany({
