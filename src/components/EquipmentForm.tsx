@@ -19,6 +19,11 @@ interface EquipmentFormData {
   nextMaintenance?: string;
   maintenanceNotes?: string;
   photoUrl?: string;
+  installationDate?: string;
+  supplier?: string;
+  invoiceRef?: string;
+  warrantyExpiryDate?: string;
+  endOfLifeDate?: string;
 }
 
 interface EquipmentFormProps {
@@ -50,6 +55,11 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
     nextMaintenance: equipment?.nextMaintenance ? new Date(equipment.nextMaintenance).toISOString().split('T')[0] : '',
     maintenanceNotes: equipment?.maintenanceNotes || '',
     photoUrl: equipment?.photoUrl || '',
+    installationDate: (equipment as any)?.installationDate ? new Date((equipment as any).installationDate).toISOString().split('T')[0] : '',
+    supplier: (equipment as any)?.supplier || '',
+    invoiceRef: (equipment as any)?.invoiceRef || '',
+    warrantyExpiryDate: (equipment as any)?.warrantyExpiryDate ? new Date((equipment as any).warrantyExpiryDate).toISOString().split('T')[0] : '',
+    endOfLifeDate: (equipment as any)?.endOfLifeDate ? new Date((equipment as any).endOfLifeDate).toISOString().split('T')[0] : '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -361,6 +371,7 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">No zone assigned</option>
+                  <option value="IN_STORAGE">In Storage</option>
                   {zones
                     .filter(zone => !formData.venueId || (zone as any).venueId === formData.venueId)
                     .map(zone => (
@@ -456,6 +467,75 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
                   placeholder="0.00"
                 />
                 {errors.purchaseCost && <p className="mt-1 text-sm text-red-600">{errors.purchaseCost}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Purchase & Supplier Details */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Purchase & Supplier Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Installation Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.installationDate}
+                  onChange={(e) => handleChange('installationDate', e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Supplier
+                </label>
+                <input
+                  type="text"
+                  value={formData.supplier}
+                  onChange={(e) => handleChange('supplier', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., ABC Sports Equipment"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Invoice Reference
+                </label>
+                <input
+                  type="text"
+                  value={formData.invoiceRef}
+                  onChange={(e) => handleChange('invoiceRef', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., INV-2024-001"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Warranty Expiry Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.warrantyExpiryDate}
+                  onChange={(e) => handleChange('warrantyExpiryDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  End of Life Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.endOfLifeDate}
+                  onChange={(e) => handleChange('endOfLifeDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
             </div>
           </div>

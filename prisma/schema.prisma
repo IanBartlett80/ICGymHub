@@ -839,6 +839,11 @@ model Equipment {
   lastCheckedDate     DateTime?
   lastCheckStatus     String?
   lastCheckedBy       String?
+  installationDate    DateTime?
+  supplier            String?
+  invoiceRef          String?
+  warrantyExpiryDate  DateTime?
+  endOfLifeDate       DateTime?
   club                Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
   venue               Venue?               @relation(fields: [venueId], references: [id], onDelete: Cascade)
   zone                Zone?                @relation(fields: [zoneId], references: [id])

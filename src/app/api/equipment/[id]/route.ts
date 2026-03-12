@@ -81,7 +81,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id} = await params;
     const body = await request.json();
     const {
       name,
@@ -100,6 +100,11 @@ export async function PUT(
       inUse,
       currentClass,
       active,
+      installationDate,
+      supplier,
+      invoiceRef,
+      warrantyExpiryDate,
+      endOfLifeDate,
     } = body;
 
     // Verify ownership
@@ -130,8 +135,8 @@ export async function PUT(
       );
     }
 
-    // Check if zone exists if provided
-    if (zoneId !== undefined && zoneId !== null) {
+    // Check if zone exists if provided (skip for IN_STORAGE virtual zone)
+    if (zoneId !== undefined && zoneId !== null && zoneId !== 'IN_STORAGE') {
       const zone = await prisma.zone.findFirst({
         where: {
           id: zoneId,
@@ -184,7 +189,7 @@ export async function PUT(
     if (condition !== undefined) updateData.condition = condition;
     if (location !== undefined) updateData.location = location || null;
     if (venueId !== undefined) updateData.venueId = venueId || null;
-    if (zoneId !== undefined) updateData.zoneId = zoneId || null;
+    if (zoneId !== undefined) updateData.zoneId = (zoneId && zoneId !== 'IN_STORAGE') ? zoneId : null;
     if (lastMaintenance !== undefined) updateData.lastMaintenance = lastMaintenance ? new Date(lastMaintenance) : null;
     if (nextMaintenance !== undefined) updateData.nextMaintenance = nextMaintenance ? new Date(nextMaintenance) : null;
     if (maintenanceNotes !== undefined) updateData.maintenanceNotes = maintenanceNotes || null;
@@ -192,6 +197,11 @@ export async function PUT(
     if (inUse !== undefined) updateData.inUse = inUse;
     if (currentClass !== undefined) updateData.currentClass = currentClass || null;
     if (active !== undefined) updateData.active = active;
+    if (installationDate !== undefined) updateData.installationDate = installationDate ? new Date(installationDate) : null;
+    if (supplier !== undefined) updateData.supplier = supplier || null;
+    if (invoiceRef !== undefined) updateData.invoiceRef = invoiceRef || null;
+    if (warrantyExpiryDate !== undefined) updateData.warrantyExpiryDate = warrantyExpiryDate ? new Date(warrantyExpiryDate) : null;
+    if (endOfLifeDate !== undefined) updateData.endOfLifeDate = endOfLifeDate ? new Date(endOfLifeDate) : null;
 
     const equipment = await prisma.equipment.update({
       where: { id },

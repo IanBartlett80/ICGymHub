@@ -111,6 +111,11 @@ export async function POST(request: NextRequest) {
       nextMaintenance,
       maintenanceNotes,
       photoUrl,
+      installationDate,
+      supplier,
+      invoiceRef,
+      warrantyExpiryDate,
+      endOfLifeDate,
     } = body;
 
     // Validation
@@ -136,8 +141,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if zone exists if provided
-    if (zoneId) {
+    // Check if zone exists if provided (skip for IN_STORAGE virtual zone)
+    if (zoneId && zoneId !== 'IN_STORAGE') {
       const zone = await prisma.zone.findFirst({
         where: {
           id: zoneId,
@@ -175,12 +180,17 @@ export async function POST(request: NextRequest) {
         purchaseCost: purchaseCost || null,
         condition: condition || 'Good',
         location: location || null,
-        zoneId: zoneId || null,
+        zoneId: (zoneId && zoneId !== 'IN_STORAGE') ? zoneId : null,
         venueId: venueId || null,
         lastMaintenance: lastMaintenance ? new Date(lastMaintenance) : null,
         nextMaintenance: nextMaintenance ? new Date(nextMaintenance) : null,
         maintenanceNotes: maintenanceNotes || null,
         photoUrl: photoUrl || null,
+        installationDate: installationDate ? new Date(installationDate) : null,
+        supplier: supplier || null,
+        invoiceRef: invoiceRef || null,
+        warrantyExpiryDate: warrantyExpiryDate ? new Date(warrantyExpiryDate) : null,
+        endOfLifeDate: endOfLifeDate ? new Date(endOfLifeDate) : null,
         active: true,
       },
     });
