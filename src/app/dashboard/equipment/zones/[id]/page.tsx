@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
+import EquipmentStatusCard from '@/components/EquipmentStatusCard';
+import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import Link from 'next/link';
 import axiosInstance from '@/lib/axios';
 import { 
@@ -13,6 +15,7 @@ import {
  CubeIcon,
  QrCodeIcon,
  PrinterIcon,
+ EyeIcon,
 } from '@heroicons/react/24/outline';
 
 interface Zone {
@@ -28,10 +31,16 @@ interface Equipment {
  id: string;
  name: string;
  category: string | null;
+ serialNumber: string | null;
  condition: string;
  photoUrl?: string | null;
+ lastCheckedDate?: string | null;
+ lastCheckStatus?: string | null;
  safetyIssues?: SafetyIssue[];
  maintenanceTasks?: MaintenanceTask[];
+ _count?: {
+  safetyIssues: number;
+ };
 }
 
 interface SafetyIssue {
@@ -79,6 +88,7 @@ export default function ZoneDetailPage() {
  const [zoneStatus, setZoneStatus] = useState<any>(null);
  const [generatingQR, setGeneratingQR] = useState(false);
  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+ const [reviewingIssueId, setReviewingIssueId] = useState<string | null>(null);
 
  useEffect(() => {
   loadData();
@@ -156,17 +166,6 @@ export default function ZoneDetailPage() {
    case 'MEDIUM': return 'text-yellow-700 bg-yellow-100';
    case 'LOW': return 'text-blue-700 bg-blue-100';
    default: return 'text-gray-700 bg-gray-100';
-  }
- };
-
- const getConditionColor = (condition: string) => {
-  switch (condition) {
-   case 'Excellent': return 'text-green-700 bg-green-50';
-   case 'Good': return 'text-blue-700 bg-blue-50';
-   case 'Fair': return 'text-yellow-700 bg-yellow-50';
-   case 'Poor': return 'text-orange-700 bg-orange-50';
-   case 'Out of Service': return 'text-red-700 bg-red-50';
-   default: return 'text-gray-700 bg-gray-50';
   }
  };
 
@@ -540,6 +539,13 @@ export default function ZoneDetailPage() {
               {issue.issueType.replace('_', ' ')} • Reported by {issue.reportedBy} • {formatDate(issue.createdAt)}
              </div>
             </div>
+            <button
+             onClick={() => setReviewingIssueId(issue.id)}
+             className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg flex-shrink-0"
+             title="View Details"
+>
+             <EyeIcon className="h-5 w-5" />
+            </button>
            </div>
           </div>
          ))
@@ -549,62 +555,31 @@ export default function ZoneDetailPage() {
 
       {/* Equipment Tab */}
       {activeTab === 'equipment' && (
-       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {equipment.length === 0 ? (
          <p className="text-gray-500 text-center py-8 col-span-full">No equipment in this zone</p>
         ) : (
          equipment.map(item => {
           const openIssuesCount = item.safetyIssues?.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length || 0;
-          const pendingTasksCount = item.maintenanceTasks?.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length || 0;
 
           return (
-           <Link
+           <EquipmentStatusCard
             key={item.id}
-            href={`/dashboard/equipment/items/${item.id}`}
-            className="block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white"
->
-            <div className="flex">
-             {/* Photo Thumbnail */}
-             <div className="w-24 h-24 flex-shrink-0 bg-gray-100 border-r border-gray-200">
-              {item.photoUrl ? (
-               <img
-                src={item.photoUrl}
-                alt={item.name}
-                className="w-full h-full object-cover"
-               />
-              ) : (
-               <div className="w-full h-full flex items-center justify-center text-gray-400">
-                <CubeIcon className="w-10 h-10" />
-               </div>
-              )}
-             </div>
-             
-             {/* Equipment Info */}
-             <div className="flex-1 p-3 min-w-0">
-              <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
-              <p className="text-xs text-gray-500 mt-0.5 truncate">{item.category || 'Uncategorized'}</p>
-              <div className="mt-2">
-               <span className={`px-2 py-0.5 rounded text-xs font-medium ${getConditionColor(item.condition)}`}>
-                {item.condition}
-               </span>
-              </div>
-              {(openIssuesCount> 0 || pendingTasksCount> 0) && (
-               <div className="mt-2 flex items-center gap-2 text-xs flex-wrap">
-                {openIssuesCount> 0 && (
-                 <span className="text-red-600 font-medium">
-                  {openIssuesCount} issue{openIssuesCount !== 1 ? 's' : ''}
-                 </span>
-                )}
-                {pendingTasksCount> 0 && (
-                 <span className="text-yellow-600 font-medium">
-                  {pendingTasksCount} task{pendingTasksCount !== 1 ? 's' : ''}
-                 </span>
-                )}
-               </div>
-              )}
-             </div>
-            </div>
-           </Link>
+            equipment={{
+             id: item.id,
+             name: item.name,
+             category: item.category,
+             serialNumber: item.serialNumber || null,
+             condition: item.condition,
+             photoUrl: item.photoUrl || null,
+             lastCheckedDate: item.lastCheckedDate || null,
+             lastCheckStatus: item.lastCheckStatus || null,
+             zone: null, // Don't show zone since we're already in a zone page
+             _count: item._count || { safetyIssues: openIssuesCount },
+            }}
+            showZone={false}
+            openIssuesCount={openIssuesCount}
+           />
           );
          })
         )}
@@ -652,6 +627,15 @@ export default function ZoneDetailPage() {
      </div>
     </div>
    </div>
+
+   {/* Safety Issue Review Modal */}
+   {reviewingIssueId && (
+    <SafetyIssueReviewModal
+     issueId={reviewingIssueId}
+     onClose={() => setReviewingIssueId(null)}
+     onUpdate={loadData}
+    />
+   )}
   </DashboardLayout>
  );
 }

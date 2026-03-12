@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
+import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import axiosInstance from '@/lib/axios';
 import { 
  ArrowLeftIcon, 
@@ -13,6 +14,7 @@ import {
  ExclamationTriangleIcon,
  ClockIcon,
  PlusIcon,
+ EyeIcon,
 } from '@heroicons/react/24/outline';
 
 interface Equipment {
@@ -95,6 +97,7 @@ export default function EquipmentDetailPage() {
  const [selectedSafetyIssue, setSelectedSafetyIssue] = useState<SafetyIssue | null>(null);
  const [showScheduledMaintenanceForm, setShowScheduledMaintenanceForm] = useState(false);
  const [editingTask, setEditingTask] = useState<MaintenanceTask | null>(null);
+ const [reviewingIssueId, setReviewingIssueId] = useState<string | null>(null);
 
  useEffect(() => {
   loadData();
@@ -403,7 +406,7 @@ export default function EquipmentDetailPage() {
          <p className="text-gray-500 text-center py-8">No safety issues reported</p>
         ) : (
          safetyIssues.map(issue => (
-          <div key={issue.id} className="border border-gray-200 rounded-lg p-4">
+          <div key={issue.id} className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
            <div className="flex items-start justify-between">
             <div className="flex-1">
              <div className="flex items-center space-x-2 mb-2">
@@ -436,7 +439,7 @@ export default function EquipmentDetailPage() {
              {issue.photos && (() => {
               try {
                const photoArray = JSON.parse(issue.photos);
-               if (Array.isArray(photoArray) && photoArray.length> 0) {
+               if (Array.isArray(photoArray) && photoArray.length > 0) {
                 return (
                  <div className="mt-3">
                   <p className="text-xs font-medium text-gray-700 mb-2">Attached Photos:</p>
@@ -446,7 +449,8 @@ export default function EquipmentDetailPage() {
                      key={idx}
                      src={photo}
                      alt={`Issue photo ${idx + 1}`}
-                     className="w-full h-24 object-cover rounded border"
+                     className="w-full h-24 object-cover rounded border cursor-pointer hover:opacity-80"
+                     onClick={() => window.open(photo, '_blank')}
                     />
                    ))}
                   </div>
@@ -459,9 +463,16 @@ export default function EquipmentDetailPage() {
               return null;
              })()}
              
-             {/* Request Quote Button */}
-             {!issue.resolvedAt && (
-              <div className="mt-3">
+             {/* Action Buttons */}
+             <div className="mt-3 flex gap-2">
+              <button
+               onClick={() => setReviewingIssueId(issue.id)}
+               className="inline-flex items-center px-3 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+>
+               <EyeIcon className="h-4 w-4 mr-2" />
+               View Full Details
+              </button>
+              {!issue.resolvedAt && (
                <button
                 onClick={() => handleRequestQuote(issue)}
                 className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -469,8 +480,8 @@ export default function EquipmentDetailPage() {
                 <WrenchScrewdriverIcon className="h-4 w-4 mr-2" />
                 Request Quote for Repair
                </button>
-              </div>
-             )}
+              )}
+             </div>
             </div>
            </div>
           </div>
@@ -582,6 +593,15 @@ export default function EquipmentDetailPage() {
      onClose={handleMaintenanceFormClose}
      onSuccess={handleMaintenanceFormSuccess}
      existingTask={editingTask || undefined}
+    />
+   )}
+
+   {/* Safety Issue Review Modal */}
+   {reviewingIssueId && (
+    <SafetyIssueReviewModal
+     issueId={reviewingIssueId}
+     onClose={() => setReviewingIssueId(null)}
+     onUpdate={loadData}
     />
    )}
   </DashboardLayout>

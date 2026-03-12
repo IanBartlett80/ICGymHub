@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import axiosInstance from '@/lib/axios';
 import { 
  PlusIcon,
  PencilIcon,
  XMarkIcon,
  FunnelIcon,
+ EyeIcon,
 } from '@heroicons/react/24/outline';
 
 interface SafetyIssue {
@@ -43,11 +46,13 @@ interface Equipment {
 }
 
 export default function SafetyIssuesPage() {
+ const router = useRouter();
  const [issues, setIssues] = useState<SafetyIssue[]>([]);
  const [equipment, setEquipment] = useState<Equipment[]>([]);
  const [loading, setLoading] = useState(true);
  const [showForm, setShowForm] = useState(false);
  const [editingIssue, setEditingIssue] = useState<SafetyIssue | null>(null);
+ const [reviewingIssueId, setReviewingIssueId] = useState<string | null>(null);
  const [filterStatus, setFilterStatus] = useState<string>('all');
  const [filterPriority, setFilterPriority] = useState<string>('all');
  const [filterIssueType, setFilterIssueType] = useState<string>('all');
@@ -493,7 +498,13 @@ export default function SafetyIssuesPage() {
            <p className="text-gray-600 mb-3">{issue.description}</p>
            <div className="flex items-center gap-6 text-sm text-gray-500">
             <span>
-             <strong>Equipment:</strong> {issue.equipment.name}
+             <strong>Equipment:</strong>{' '}
+             <button
+              onClick={() => router.push(`/dashboard/equipment/items/${issue.equipment.id}`)}
+              className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+             >
+              {issue.equipment.name}
+             </button>
              {issue.equipment.zone && ` (${issue.equipment.zone.name})`}
             </span>
             <span>
@@ -506,6 +517,13 @@ export default function SafetyIssuesPage() {
            </div>
           </div>
           <div className="flex items-center gap-2 ml-4">
+           <button
+            onClick={() => setReviewingIssueId(issue.id)}
+            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+            title="View Details"
+>
+            <EyeIcon className="h-5 w-5" />
+           </button>
            <button
             onClick={() => handleEdit(issue)}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -528,6 +546,15 @@ export default function SafetyIssuesPage() {
      )}
     </div>
    </div>
+
+   {/* Safety Issue Review Modal */}
+   {reviewingIssueId && (
+    <SafetyIssueReviewModal
+     issueId={reviewingIssueId}
+     onClose={() => setReviewingIssueId(null)}
+     onUpdate={loadData}
+    />
+   )}
   </DashboardLayout>
  );
 }
