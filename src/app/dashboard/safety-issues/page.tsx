@@ -9,7 +9,6 @@ import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import axiosInstance from '@/lib/axios';
 import { 
  PlusIcon,
- PencilIcon,
  XMarkIcon,
  FunnelIcon,
  EyeIcon,
@@ -510,70 +509,76 @@ export default function SafetyIssuesPage() {
         No {activeTab} safety issues found
        </div>
       ) : (
-       <div className="divide-y divide-gray-200">
-        {filteredIssues.map(issue => (
-        <div key={issue.id} className="p-6 hover:bg-gray-50">
-         <div className="flex items-start justify-between">
+       <div>
+        {/* Header Row */}
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+         <div className="flex items-center justify-between">
           <div className="flex-1">
-           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{issue.title}</h3>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getIssueTypeColor(issue.issueType)}`}>
-             {issue.issueType.replace('_', ' ')}
-            </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(issue.priority)}`}>
-             {issue.priority}
-            </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(issue.status)}`}>
-             {issue.status.replace('_', ' ')}
-            </span>
-           </div>
-           <p className="text-gray-600 mb-3">{issue.description}</p>
-           <div className="flex items-center gap-6 text-sm text-gray-500">
-            <span>
-             <strong>Equipment:</strong>{' '}
-             <button
-              onClick={() => router.push(`/dashboard/equipment/items/${issue.equipment.id}`)}
-              className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
-             >
-              {issue.equipment.name}
-             </button>
-             {issue.equipment.zone && ` (${issue.equipment.zone.name})`}
-            </span>
-            <span>
-             <strong>Reported by:</strong> {issue.reportedBy}
-             {issue.reportedByEmail && ` (${issue.reportedByEmail})`}
-            </span>
-            <span>
-             <strong>Created:</strong> {new Date(issue.createdAt).toLocaleDateString()}
-            </span>
-           </div>
+           <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Issue Details</span>
           </div>
-          <div className="flex items-center gap-2 ml-4">
-           <button
-            onClick={() => setReviewingIssueId(issue.id)}
-            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
-            title="View Details"
->
-            <EyeIcon className="h-5 w-5" />
-           </button>
-           <button
-            onClick={() => handleEdit(issue)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-            title="Edit"
->
-            <PencilIcon className="h-5 w-5" />
-           </button>
-           <button
-            onClick={() => handleDelete(issue.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-            title="Delete"
->
-            <XMarkIcon className="h-5 w-5" />
-           </button>
+          <div className="ml-4">
+           <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</span>
           </div>
          </div>
         </div>
-        ))}
+        <div className="divide-y divide-gray-200">
+         {filteredIssues.map(issue => (
+         <div key={issue.id} className="p-6 hover:bg-gray-50">
+          <div className="flex items-start justify-between">
+           <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+             <h3 className="text-lg font-semibold text-gray-900">{issue.title}</h3>
+             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getIssueTypeColor(issue.issueType)}`}>
+              {issue.issueType.replace('_', ' ')}
+             </span>
+             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(issue.priority)}`}>
+              {issue.priority}
+             </span>
+             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(issue.status)}`}>
+              {issue.status.replace('_', ' ')}
+             </span>
+            </div>
+            <p className="text-gray-600 mb-3">{issue.description}</p>
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+             <span>
+              <strong>Equipment:</strong>{' '}
+              <button
+               onClick={() => router.push(`/dashboard/equipment/items/${issue.equipment.id}`)}
+               className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+              >
+               {issue.equipment.name}
+              </button>
+              {issue.equipment.zone && ` (${issue.equipment.zone.name})`}
+             </span>
+             <span>
+              <strong>Reported by:</strong> {issue.reportedBy}
+              {issue.reportedByEmail && ` (${issue.reportedByEmail})`}
+             </span>
+             <span>
+              <strong>Created:</strong> {new Date(issue.createdAt).toLocaleDateString()}
+             </span>
+            </div>
+           </div>
+           <div className="flex items-center gap-2 ml-4">
+            <button
+             onClick={() => setReviewingIssueId(issue.id)}
+             className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+             title="View Details"
+>
+             <EyeIcon className="h-5 w-5" />
+            </button>
+            <button
+             onClick={() => handleDelete(issue.id)}
+             className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+             title="Delete"
+>
+             <XMarkIcon className="h-5 w-5" />
+            </button>
+           </div>
+          </div>
+         </div>
+         ))}
+        </div>
        </div>
       );
      })()}
