@@ -373,7 +373,7 @@ export default function EquipmentDetailPage() {
           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
 >
-        Safety Issues ({safetyIssues.length})
+        Safety Issues ({safetyIssues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length})
        </button>
        <button
         onClick={() => setActiveTab('tasks')}
@@ -399,14 +399,14 @@ export default function EquipmentDetailPage() {
      </div>
 
      <div className="p-6">
-      {/* Safety Issues Tab */}
+      {/* Safety Issues Tab - Only Active Issues */}
       {activeTab === 'safety' && (
        <div className="space-y-4">
-        {safetyIssues.length === 0 ? (
-         <p className="text-gray-500 text-center py-8">No safety issues reported</p>
+        {safetyIssues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length === 0 ? (
+          <p className="text-gray-500 text-center py-8">No active safety issues</p>
         ) : (
-         safetyIssues.map(issue => (
-          <div key={issue.id} className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
+          safetyIssues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').map(issue => (
+           <div key={issue.id} className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
            <div className="flex items-start justify-between">
             <div className="flex-1">
              <div className="flex items-center space-x-2 mb-2">
@@ -545,11 +545,70 @@ export default function EquipmentDetailPage() {
 
       {/* Maintenance Logs Tab */}
       {activeTab === 'logs' && (
-       <div className="space-y-4">
-        {maintenanceLogs.length === 0 ? (
-         <p className="text-gray-500 text-center py-8">No maintenance history</p>
-        ) : (
-         maintenanceLogs.map(log => (
+       <div className="space-y-6">
+        {/* Resolved Safety Issues Section */}
+        {safetyIssues.filter(i => i.status === 'RESOLVED' || i.status === 'CLOSED').length > 0 && (
+          <div>
+           <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <ExclamationTriangleIcon className="h-5 w-5 text-green-600" />
+            Resolved Safety Issues
+           </h3>
+           <div className="space-y-3">
+            {safetyIssues.filter(i => i.status === 'RESOLVED' || i.status === 'CLOSED').map(issue => (
+             <div key={issue.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
+              <div className="flex items-start justify-between">
+               <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                 <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(issue.status)}`}>
+                  {issue.status.replace('_', ' ')}
+                 </span>
+                 <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(issue.priority)}`}>
+                  {issue.priority}
+                 </span>
+                 <span className="text-xs text-gray-500">{issue.issueType.replace('_', ' ')}</span>
+                </div>
+                <h4 className="text-sm font-semibold text-gray-900">{issue.title}</h4>
+                <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
+                <div className="mt-2 text-xs text-gray-500">
+                 Reported by {issue.reportedBy} on {formatDate(issue.createdAt)}
+                </div>
+                {issue.resolvedAt && (
+                 <div className="mt-2 p-2 bg-white rounded border border-green-300">
+                  <p className="text-xs font-medium text-green-800">✓ Resolved</p>
+                  <p className="text-xs text-green-700 mt-1">
+                   By {issue.resolvedBy} on {formatDate(issue.resolvedAt)}
+                  </p>
+                  {issue.resolutionNotes && (
+                   <p className="text-xs text-green-600 mt-1">{issue.resolutionNotes}</p>
+                  )}
+                 </div>
+                )}
+               </div>
+               <button
+                onClick={() => setReviewingIssueId(issue.id)}
+                className="p-2 text-green-600 hover:bg-green-100 rounded-lg flex-shrink-0"
+                title="View Details"
+               >
+                <EyeIcon className="h-5 w-5" />
+               </button>
+              </div>
+             </div>
+            ))}
+           </div>
+          </div>
+         )}
+
+         {/* Maintenance Logs Section */}
+         <div>
+          <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+           <WrenchScrewdriverIcon className="h-5 w-5 text-blue-600" />
+           Maintenance Logs
+          </h3>
+          {maintenanceLogs.length === 0 ? (
+           <p className="text-gray-500 text-center py-8">No maintenance history</p>
+          ) : (
+           <div className="space-y-3">
+            {maintenanceLogs.map(log => (
           <div key={log.id} className="border border-gray-200 rounded-lg p-4">
            <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -568,12 +627,15 @@ export default function EquipmentDetailPage() {
            </div>
           </div>
          ))
-        )}
-       </div>
-      )}
+        }
+        </div>
+       )}
+      </div>
      </div>
-    </div>
+    )}
    </div>
+   </div>
+  </div>
    
    {/* Repair Quote Request Form Modal */}
    {showRepairQuoteForm && equipment && (

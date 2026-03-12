@@ -53,6 +53,7 @@ export default function SafetyIssuesPage() {
  const [showForm, setShowForm] = useState(false);
  const [editingIssue, setEditingIssue] = useState<SafetyIssue | null>(null);
  const [reviewingIssueId, setReviewingIssueId] = useState<string | null>(null);
+ const [activeTab, setActiveTab] = useState<'active' | 'resolved'>('active');
  const [filterStatus, setFilterStatus] = useState<string>('all');
  const [filterPriority, setFilterPriority] = useState<string>('all');
  const [filterIssueType, setFilterIssueType] = useState<string>('all');
@@ -220,8 +221,10 @@ export default function SafetyIssuesPage() {
     {/* Stats Cards */}
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
      <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="text-sm font-medium text-gray-600">Total Issues</div>
-      <div className="text-2xl font-bold text-gray-900 mt-2">{issues.length}</div>
+      <div className="text-sm font-medium text-gray-600">Active Issues</div>
+      <div className="text-2xl font-bold text-orange-600 mt-2">
+       {issues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length}
+      </div>
      </div>
      <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="text-sm font-medium text-gray-600">Open Issues</div>
@@ -230,15 +233,15 @@ export default function SafetyIssuesPage() {
       </div>
      </div>
      <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="text-sm font-medium text-gray-600">Critical Issues</div>
-      <div className="text-2xl font-bold text-orange-600 mt-2">
-       {issues.filter(i => i.issueType === 'CRITICAL').length}
+      <div className="text-sm font-medium text-gray-600">In Progress</div>
+      <div className="text-2xl font-bold text-yellow-600 mt-2">
+       {issues.filter(i => i.status === 'IN_PROGRESS').length}
       </div>
      </div>
      <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="text-sm font-medium text-gray-600">Resolved</div>
       <div className="text-2xl font-bold text-green-600 mt-2">
-       {issues.filter(i => i.status === 'RESOLVED').length}
+       {issues.filter(i => i.status === 'RESOLVED' || i.status === 'CLOSED').length}
       </div>
      </div>
     </div>
@@ -464,22 +467,51 @@ export default function SafetyIssuesPage() {
      </div>
     )}
 
-    {/* Issues List */}
+    {/* Issues List with Tabs */}
     <div className="bg-white rounded-lg border border-gray-200">
-     <div className="p-6 border-b border-gray-200">
-      <h2 className="text-lg font-semibold text-gray-900">Safety Issues</h2>
+     <div className="border-b border-gray-200">
+      <div className="flex items-center justify-between p-6 pb-0">
+       <h2 className="text-lg font-semibold text-gray-900">Safety Issues</h2>
+      </div>
+      <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+       <button
+        onClick={() => setActiveTab('active')}
+        className={`${
+         activeTab === 'active'
+          ? 'border-indigo-500 text-indigo-600'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+       >
+        Active Safety Issues ({issues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS').length})
+       </button>
+       <button
+        onClick={() => setActiveTab('resolved')}
+        className={`${
+         activeTab === 'resolved'
+          ? 'border-indigo-500 text-indigo-600'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+       >
+        Resolved Safety Issues History ({issues.filter(i => i.status === 'RESOLVED' || i.status === 'CLOSED').length})
+       </button>
+      </nav>
      </div>
      {loading ? (
       <div className="p-12 text-center">
        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
       </div>
-     ) : issues.length === 0 ? (
-      <div className="p-12 text-center text-gray-500">
-       No safety issues found
-      </div>
-     ) : (
-      <div className="divide-y divide-gray-200">
-       {issues.map(issue => (
+     ) : (() => {
+      const filteredIssues = activeTab === 'active'
+       ? issues.filter(i => i.status === 'OPEN' || i.status === 'IN_PROGRESS')
+       : issues.filter(i => i.status === 'RESOLVED' || i.status === 'CLOSED');
+      
+      return filteredIssues.length === 0 ? (
+       <div className="p-12 text-center text-gray-500">
+        No {activeTab} safety issues found
+       </div>
+      ) : (
+       <div className="divide-y divide-gray-200">
+        {filteredIssues.map(issue => (
         <div key={issue.id} className="p-6 hover:bg-gray-50">
          <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -541,9 +573,10 @@ export default function SafetyIssuesPage() {
           </div>
          </div>
         </div>
-       ))}
-      </div>
-     )}
+        ))}
+       </div>
+      );
+     })()}
     </div>
    </div>
 

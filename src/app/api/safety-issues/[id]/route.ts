@@ -52,7 +52,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { club } = await authenticateRequest(request);
+    const { club, user } = await authenticateRequest(request);
     const { id } = await params;
     const body = await request.json();
 
@@ -61,6 +61,9 @@ export async function PUT(
       where: {
         id,
         clubId: club.id,
+      },
+      include: {
+        equipment: true,
       },
     });
 
@@ -81,19 +84,53 @@ export async function PUT(
       updateData.photos = body.photos ? JSON.stringify(body.photos) : null;
     }
 
-    const issue = await prisma.safetyIssue.update({
-      where: { id },
-      data: updateData,
-      include: {
-        equipment: {
-          include: {
-            zone: true,
+    // If status is changing to RESOLVED or CLOSED, add resolution data
+    const isBeingResolved = (body.status === 'RESOLVED' || body.status === 'CLOSED') && 
+                           existing.status !== 'RESOLVED' && 
+                           existing.status !== 'CLOSED';
+    
+    if (isBeingResolved) {
+      updateData.resolvedAt = new Date();
+      updateData.resolvedBy = user.fullName || user.email;
+      if (body.resolutionNotes) {
+        updateData.resolutionNotes = body.resolutionNotes;
+      }
+    }
+
+    // Use transaction to update safety issue and create maintenance log
+    const result = await prisma.$transaction(async (tx) => {
+      // Update the safety issue
+      const updatedIssue = await tx.safetyIssue.update({
+        where: { id },
+        data: updateData,
+        include: {
+          equipment: {
+            include: {
+              zone: true,
+            },
           },
         },
-      },
+      });
+
+      // If being resolved, create a maintenance log entry
+      if (isBeingResolved && existing.equipment) {
+        await tx.maintenanceLog.create({
+          data: {
+            clubId: club.id,
+            equipmentId: existing.equipmentId,
+            maintenanceType: 'Safety Issue Resolution',
+            description: `Safety Issue Resolved: ${existing.title}\n\nOriginal Issue: ${existing.description}\n\nResolution: ${body.resolutionNotes || 'No resolution notes provided'}\n\nReported by: ${existing.reportedBy}\nResolved by: ${user.fullName || user.email}`,
+            performedBy: user.fullName || user.email,
+            performedAt: new Date(),
+            cost: null,
+          },
+        });
+      }
+
+      return updatedIssue;
     });
 
-    return NextResponse.json({ issue });
+    return NextResponse.json({ issue: result });
   } catch (error: unknown) {
     console.error('Error updating safety issue:', error);
     return NextResponse.json(

@@ -78,20 +78,20 @@ export async function POST(
         });
       }
 
-      // Create a maintenance log entry if this was a repair or replacement
-      if (resolutionType === 'Repaired' || resolutionType === 'Replaced') {
-        await tx.maintenanceLog.create({
-          data: {
-            clubId: club.id,
-            equipmentId: existingIssue.equipmentId,
-            maintenanceType: resolutionType === 'Repaired' ? 'Repair' : 'Replacement',
-            description: `Resolved safety issue: ${existingIssue.title}. ${resolutionNotes}`,
-            performedBy: resolvedBy,
-            cost: resolutionCost || null,
-            performedAt: new Date(),
-          },
-        });
-      }
+      // Always create a maintenance log entry for resolved safety issues
+      await tx.maintenanceLog.create({
+        data: {
+          clubId: club.id,
+          equipmentId: existingIssue.equipmentId,
+          maintenanceType: resolutionType === 'Repaired' ? 'Repair' : 
+                          resolutionType === 'Replaced' ? 'Replacement' : 
+                          'Safety Issue Resolution',
+          description: `Safety Issue Resolved: ${existingIssue.title}\n\nOriginal Issue: ${existingIssue.description}\n\nResolution Type: ${resolutionType}\nResolution Notes: ${resolutionNotes}\n\nReported by: ${existingIssue.reportedBy}\nResolved by: ${resolvedBy}`,
+          performedBy: resolvedBy,
+          cost: resolutionCost || null,
+          performedAt: new Date(),
+        },
+      });
 
       return resolvedIssue;
     });
