@@ -5,10 +5,12 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
 import {
  LineChart, Line,
  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { AcademicCapIcon, MapPinIcon } from '@heroicons/react/24/outline';
 
 interface Stats {
  totalSubmissions: number;
@@ -322,48 +324,67 @@ export default function InjuryReportsDashboard() {
     {showAnalytics && analytics && (
      <>
       {/* Filters Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-       <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics Filters</h2>
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <VenueSelector
-         value={venueId}
-         onChange={(value) => {
-          setVenueId(value);
-          // Reset zone filter when venue changes
-          if (value !== venueId) setZoneFilter('all');
-         }}
-         showAllOption={true}
-        />
-        <div>
-         <label className="block text-sm font-medium text-gray-700 mb-2">Program (Gymsport)</label>
-         <select
-          value={programFilter}
-          onChange={(e) => setProgramFilter(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
->
-          <option value="all">All Programs</option>
-          {uniquePrograms.map(program => (
-           <option key={program} value={program}>{program}</option>
-          ))}
-         </select>
-        </div>
-        <div>
-         <label className="block text-sm font-medium text-gray-700 mb-2">Zone</label>
-         <select
-          value={zoneFilter}
-          onChange={(e) => setZoneFilter(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
->
-          <option value="all">All Zones</option>
-          {zones
-           .filter(zone => !venueId || venueId === 'all' || zone.venueId === venueId)
-           .map(zone => (
-            <option key={zone.id} value={zone.id}>{zone.name}</option>
-           ))}
-         </select>
-        </div>
-       </div>
-      </div>
+      <IntelligenceFilter
+        title="Injury Report Analytics Filters"
+        subtitle="Filter incident data by venue, program, and zone"
+        variant="gradient"
+        filters={[
+          {
+            type: 'custom',
+            label: 'Venue',
+            value: venueId,
+            onChange: (value) => {
+              setVenueId(value);
+              if (value !== venueId) setZoneFilter('all');
+            },
+            customComponent: (
+              <VenueSelector
+                value={venueId}
+                onChange={(value) => {
+                  setVenueId(value);
+                  if (value !== venueId) setZoneFilter('all');
+                }}
+                showAllOption={true}
+              />
+            ),
+          },
+          {
+            type: 'select',
+            label: 'Program (Gymsport)',
+            value: programFilter,
+            onChange: setProgramFilter,
+            icon: <AcademicCapIcon className="h-4 w-4" />,
+            options: [
+              { value: 'all', label: 'All Programs' },
+              ...uniquePrograms.map(program => ({
+                value: program,
+                label: program,
+              })),
+            ],
+          },
+          {
+            type: 'select',
+            label: 'Zone',
+            value: zoneFilter,
+            onChange: setZoneFilter,
+            icon: <MapPinIcon className="h-4 w-4" />,
+            options: [
+              { value: 'all', label: 'All Zones' },
+              ...zones
+                .filter(zone => !venueId || venueId === 'all' || zone.venueId === venueId)
+                .map(zone => ({
+                  value: zone.id,
+                  label: zone.name,
+                })),
+            ],
+          },
+        ]}
+        onReset={() => {
+          setVenueId(null);
+          setProgramFilter('all');
+          setZoneFilter('all');
+        }}
+      />
      </>
     )}
 

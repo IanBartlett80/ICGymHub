@@ -5,6 +5,8 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import IntelligenceFilter from '@/components/IntelligenceFilter';
+import { CheckCircleIcon, AcademicCapIcon, UserIcon, AcademicCapIcon as ClassIcon } from '@heroicons/react/24/outline';
 
 interface Submission {
  id: string;
@@ -175,54 +177,91 @@ export default function SubmissionsReportsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3">
-       <div className="flex-1">
-        <VenueSelector
-         value={venueId}
-         onChange={setVenueId}
-         showAllOption={true}
-        />
-       </div>
-       <div className="flex-1">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Program</label>
-        <select
-         value={programFilter}
-         onChange={(e) => setProgramFilter(e.target.value)}
-         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
->
-         <option value="all">All Programs</option>
-         {uniquePrograms.map(program => (
-          <option key={program} value={program}>{program}</option>
-         ))}
-        </select>
-       </div>
-       <div className="flex-1">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Coach</label>
-        <select
-         value={coachFilter}
-         onChange={(e) => setCoachFilter(e.target.value)}
-         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
->
-         <option value="all">All Coaches</option>
-         {uniqueCoaches.map(coach => (
-          <option key={coach} value={coach}>{coach}</option>
-         ))}
-        </select>
-       </div>
-       <div className="flex-1">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Class</label>
-        <select
-         value={classFilter}
-         onChange={(e) => setClassFilter(e.target.value)}
-         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
->
-         <option value="all">All Classes</option>
-         {uniqueClasses.map(className => (
-          <option key={className} value={className}>{className}</option>
-         ))}
-        </select>
-       </div>
-      </div>
+      <IntelligenceFilter
+        title="Submission Filters"
+        subtitle="Filter injury reports by venue, program, coach, and class"
+        variant="gradient"
+        filters={[
+          {
+            type: 'custom',
+            label: 'Venue',
+            value: venueId,
+            onChange: setVenueId,
+            customComponent: (
+              <VenueSelector
+                value={venueId}
+                onChange={setVenueId}
+                showAllOption={true}
+              />
+            ),
+          },
+          {
+            type: 'select',
+            label: 'Status',
+            value: statusFilter,
+            onChange: setStatusFilter,
+            icon: <CheckCircleIcon className="h-4 w-4" />,
+            options: [
+              { value: 'all', label: 'All Statuses' },
+              { value: 'NEW', label: 'New' },
+              { value: 'UNDER_REVIEW', label: 'Under Review' },
+              { value: 'RESOLVED', label: 'Resolved' },
+              { value: 'CLOSED', label: 'Closed' },
+            ],
+          },
+          {
+            type: 'select',
+            label: 'Program',
+            value: programFilter,
+            onChange: setProgramFilter,
+            icon: <AcademicCapIcon className="h-4 w-4" />,
+            options: [
+              { value: 'all', label: 'All Programs' },
+              ...uniquePrograms.map(program => ({
+                value: program,
+                label: program,
+              })),
+            ],
+          },
+          {
+            type: 'select',
+            label: 'Coach',
+            value: coachFilter,
+            onChange: setCoachFilter,
+            icon: <UserIcon className="h-4 w-4" />,
+            options: [
+              { value: 'all', label: 'All Coaches' },
+              ...uniqueCoaches.map(coach => ({
+                value: coach,
+                label: coach,
+              })),
+            ],
+          },
+          {
+            type: 'select',
+            label: 'Class',
+            value: classFilter,
+            onChange: setClassFilter,
+            icon: <ClassIcon className="h-4 w-4" />,
+            options: [
+              { value: 'all', label: 'All Classes' },
+              ...uniqueClasses.map(className => ({
+                value: className,
+                label: className,
+              })),
+            ],
+          },
+        ]}
+        onReset={() => {
+          setVenueId(null);
+          setStatusFilter('all');
+          setProgramFilter('all');
+          setCoachFilter('all');
+          setClassFilter('all');
+        }}
+        filterCount={filteredSubmissions.length}
+        filterCountLabel="submissions"
+      />
      </div>
 
      <div className="overflow-x-auto">
