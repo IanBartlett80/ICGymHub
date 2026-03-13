@@ -61,6 +61,10 @@ interface ComplianceItem {
  fileLinks: ComplianceFileLink[]
  category: ComplianceCategory | null
  owner: { id: string; fullName: string; email: string } | null
+ parentItemId: string | null
+ isTemplate: boolean
+ instanceNumber: number | null
+ parentItem?: { id: string; title: string; recurringSchedule: string } | null
 }
 
 interface ComplianceTrend {
@@ -370,14 +374,14 @@ export default function ComplianceManagerPage() {
   try {
    // Enhanced confirmation for recurring items
    if (item.recurringSchedule !== 'NONE') {
+    const instanceInfo = item.instanceNumber ? ` (Instance #${item.instanceNumber})` : ''
     const message = (
-     `Complete Recurring Item: "${item.title}"\n\n` +
+     `Complete Recurring Item: "${item.title}"${instanceInfo}\n\n` +
      `This is a ${item.recurringSchedule.toLowerCase()} recurring item.\n\n` +
-     `When you mark it complete, the deadline will automatically advance to the next ` +
-     `${item.recurringSchedule.toLowerCase()} occurrence and the status will reset to OPEN.\n\n` +
-     `✓ This instance will be marked as completed\n` +
-     `✓ Deadline will move to next ${item.recurringSchedule.toLowerCase()} date\n` +
-     `✓ Status will reset to OPEN\n\n` +
+     `When you mark it complete:\n\n` +
+     `✓ THIS instance will move to Closed Items (completion history preserved)\n` +
+     `✓ A NEW instance will be created for the next ${item.recurringSchedule.toLowerCase()} deadline\n` +
+     `✓ The next instance will appear in Active Items\n\n` +
      `Continue?`
     )
     const confirmed = window.confirm(message)
@@ -387,7 +391,7 @@ export default function ComplianceManagerPage() {
    await axiosInstance.put(`/api/compliance/items/${item.id}`, { status: 'COMPLETED' })
    showToast.success(
     item.recurringSchedule !== 'NONE'
-     ? `Recurring item completed. Deadline advanced to next ${item.recurringSchedule.toLowerCase()} occurrence.`
+     ? `Instance completed! A new instance has been created for the next ${item.recurringSchedule.toLowerCase()} deadline. Check Active Items.`
      : 'Compliance item marked as completed'
    )
    await loadData()
@@ -400,12 +404,13 @@ export default function ComplianceManagerPage() {
  const deleteItem = async (item: ComplianceItem) => {
   // Enhanced deletion confirmation for recurring items
   if (item.recurringSchedule !== 'NONE') {
+    const instanceInfo = item.instanceNumber ? ` #${item.instanceNumber}` : ''
     const confirmed = window.confirm(
-      `⚠️ DELETE RECURRING ITEM\n\n` +
-      `"${item.title}" is a recurring ${item.recurringSchedule.toLowerCase()} item.\n\n` +
-      `Deleting this will permanently remove the entire recurring series.\n` +
-      `This action cannot be undone.\n\n` +
-      `Are you sure you want to delete this recurring item?`
+      `⚠️ DELETE RECURRING ITEM${instanceInfo}\n\n` +
+      `"${item.title}" is a ${item.recurringSchedule.toLowerCase()} recurring item.\n\n` +
+      `This will delete only THIS instance.\n` +
+      `Other instances in the series will not be affected.\n\n` +
+      `Are you sure you want to delete this instance?`
     )
     if (!confirmed) return
   }
@@ -792,6 +797,7 @@ export default function ComplianceManagerPage() {
               {item.recurringSchedule !== 'NONE' && (
                <div className="mt-0.5 text-xs text-blue-600">
                 Recurs: {item.recurringSchedule.toLowerCase()}
+                {item.instanceNumber && ` • Instance #${item.instanceNumber}`}
                </div>
               )}
              </div>

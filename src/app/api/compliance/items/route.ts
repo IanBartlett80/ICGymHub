@@ -131,6 +131,13 @@ export async function GET(request: NextRequest) {
             fullName: true,
           },
         },
+        parentItem: {
+          select: {
+            id: true,
+            title: true,
+            recurringSchedule: true,
+          },
+        },
       },
       orderBy: [{ deadlineDate: 'asc' }, { createdAt: 'desc' }],
     })
@@ -262,6 +269,9 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         completedAt: status === 'COMPLETED' ? new Date() : null,
         completedById: status === 'COMPLETED' ? user.id : null,
+        isTemplate: false,
+        instanceNumber: recurringSchedule !== 'NONE' ? 1 : null,
+        parentItemId: null,
       },
       include: {
         category: true,

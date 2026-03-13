@@ -52,6 +52,13 @@ export async function GET(
             fullName: true,
           },
         },
+        parentItem: {
+          select: {
+            id: true,
+            title: true,
+            recurringSchedule: true,
+          },
+        },
       },
     })
 
@@ -212,26 +219,55 @@ export async function PUT(
     }
 
     if (nextStatus === 'COMPLETED') {
-      // Handle recurring items: move deadline forward instead of marking complete
+      // Handle recurring items: create separate instances to preserve history
       const recurringSchedule = normalizeRecurringSchedule(
         body.recurringSchedule !== undefined 
           ? body.recurringSchedule
           : existing.recurringSchedule || 'NONE'
       )
       
-      if (recurringSchedule !== 'NONE') {
-        // Recurring item: update deadline to next occurrence and reset to OPEN
-        // This preserves the recurring item while moving to next deadline
-        const newDeadline = calculateNextDeadline(nextDeadlineDate, recurringSchedule)
-        updateData.deadlineDate = newDeadline
-        updateData.status = 'OPEN'
-        updateData.completedAt = new Date() // Track when this instance was completed
+      if (recurringSchedule !== 'NONE' && !existing.isTemplate) {
+        // Recurring item instance: mark THIS instance as completed (preserves history)
+        updateData.completedAt = new Date()
         updateData.completedById = user.id
-        updateData.nextReminderDate = calculateNextReminderDate(newDeadline, reminderSchedule)
-        updateData.lastReminderSent = null
-        updateData.remindersSent = null
+        updateData.nextReminderDate = null
+        // Status stays as COMPLETED (don't reset to OPEN)
+        
+        // Generate next instance for the recurring item
+        const newDeadline = calculateNextDeadline(nextDeadlineDate, recurringSchedule)
+        const nextInstanceNumber = (existing.instanceNumber || 1) + 1
+        
+        try {
+          await prisma.complianceItem.create({
+            data: {
+              clubId: club.id,
+              title: existing.title,
+              description: existing.description,
+              categoryId: existing.categoryId,
+              venueId: existing.venueId,
+              ownerId: existing.ownerId,
+              ownerName: existing.ownerName,
+              ownerEmail: existing.ownerEmail,
+              createdById: existing.createdById,
+              deadlineDate: newDeadline,
+              status: 'OPEN',
+              recurringSchedule: existing.recurringSchedule,
+              reminderSchedule: existing.reminderSchedule,
+              nextReminderDate: calculateNextReminderDate(newDeadline, reminderSchedule),
+              fileLinks: existing.fileLinks,
+              notes: existing.notes,
+              parentItemId: existing.parentItemId || existing.id, // Link to parent or self if first
+              isTemplate: false,
+              instanceNumber: nextInstanceNumber,
+            },
+          })
+          console.log(`✅ Auto-generated next recurring instance #${nextInstanceNumber} for "${existing.title}"`)
+        } catch (createError) {
+          console.error('Failed to create next recurring instance:', createError)
+          // Don't fail the completion if instance creation fails
+        }
       } else {
-        // Non-recurring item: mark as completed permanently
+        // Non-recurring item or template: mark as completed permanently
         updateData.completedAt = body.completedAt ? new Date(body.completedAt) : new Date()
         updateData.completedById = user.id
         updateData.nextReminderDate = null
@@ -264,6 +300,13 @@ export async function PUT(
           select: {
             id: true,
             fullName: true,
+          },
+        },
+        parentItem: {
+          select: {
+            id: true,
+            title: true,
+            recurringSchedule: true,
           },
         },
       },

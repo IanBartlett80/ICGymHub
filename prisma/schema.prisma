@@ -193,12 +193,17 @@ model ComplianceItem {
   ownerEmail        String?
   recurringSchedule String              @default("NONE")
   venueId           String?
+  parentItemId      String?
+  isTemplate        Boolean             @default(false)
+  instanceNumber    Int?
   category          ComplianceCategory? @relation(fields: [categoryId], references: [id])
   club              Club                @relation(fields: [clubId], references: [id], onDelete: Cascade)
   completedBy       User?               @relation("ComplianceItemCompletedBy", fields: [completedById], references: [id])
   createdBy         User?               @relation("ComplianceItemCreatedBy", fields: [createdById], references: [id])
   owner             User?               @relation("ComplianceItemOwner", fields: [ownerId], references: [id])
   venue             Venue?              @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  parentItem        ComplianceItem?     @relation("RecurringInstances", fields: [parentItemId], references: [id], onDelete: Cascade)
+  instances         ComplianceItem[]    @relation("RecurringInstances")
 
   @@index([clubId])
   @@index([venueId])
@@ -207,6 +212,7 @@ model ComplianceItem {
   @@index([status])
   @@index([deadlineDate])
   @@index([nextReminderDate])
+  @@index([parentItemId])
 }
 
 model Session {
