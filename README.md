@@ -157,4 +157,4 @@ npm run lint
 
 All rights reserved © 2025 GymHub
 
-<!-- Last deployed: 2026-03-13 -->
+<!-- Last deployed: 2026-03-13 14:30 -->
