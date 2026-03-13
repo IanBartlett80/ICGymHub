@@ -1252,6 +1252,30 @@ export default function ComplianceManagerPage() {
           </label>
          ))}
         </div>
+        {itemForm.reminderSchedule.length > 0 && (
+         <div className="mt-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2">
+          <p className="text-sm text-blue-800">
+           {itemForm.ownerId === 'none' ? (
+            <span>⚠️ No owner assigned - reminder emails will not be sent</span>
+           ) : itemForm.ownerId === 'quick-add' ? (
+            itemForm.ownerEmail ? (
+             <span>📧 Reminder emails will be sent to: <strong>{itemForm.ownerEmail}</strong></span>
+            ) : (
+             <span>⚠️ Please enter owner email to receive reminders</span>
+            )
+           ) : (
+            (() => {
+             const selectedOwner = owners.find(o => o.id === itemForm.ownerId)
+             return selectedOwner ? (
+              <span>📧 Reminder emails will be sent to: <strong>{selectedOwner.email}</strong></span>
+             ) : (
+              <span>⚠️ Owner not found</span>
+             )
+            })()
+           )}
+          </p>
+         </div>
+        )}
        </div>
 
        <div className="md:col-span-2">
