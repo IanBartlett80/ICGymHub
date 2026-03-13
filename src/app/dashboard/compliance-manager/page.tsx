@@ -148,6 +148,7 @@ export default function ComplianceManagerPage() {
  const [dueWithinFilter, setDueWithinFilter] = useState('all')
  const [startDate, setStartDate] = useState('')
  const [endDate, setEndDate] = useState('')
+ const [itemsView, setItemsView] = useState<'active' | 'closed' | 'all'>('active')
 
  const [showItemModal, setShowItemModal] = useState(false)
  const [showCategoryModal, setShowCategoryModal] = useState(false)
@@ -185,6 +186,19 @@ export default function ComplianceManagerPage() {
   if (endDate) params.append('endDate', endDate)
   return params
  }, [search, venueId, categoryFilter, ownerFilter, statusFilter, dueWithinFilter, startDate, endDate])
+
+ // Filter items based on Active/Closed view
+ const filteredItems = useMemo(() => {
+  if (itemsView === 'active') {
+   // Active: exclude COMPLETED items
+   return items.filter(item => item.computedStatus !== 'COMPLETED' && item.status !== 'COMPLETED')
+  } else if (itemsView === 'closed') {
+   // Closed: only COMPLETED items
+   return items.filter(item => item.computedStatus === 'COMPLETED' || item.status === 'COMPLETED')
+  }
+  // All: show everything
+  return items
+ }, [items, itemsView])
 
  const loadData = useCallback(async () => {
   try {
@@ -234,6 +248,7 @@ export default function ComplianceManagerPage() {
   setDueWithinFilter('all')
   setStartDate('')
   setEndDate('')
+  setItemsView('active') // Reset to active view
  }
 
  const openCreateItemModal = () => {
@@ -496,6 +511,53 @@ export default function ComplianceManagerPage() {
      </div>
     </div>
 
+    {/* Active/Closed Items Toggle Tabs */}
+    <div className="flex items-center gap-2 border-b border-gray-200">
+     <button
+      onClick={() => setItemsView('active')}
+      className={`px-4 py-2 text-sm font-medium transition-colors ${
+       itemsView === 'active'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+      }`}
+     >
+      📋 Active Items
+      {items.filter(i => i.computedStatus !== 'COMPLETED' && i.status !== 'COMPLETED').length > 0 && (
+       <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
+        {items.filter(i => i.computedStatus !== 'COMPLETED' && i.status !== 'COMPLETED').length}
+       </span>
+      )}
+     </button>
+     <button
+      onClick={() => setItemsView('closed')}
+      className={`px-4 py-2 text-sm font-medium transition-colors ${
+       itemsView === 'closed'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+      }`}
+     >
+      ✅ Closed Items
+      {items.filter(i => i.computedStatus === 'COMPLETED' || i.status === 'COMPLETED').length > 0 && (
+       <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+        {items.filter(i => i.computedStatus === 'COMPLETED' || i.status === 'COMPLETED').length}
+       </span>
+      )}
+     </button>
+     <button
+      onClick={() => setItemsView('all')}
+      className={`px-4 py-2 text-sm font-medium transition-colors ${
+       itemsView === 'all'
+        ? 'border-b-2 border-blue-600 text-blue-600'
+        : 'text-gray-600 hover:text-gray-900'
+      }`}
+     >
+      📊 All Items
+      <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+       {items.length}
+      </span>
+     </button>
+    </div>
+
     {analytics && (
      <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -681,7 +743,7 @@ export default function ComplianceManagerPage() {
         },
       ]}
       onReset={clearFilters}
-      filterCount={items.length}
+      filterCount={filteredItems.length}
       filterCountLabel="compliance items"
     />
 
@@ -706,12 +768,16 @@ export default function ComplianceManagerPage() {
          <tr>
           <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">Loading compliance items...</td>
          </tr>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
          <tr>
-          <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">No compliance items match the current filters.</td>
+          <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500">
+           {itemsView === 'active' ? 'No active compliance items. Great job!' : 
+            itemsView === 'closed' ? 'No closed compliance items yet.' :
+            'No compliance items match the current filters.'}
+          </td>
          </tr>
         ) : (
-         items.map((item) => (
+         filteredItems.map((item) => (
           <tr key={item.id}>
            <td className="px-4 py-3 text-sm text-gray-900">
             <div className="flex items-center gap-2">
