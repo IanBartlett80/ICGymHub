@@ -244,12 +244,12 @@ export default function InjuryReportsDashboard() {
  return (
   <DashboardLayout>
    <InjuryReportsSubNav />
-   <div className="p-6 space-y-6">
+   <div className="p-4 space-y-4">
     {/* Header */}
     <div className="flex justify-between items-center">
      <div>
-      <h1 className="text-2xl font-bold text-gray-900">Injury and Incident Management</h1>
-      <p className="text-gray-600 mt-1">Manage and review injury reports from your team</p>
+      <h1 className="text-xl font-bold text-gray-900">Injury and Incident Management</h1>
+      <p className="text-xs text-gray-600 mt-1">Manage and review injury reports from your team</p>
      </div>
      <div className="flex gap-3">
       <button
@@ -275,47 +275,47 @@ export default function InjuryReportsDashboard() {
 
     {/* Statistics Cards */}
     {stats && (
-     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-       <div className="flex items-center justify-between mb-4">
-        <span className="text-4xl">📋</span>
-        <span className="text-blue-100 text-sm">Total</span>
+     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
+       <div className="flex items-center justify-between mb-2">
+        <span className="text-3xl">📋</span>
+        <span className="text-blue-100 text-xs">Total</span>
        </div>
-       <div className="text-3xl font-bold">{stats.totalSubmissions}</div>
-       <div className="text-blue-100 text-sm mt-1">Total Submissions</div>
+       <div className="text-2xl font-bold">{stats.totalSubmissions}</div>
+       <div className="text-blue-100 text-xs mt-1">Total Submissions</div>
       </div>
 
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
-       <div className="flex items-center justify-between mb-4">
-        <span className="text-4xl">🆕</span>
-        <span className="text-orange-100 text-sm">New</span>
+      <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
+       <div className="flex items-center justify-between mb-2">
+        <span className="text-3xl">🆕</span>
+        <span className="text-orange-100 text-xs">New</span>
        </div>
-       <div className="text-3xl font-bold">
+       <div className="text-2xl font-bold">
         {stats.statusCounts.find(s => s.status === 'NEW')?.count || 0}
        </div>
-       <div className="text-orange-100 text-sm mt-1">New Reports</div>
+       <div className="text-orange-100 text-xs mt-1">New Reports</div>
       </div>
 
-      <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-       <div className="flex items-center justify-between mb-4">
-        <span className="text-4xl">🔍</span>
-        <span className="text-purple-100 text-sm">Active</span>
+      <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
+       <div className="flex items-center justify-between mb-2">
+        <span className="text-3xl">🔍</span>
+        <span className="text-purple-100 text-xs">Active</span>
        </div>
-       <div className="text-3xl font-bold">
+       <div className="text-2xl font-bold">
         {stats.statusCounts.find(s => s.status === 'UNDER_REVIEW')?.count || 0}
        </div>
-       <div className="text-purple-100 text-sm mt-1">Under Review</div>
+       <div className="text-purple-100 text-xs mt-1">Under Review</div>
       </div>
 
-      <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
-       <div className="flex items-center justify-between mb-4">
-        <span className="text-4xl">⏱️</span>
-        <span className="text-green-100 text-sm">Average</span>
+      <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
+       <div className="flex items-center justify-between mb-2">
+        <span className="text-3xl">⏱️</span>
+        <span className="text-green-100 text-xs">Average</span>
        </div>
-       <div className="text-3xl font-bold">
-        {stats.avgResponseTimeHours> 0 ? `${Math.round(stats.avgResponseTimeHours)}h` : 'N/A'}
+       <div className="text-2xl font-bold">
+        {stats.avgResponseTimeHours > 0 ? `${Math.round(stats.avgResponseTimeHours)}h` : 'N/A'}
        </div>
-       <div className="text-green-100 text-sm mt-1">Response Time</div>
+       <div className="text-green-100 text-xs mt-1">Response Time</div>
       </div>
      </div>
     )}
@@ -389,13 +389,13 @@ export default function InjuryReportsDashboard() {
     )}
 
     {/* Monthly Incident Trends */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
      {/* Incident Trends by Zone */}
      {monthlyDataByZone.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Zone</h2>
-        <p className="text-sm text-gray-600">Month-over-month incidents reported per zone (Last 6 months)</p>
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+       <div className="mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">Incident Trends by Zone</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
        <div className="relative group hover-legend-chart">
         <style jsx>{`
@@ -417,7 +417,7 @@ export default function InjuryReportsDashboard() {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={180}>
         <LineChart data={monthlyDataByZone}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -484,10 +484,10 @@ export default function InjuryReportsDashboard() {
 
      {/* Incident Trends by Venue */}
      {monthlyDataByVenue.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Venue</h2>
-        <p className="text-sm text-gray-600">Month-over-month incidents reported per venue (Last 6 months)</p>
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+       <div className="mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">Incident Trends by Venue</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
        <div className="relative group hover-legend-chart">
         <style jsx>{`
@@ -509,7 +509,7 @@ export default function InjuryReportsDashboard() {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={180}>
         <LineChart data={monthlyDataByVenue}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -576,10 +576,10 @@ export default function InjuryReportsDashboard() {
 
      {/* Incident Trends by Program */}
      {monthlyDataByProgram.length > 0 && (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Incident Trends by Program</h2>
-        <p className="text-sm text-gray-600">Month-over-month incidents reported per gymsport/program (Last 6 months)</p>
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+       <div className="mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">Incident Trends by Program</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
        <div className="relative group hover-legend-chart">
         <style jsx>{`
@@ -601,7 +601,7 @@ export default function InjuryReportsDashboard() {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={180}>
         <LineChart data={monthlyDataByProgram}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 

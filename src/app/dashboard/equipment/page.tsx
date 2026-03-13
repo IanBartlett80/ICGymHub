@@ -376,12 +376,12 @@ export default function EquipmentPage() {
  return (
   <DashboardLayout>
    <EquipmentManagementSubNav />
-   <div className="p-6 space-y-6">
+   <div className="p-4 space-y-4">
     {/* Header */}
-    <div className="mb-6 flex items-center justify-between">
+    <div className="mb-2 flex items-center justify-between">
      <div>
-      <h1 className="text-2xl font-bold text-gray-900">Equipment Management</h1>
-      <p className="mt-1 text-sm text-gray-600">
+      <h1 className="text-xl font-bold text-gray-900">Equipment Management</h1>
+      <p className="mt-1 text-xs text-gray-600">
        Zone-based equipment tracking and safety management
       </p>
      </div>
@@ -459,13 +459,13 @@ export default function EquipmentPage() {
     />
 
     {/* Monthly Safety Issues Charts */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
      {/* By Zone Chart */}
      {monthlyData.length > 0 && (
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Zone</h2>
-        <p className="text-sm text-gray-600">Month-over-month safety issues reported per zone (Last 6 months)</p>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+       <div className="mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">Safety Issues Trend by Zone</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
        <div className="relative group hover-legend-chart">
         <style jsx>{`
@@ -487,7 +487,7 @@ export default function EquipmentPage() {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={180}>
         <LineChart data={monthlyData}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -554,10 +554,10 @@ export default function EquipmentPage() {
 
      {/* By Venue Chart */}
      {monthlyDataByVenue.length > 0 && (
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Venue</h2>
-        <p className="text-sm text-gray-600">Month-over-month safety issues reported per venue (Last 6 months)</p>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+       <div className="mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">Safety Issues Trend by Venue</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
        <div className="relative group hover-legend-chart">
         <style jsx>{`
@@ -579,7 +579,7 @@ export default function EquipmentPage() {
           opacity: 1;
          }
         `}</style>
-        <ResponsiveContainer width="100%" height={400}>
+        <ResponsiveContainer width="100%" height={180}>
         <LineChart data={monthlyDataByVenue}>
          <CartesianGrid strokeDasharray="3 3" />
          <XAxis 
@@ -722,12 +722,12 @@ export default function EquipmentPage() {
          onClick={() => router.push(`/dashboard/equipment/zones/${zone.id}`)}
 >
          {/* Zone Header */}
-         <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
+         <div className="p-4">
+          <div className="flex items-start justify-between mb-3">
            <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{zone.name}</h3>
+            <h3 className="text-base font-semibold text-gray-900">{zone.name}</h3>
             {zone.description && (
-             <p className="text-sm text-gray-500 mt-1">{zone.description}</p>
+             <p className="text-xs text-gray-500 mt-1">{zone.description}</p>
             )}
            </div>
            {/* QR Code Display in Top Right */}
@@ -744,38 +744,38 @@ export default function EquipmentPage() {
           </div>
 
           {/* Status Badge */}
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.bgColor} ${statusConfig.textColor} mb-4`}>
-           <span className="mr-2">{statusConfig.icon}</span>
+          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusConfig.bgColor} ${statusConfig.textColor} mb-3`}>
+           <span className="mr-1 text-sm">{statusConfig.icon}</span>
            {statusConfig.label}
           </div>
 
           {/* Stats */}
-          <div className="space-y-2">
+          <div className="space-y-1">
            {/* Always show equipment count */}
-           <div className="flex items-center justify-between text-sm">
+           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">Equipment:</span>
             <span className="font-medium text-gray-900">{statusInfo?.equipmentCount || 0}</span>
            </div>
            {statusInfo && statusInfo.criticalIssues> 0 && (
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs">
              <span className="text-red-600">Critical Issues:</span>
              <span className="font-bold text-red-700">{statusInfo.criticalIssues}</span>
             </div>
            )}
            {statusInfo && statusInfo.nonCriticalIssues> 0 && (
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs">
              <span className="text-orange-600">Non-Critical Issues:</span>
              <span className="font-medium text-orange-700">{statusInfo.nonCriticalIssues}</span>
             </div>
            )}
            {statusInfo && statusInfo.overdueMaintenance> 0 && (
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs">
              <span className="text-yellow-600">Overdue Maintenance:</span>
              <span className="font-medium text-yellow-700">{statusInfo.overdueMaintenance}</span>
             </div>
            )}
            {statusInfo && statusInfo.outOfServiceEquipment> 0 && (
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs">
              <span className="text-gray-600">Out of Service:</span>
              <span className="font-medium text-gray-700">{statusInfo.outOfServiceEquipment}</span>
             </div>
@@ -784,13 +784,13 @@ export default function EquipmentPage() {
          </div>
 
          {/* Quick Actions */}
-         <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+         <div className="bg-gray-50 px-4 py-2 flex items-center justify-between border-t border-gray-200">
           <button
            onClick={(e) => {
             e.stopPropagation();
             router.push(`/dashboard/equipment/zones/${zone.id}`);
            }}
-           className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+           className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
 >
            View Equipment →
           </button>
