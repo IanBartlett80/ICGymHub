@@ -182,7 +182,9 @@ export async function POST(request: NextRequest) {
     const description = typeof body.description === 'string' ? body.description.trim() : ''
     const categoryId = typeof body.categoryId === 'string' && body.categoryId !== 'none' ? body.categoryId : null
     const venueId = typeof body.venueId === 'string' && body.venueId !== '' ? body.venueId : null
-    const ownerId = typeof body.ownerId === 'string' && body.ownerId !== 'none' ? body.ownerId : null
+    const rawOwnerId = typeof body.ownerId === 'string' && body.ownerId !== 'none' ? body.ownerId : null
+    // Handle "quick-add" owner - set ownerId to null and use ownerName/ownerEmail instead
+    const ownerId = rawOwnerId === 'quick-add' ? null : rawOwnerId
     const ownerName = typeof body.ownerName === 'string' ? body.ownerName.trim() : ''
     const ownerEmail = typeof body.ownerEmail === 'string' ? body.ownerEmail.trim() : ''
     const notes = typeof body.notes === 'string' ? body.notes.trim() : ''

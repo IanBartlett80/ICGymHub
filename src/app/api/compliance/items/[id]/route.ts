@@ -167,7 +167,9 @@ export async function PUT(
     }
 
     if (body.ownerId !== undefined) {
-      const ownerId = typeof body.ownerId === 'string' && body.ownerId !== 'none' ? body.ownerId : null
+      const rawOwnerId = typeof body.ownerId === 'string' && body.ownerId !== 'none' ? body.ownerId : null
+      // Handle "quick-add" owner - set ownerId to null and use ownerName/ownerEmail instead
+      const ownerId = rawOwnerId === 'quick-add' ? null : rawOwnerId
       if (ownerId) {
         const owner = await prisma.user.findFirst({
           where: { id: ownerId, clubId: club.id, isActive: true },
