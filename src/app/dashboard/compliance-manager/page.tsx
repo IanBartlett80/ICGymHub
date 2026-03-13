@@ -469,60 +469,60 @@ export default function ComplianceManagerPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Total Items</p>
-        <p className="mt-2 text-2xl font-bold text-gray-900">{analytics.totals.totalItems}</p>
+        <p className="mt-2 text-xl font-bold text-gray-900">{analytics.totals.totalItems}</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Overdue</p>
-        <p className="mt-2 text-2xl font-bold text-red-600">{analytics.totals.overdueItems}</p>
+        <p className="mt-2 text-xl font-bold text-red-600">{analytics.totals.overdueItems}</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Due in 7 Days</p>
-        <p className="mt-2 text-2xl font-bold text-orange-600">{analytics.totals.dueIn7Days}</p>
+        <p className="mt-2 text-xl font-bold text-orange-600">{analytics.totals.dueIn7Days}</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Completion Rate</p>
-        <p className="mt-2 text-2xl font-bold text-green-600">{analytics.totals.completionRate}%</p>
+        <p className="mt-2 text-xl font-bold text-green-600">{analytics.totals.completionRate}%</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Items With Files</p>
-        <p className="mt-2 text-2xl font-bold text-blue-600">{analytics.totals.withLinkedFiles}</p>
+        <p className="mt-2 text-xl font-bold text-blue-600">{analytics.totals.withLinkedFiles}</p>
        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-       <div className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Category Workload</h2>
-        <p className="text-sm text-gray-600">Total, completed, and overdue items by category.</p>
-        <div className="mt-4 h-72">
+       <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Category Workload</h2>
+        <p className="text-xs text-gray-600">Total, completed, and overdue items by category.</p>
+        <div className="mt-3 h-48">
          <ResponsiveContainer width="100%" height="100%">
           <BarChart data={analytics.byCategory.slice(0, 8)}>
-           <CartesianGrid strokeDasharray="3 3" />
-           <XAxis dataKey="category" tick={{ fontSize: 12 }} />
-           <YAxis />
-           <Tooltip />
-           <Legend />
-           <Bar dataKey="total" fill="#3b82f6" name="Total" />
-           <Bar dataKey="completed" fill="#10b981" name="Completed" />
-           <Bar dataKey="overdue" fill="#ef4444" name="Overdue" />
+           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+           <XAxis dataKey="category" tick={{ fontSize: 11 }} stroke="#6b7280" />
+           <YAxis tick={{ fontSize: 11 }} stroke="#6b7280" />
+           <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }} />
+           <Legend wrapperStyle={{ fontSize: '12px' }} />
+           <Bar dataKey="total" fill="#3b82f6" name="Total" radius={[4, 4, 0, 0]} />
+           <Bar dataKey="completed" fill="#10b981" name="Completed" radius={[4, 4, 0, 0]} />
+           <Bar dataKey="overdue" fill="#ef4444" name="Overdue" radius={[4, 4, 0, 0]} />
           </BarChart>
          </ResponsiveContainer>
         </div>
        </div>
 
-       <div className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Compliance Trend</h2>
-        <p className="text-sm text-gray-600">Six-month trend of created, completed, and overdue items.</p>
-        <div className="mt-4 h-72">
+       <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Compliance Trend</h2>
+        <p className="text-xs text-gray-600">Six-month trend of created, completed, and overdue items.</p>
+        <div className="mt-3 h-48">
          <ResponsiveContainer width="100%" height="100%">
           <LineChart data={analytics.trend}>
-           <CartesianGrid strokeDasharray="3 3" />
-           <XAxis dataKey="month" />
-           <YAxis />
-           <Tooltip />
-           <Legend />
-           <Line type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} name="Created" />
-           <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name="Completed" />
-           <Line type="monotone" dataKey="overdue" stroke="#ef4444" strokeWidth={2} name="Overdue" />
+           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+           <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#6b7280" />
+           <YAxis tick={{ fontSize: 11 }} stroke="#6b7280" />
+           <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }} />
+           <Legend wrapperStyle={{ fontSize: '12px' }} />
+           <Line type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} name="Created" dot={{ r: 3 }} />
+           <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name="Completed" dot={{ r: 3 }} />
+           <Line type="monotone" dataKey="overdue" stroke="#ef4444" strokeWidth={2} name="Overdue" dot={{ r: 3 }} />
           </LineChart>
          </ResponsiveContainer>
         </div>
