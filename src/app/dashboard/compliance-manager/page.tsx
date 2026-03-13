@@ -44,6 +44,13 @@ interface ComplianceFileLink {
  url: string
 }
 
+interface ComplianceUploadedFile {
+ name: string
+ data: string // base64 encoded file data
+ type: string // MIME type
+ size: number // file size in bytes
+}
+
 interface ComplianceItem {
  id: string
  title: string
@@ -59,6 +66,7 @@ interface ComplianceItem {
  recurringSchedule: string
  reminderSchedule: number[]
  fileLinks: ComplianceFileLink[]
+ uploadedFiles: ComplianceUploadedFile[]
  category: ComplianceCategory | null
  owner: { id: string; fullName: string; email: string } | null
  parentItemId: string | null
@@ -114,6 +122,7 @@ interface ItemFormState {
  recurringSchedule: string
  reminderSchedule: number[]
  fileLinks: ComplianceFileLink[]
+ uploadedFiles: ComplianceUploadedFile[]
 }
 
 const DEFAULT_REMINDER_SCHEDULE = [90, 30, 7, 1]
@@ -133,6 +142,7 @@ function buildDefaultItemForm(): ItemFormState {
   recurringSchedule: 'NONE',
   reminderSchedule: [...DEFAULT_REMINDER_SCHEDULE],
   fileLinks: [],
+  uploadedFiles: [],
  }
 }
 
@@ -277,6 +287,7 @@ export default function ComplianceManagerPage() {
    recurringSchedule: item.recurringSchedule || 'NONE',
    reminderSchedule: item.reminderSchedule || [],
    fileLinks: item.fileLinks || [],
+   uploadedFiles: item.uploadedFiles || [],
   })
   setShowItemModal(true)
  }
@@ -439,6 +450,70 @@ export default function ComplianceManagerPage() {
   setItemForm((prev) => ({
    ...prev,
    fileLinks: prev.fileLinks.filter((_, i) => i !== index),
+  }))
+ }
+
+ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files
+  if (!files) return
+
+  const maxFiles = 5
+  const maxFileSize = 10 * 1024 * 1024 // 10MB
+  const availableSlots = maxFiles - itemForm.uploadedFiles.length
+
+  if (files.length > availableSlots) {
+   showToast.error(`You can upload up to ${maxFiles} files total. You have ${availableSlots} slot(s) remaining.`)
+   return
+  }
+
+  const newFiles: ComplianceUploadedFile[] = []
+  
+  for (let i = 0; i < files.length; i++) {
+   const file = files[i]
+
+   // Validate file size
+   if (file.size > maxFileSize) {
+    showToast.error(`File "${file.name}" is too large. Maximum size is 10MB.`)
+    continue
+   }
+
+   // Convert to base64
+   try {
+    const base64 = await new Promise<string>((resolve, reject) => {
+     const reader = new FileReader()
+     reader.onloadend = () => resolve(reader.result as string)
+     reader.onerror = reject
+     reader.readAsDataURL(file)
+    })
+
+    newFiles.push({
+     name: file.name,
+     data: base64,
+     type: file.type,
+     size: file.size,
+    })
+   } catch (error) {
+    console.error('Failed to read file:', error)
+    showToast.error(`Failed to read file "${file.name}"`)
+   }
+  }
+
+  if (newFiles.length > 0) {
+   setItemForm((prev) => ({
+    ...prev,
+    uploadedFiles: [...prev.uploadedFiles, ...newFiles],
+   }))
+   showToast.success(`${newFiles.length} file(s) added successfully`)
+  }
+
+  // Clear the input
+  e.target.value = ''
+ }
+
+ const removeUploadedFile = (index: number) => {
+  setItemForm((prev) => ({
+   ...prev,
+   uploadedFiles: prev.uploadedFiles.filter((_, i) => i !== index),
   }))
  }
 
@@ -815,7 +890,7 @@ export default function ComplianceManagerPage() {
             {item.reminderSchedule.length> 0 ? `${item.reminderSchedule.join(', ')}d` : 'None'}
            </td>
            <td className="px-4 py-3 text-sm text-gray-700">
-            {item.fileLinks.length> 0 ? (
+            {(item.fileLinks.length> 0 || item.uploadedFiles.length > 0) ? (
              <div className="space-y-1">
               {item.fileLinks.slice(0, 2).map((link) => (
                <a
@@ -824,11 +899,47 @@ export default function ComplianceManagerPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block text-blue-600 hover:underline"
+                title="External link"
 >
-                {link.name}
+                🔗 {link.name}
                </a>
               ))}
-              {item.fileLinks.length> 2 && <span className="text-xs text-gray-500">+{item.fileLinks.length - 2} more</span>}
+              {item.uploadedFiles.slice(0, Math.max(0, 2 - item.fileLinks.length)).map((file) => (
+               <button
+                key={`${item.id}-${file.name}`}
+                onClick={() => {
+                 try {
+                  const byteCharacters = atob(file.data);
+                  const byteNumbers = new Array(byteCharacters.length);
+                  for (let i = 0; i < byteCharacters.length; i++) {
+                   byteNumbers[i] = byteCharacters.charCodeAt(i);
+                  }
+                  const byteArray = new Uint8Array(byteNumbers);
+                  const blob = new Blob([byteArray], { type: file.type });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = file.name;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                 } catch (error) {
+                  console.error('Download failed:', error);
+                  showToast('Failed to download file', 'error');
+                 }
+                }}
+                className="block text-left text-blue-600 hover:underline"
+                title={`Download ${file.name} (${(file.size / 1024).toFixed(1)} KB)`}
+>
+                📎 {file.name}
+               </button>
+              ))}
+              {(item.fileLinks.length + item.uploadedFiles.length) > 2 && (
+               <span className="text-xs text-gray-500">
+                +{item.fileLinks.length + item.uploadedFiles.length - 2} more
+               </span>
+              )}
              </div>
             ) : (
              <span className="text-gray-400">-</span>
@@ -1177,6 +1288,54 @@ export default function ComplianceManagerPage() {
           </div>
          ))}
         </div>
+       </div>
+
+       <div className="md:col-span-2">
+        <div className="mb-1 flex items-center justify-between">
+         <label className="block text-sm font-medium text-gray-700">Uploaded Files</label>
+         <label className="cursor-pointer rounded border border-indigo-600 bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700">
+          <span>Upload Files</span>
+          <input
+           type="file"
+           multiple
+           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+           onChange={handleFileUpload}
+           className="hidden"
+          />
+         </label>
+        </div>
+        <div className="space-y-2">
+         {itemForm.uploadedFiles.length === 0 && (
+          <div className="rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500">
+           No files uploaded. Click "Upload Files" to attach documents, images, or PDFs (max 5 files, 10MB each).
+          </div>
+         )}
+         {itemForm.uploadedFiles.map((file, index) => (
+          <div key={`uploaded-file-${index}`} className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+           <div className="flex items-center gap-2 flex-1 min-w-0">
+            <svg className="w-5 h-5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+             <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+             <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB • {file.type || 'Unknown type'}</p>
+            </div>
+           </div>
+           <button
+            type="button"
+            onClick={() => removeUploadedFile(index)}
+            className="ml-2 rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 flex-shrink-0"
+           >
+            Remove
+           </button>
+          </div>
+         ))}
+        </div>
+        {itemForm.uploadedFiles.length > 0 && (
+         <p className="mt-1 text-xs text-gray-500">
+          {itemForm.uploadedFiles.length} / 5 files uploaded
+         </p>
+        )}
        </div>
 
        <div className="md:col-span-2">

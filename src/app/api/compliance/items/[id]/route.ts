@@ -8,6 +8,7 @@ import {
   normalizeFileLinks,
   normalizeRecurringSchedule,
   normalizeReminderSchedule,
+  normalizeUploadedFiles,
   parseJsonArray,
 } from '@/lib/compliance'
 
@@ -72,6 +73,7 @@ export async function GET(
         computedStatus: getDerivedComplianceStatus(item.status, item.deadlineDate),
         reminderSchedule: parseJsonArray<number>(item.reminderSchedule, []),
         fileLinks: parseJsonArray<{ name: string; url: string }>(item.fileLinks, []),
+        uploadedFiles: parseJsonArray<{ name: string; data: string; type: string; size: number }>(item.uploadedFiles, []),
         remindersSent: parseJsonArray<{ sentAt: string; daysBefore: number }>(item.remindersSent, []),
       },
     })
@@ -118,6 +120,7 @@ export async function PUT(
       reminderSchedule?: string | null
       nextReminderDate?: Date | null
       fileLinks?: string | null
+      uploadedFiles?: string | null
       notes?: string | null
       completedAt?: Date | null
       completedById?: string | null
@@ -216,6 +219,11 @@ export async function PUT(
     if (body.fileLinks !== undefined) {
       const fileLinks = normalizeFileLinks(body.fileLinks)
       updateData.fileLinks = fileLinks.length ? JSON.stringify(fileLinks) : null
+    }
+
+    if (body.uploadedFiles !== undefined) {
+      const uploadedFiles = normalizeUploadedFiles(body.uploadedFiles)
+      updateData.uploadedFiles = uploadedFiles.length ? JSON.stringify(uploadedFiles) : null
     }
 
     if (nextStatus === 'COMPLETED') {
@@ -318,6 +326,7 @@ export async function PUT(
         computedStatus: getDerivedComplianceStatus(updated.status, updated.deadlineDate),
         reminderSchedule: parseJsonArray<number>(updated.reminderSchedule, []),
         fileLinks: parseJsonArray<{ name: string; url: string }>(updated.fileLinks, []),
+        uploadedFiles: parseJsonArray<{ name: string; data: string; type: string; size: number }>(updated.uploadedFiles, []),
         remindersSent: parseJsonArray<{ sentAt: string; daysBefore: number }>(updated.remindersSent, []),
       },
     })

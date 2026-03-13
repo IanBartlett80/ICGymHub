@@ -10,6 +10,13 @@ export interface FileLink {
   url: string
 }
 
+export interface UploadedFile {
+  name: string
+  data: string // base64 encoded file data
+  type: string // MIME type
+  size: number // file size in bytes
+}
+
 export function normalizeReminderSchedule(input: unknown): number[] {
   if (!Array.isArray(input)) return []
   const sanitized = input
@@ -52,6 +59,38 @@ export function normalizeFileLinks(input: unknown): FileLink[] {
       }
     })
     .filter((entry): entry is FileLink => entry !== null)
+}
+
+export function normalizeUploadedFiles(input: unknown): UploadedFile[] {
+  if (!Array.isArray(input)) return []
+
+  return input
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null
+      const record = entry as { name?: unknown; data?: unknown; type?: unknown; size?: unknown }
+      
+      const rawName = typeof record.name === 'string' ? record.name.trim() : ''
+      const rawData = typeof record.data === 'string' ? record.data.trim() : ''
+      const rawType = typeof record.type === 'string' ? record.type.trim() : ''
+      const rawSize = typeof record.size === 'number' ? record.size : 0
+
+      // Validate required fields
+      if (!rawName || !rawData) return null
+
+      // Validate base64 format (should start with data:)
+      if (!rawData.startsWith('data:')) return null
+
+      // Validate file size (max 10MB)
+      if (rawSize > 10 * 1024 * 1024) return null
+
+      return {
+        name: rawName,
+        data: rawData,
+        type: rawType,
+        size: rawSize,
+      }
+    })
+    .filter((entry): entry is UploadedFile => entry !== null)
 }
 
 export function getDerivedComplianceStatus(status: string, deadlineDate: Date): string {

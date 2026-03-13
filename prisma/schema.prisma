@@ -185,6 +185,7 @@ model ComplianceItem {
   lastReminderSent  DateTime?
   remindersSent     String?
   fileLinks         String?
+  uploadedFiles     String?
   notes             String?
   completedAt       DateTime?
   createdAt         DateTime            @default(now())

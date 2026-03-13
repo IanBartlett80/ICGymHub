@@ -7,6 +7,7 @@ import {
   normalizeFileLinks,
   normalizeRecurringSchedule,
   normalizeReminderSchedule,
+  normalizeUploadedFiles,
   parseJsonArray,
 } from '@/lib/compliance'
 
@@ -149,6 +150,7 @@ export async function GET(request: NextRequest) {
         computedStatus,
         reminderSchedule: parseJsonArray<number>(item.reminderSchedule, []),
         fileLinks: parseJsonArray<{ name: string; url: string }>(item.fileLinks, []),
+        uploadedFiles: parseJsonArray<{ name: string; data: string; type: string; size: number }>(item.uploadedFiles, []),
         remindersSent: parseJsonArray<{ sentAt: string; daysBefore: number }>(item.remindersSent, []),
       }
     })
@@ -244,6 +246,7 @@ export async function POST(request: NextRequest) {
 
     const reminderSchedule = normalizeReminderSchedule(body.reminderSchedule)
     const fileLinks = normalizeFileLinks(body.fileLinks)
+    const uploadedFiles = normalizeUploadedFiles(body.uploadedFiles)
 
     const nextReminderDate = status === 'COMPLETED'
       ? null
@@ -266,6 +269,7 @@ export async function POST(request: NextRequest) {
         reminderSchedule: reminderSchedule.length ? JSON.stringify(reminderSchedule) : null,
         nextReminderDate,
         fileLinks: fileLinks.length ? JSON.stringify(fileLinks) : null,
+        uploadedFiles: uploadedFiles.length ? JSON.stringify(uploadedFiles) : null,
         notes: notes || null,
         completedAt: status === 'COMPLETED' ? new Date() : null,
         completedById: status === 'COMPLETED' ? user.id : null,
@@ -291,6 +295,7 @@ export async function POST(request: NextRequest) {
         computedStatus: getDerivedComplianceStatus(item.status, item.deadlineDate),
         reminderSchedule,
         fileLinks,
+        uploadedFiles,
         remindersSent: [],
       },
     }, { status: 201 })
