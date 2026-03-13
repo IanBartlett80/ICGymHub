@@ -101,6 +101,7 @@ export async function PUT(
       title?: string
       description?: string | null
       categoryId?: string | null
+      venueId?: string | null
       ownerId?: string | null
       ownerName?: string | null
       ownerEmail?: string | null
@@ -142,6 +143,17 @@ export async function PUT(
         if (!category) return NextResponse.json({ error: 'Category not found' }, { status: 404 })
       }
       updateData.categoryId = categoryId
+    }
+
+    if (body.venueId !== undefined) {
+      const venueId = typeof body.venueId === 'string' && body.venueId !== '' ? body.venueId : null
+      if (venueId) {
+        const venue = await prisma.venue.findFirst({
+          where: { id: venueId, clubId: club.id },
+        })
+        if (!venue) return NextResponse.json({ error: 'Venue not found' }, { status: 404 })
+      }
+      updateData.venueId = venueId
     }
 
     if (body.ownerId !== undefined) {

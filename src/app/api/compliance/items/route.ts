@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
     const title = typeof body.title === 'string' ? body.title.trim() : ''
     const description = typeof body.description === 'string' ? body.description.trim() : ''
     const categoryId = typeof body.categoryId === 'string' && body.categoryId !== 'none' ? body.categoryId : null
+    const venueId = typeof body.venueId === 'string' && body.venueId !== '' ? body.venueId : null
     const ownerId = typeof body.ownerId === 'string' && body.ownerId !== 'none' ? body.ownerId : null
     const ownerName = typeof body.ownerName === 'string' ? body.ownerName.trim() : ''
     const ownerEmail = typeof body.ownerEmail === 'string' ? body.ownerEmail.trim() : ''
@@ -222,6 +223,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (venueId) {
+      const venue = await prisma.venue.findFirst({
+        where: {
+          id: venueId,
+          clubId: club.id,
+        },
+      })
+      if (!venue) {
+        return NextResponse.json({ error: 'Venue not found' }, { status: 404 })
+      }
+    }
+
     const reminderSchedule = normalizeReminderSchedule(body.reminderSchedule)
     const fileLinks = normalizeFileLinks(body.fileLinks)
 
@@ -233,6 +246,7 @@ export async function POST(request: NextRequest) {
       data: {
         clubId: club.id,
         categoryId,
+        venueId,
         ownerId,
         ownerName: ownerName || null,
         ownerEmail: ownerEmail || null,

@@ -353,8 +353,28 @@ export default function ComplianceManagerPage() {
 
  const markCompleted = async (item: ComplianceItem) => {
   try {
+   // Enhanced confirmation for recurring items
+   if (item.recurringSchedule !== 'NONE') {
+    const message = (
+     `Complete Recurring Item: "${item.title}"\n\n` +
+     `This is a ${item.recurringSchedule.toLowerCase()} recurring item.\n\n` +
+     `When you mark it complete, the deadline will automatically advance to the next ` +
+     `${item.recurringSchedule.toLowerCase()} occurrence and the status will reset to OPEN.\n\n` +
+     `✓ This instance will be marked as completed\n` +
+     `✓ Deadline will move to next ${item.recurringSchedule.toLowerCase()} date\n` +
+     `✓ Status will reset to OPEN\n\n` +
+     `Continue?`
+    )
+    const confirmed = window.confirm(message)
+    if (!confirmed) return
+   }
+   
    await axiosInstance.put(`/api/compliance/items/${item.id}`, { status: 'COMPLETED' })
-   showToast.success('Compliance item marked as completed')
+   showToast.success(
+    item.recurringSchedule !== 'NONE'
+     ? `Recurring item completed. Deadline advanced to next ${item.recurringSchedule.toLowerCase()} occurrence.`
+     : 'Compliance item marked as completed'
+   )
    await loadData()
   } catch (error) {
    console.error(error)
@@ -363,6 +383,18 @@ export default function ComplianceManagerPage() {
  }
 
  const deleteItem = async (item: ComplianceItem) => {
+  // Enhanced deletion confirmation for recurring items
+  if (item.recurringSchedule !== 'NONE') {
+    const confirmed = window.confirm(
+      `⚠️ DELETE RECURRING ITEM\n\n` +
+      `"${item.title}" is a recurring ${item.recurringSchedule.toLowerCase()} item.\n\n` +
+      `Deleting this will permanently remove the entire recurring series.\n` +
+      `This action cannot be undone.\n\n` +
+      `Are you sure you want to delete this recurring item?`
+    )
+    if (!confirmed) return
+  }
+  
   await confirmAndDelete(item.title, async () => {
    await axiosInstance.delete(`/api/compliance/items/${item.id}`)
    await loadData()
@@ -682,8 +714,22 @@ export default function ComplianceManagerPage() {
          items.map((item) => (
           <tr key={item.id}>
            <td className="px-4 py-3 text-sm text-gray-900">
-            <div className="font-medium">{item.title}</div>
-            {item.description && <div className="text-xs text-gray-500">{item.description}</div>}
+            <div className="flex items-center gap-2">
+             {item.recurringSchedule !== 'NONE' && (
+              <span className="text-blue-600" title="Recurring item">
+               🔄
+              </span>
+             )}
+             <div className="flex-1">
+              <div className="font-medium">{item.title}</div>
+              {item.description && <div className="text-xs text-gray-500">{item.description}</div>}
+              {item.recurringSchedule !== 'NONE' && (
+               <div className="mt-0.5 text-xs text-blue-600">
+                Recurs: {item.recurringSchedule.toLowerCase()}
+               </div>
+              )}
+             </div>
+            </div>
            </td>
            <td className="px-4 py-3 text-sm text-gray-700">{item.category?.name || 'Uncategorised'}</td>
            <td className="px-4 py-3 text-sm text-gray-700">{item.owner?.fullName || item.ownerName || 'Unassigned'}</td>
