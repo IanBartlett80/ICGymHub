@@ -195,7 +195,7 @@ export default function DashboardPage() {
 
  return (
   <DashboardLayout>
-   <div className="p-6 space-y-6">
+   <div className="p-4 space-y-4">
     {/* Welcome Section */}
     <div className="mb-2">
      <h2 className="text-3xl font-bold text-gray-900">
@@ -219,8 +219,8 @@ export default function DashboardPage() {
     )}
 
     {/* Quick Actions */}
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-     <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
+     <h3 className="text-base font-semibold text-gray-900 mb-3">Quick Actions</h3>
      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
       <Link href="/dashboard/class-rostering" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
        <span className="text-3xl">📋</span>
@@ -265,14 +265,14 @@ export default function DashboardPage() {
     </div>
 
     {/* Key Metrics Overview */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-     <Link href="/dashboard/class-rostering" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-4">
-       <span className="text-4xl">📅</span>
-       <span className="text-blue-100 text-sm">This Week</span>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+     <Link href="/dashboard/class-rostering" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-2">
+       <span className="text-3xl">📅</span>
+       <span className="text-blue-100 text-xs">This Week</span>
       </div>
-      <p className="text-3xl font-bold mb-1">{stats?.rosters.weeklyClasses || 0}</p>
-      <p className="text-blue-100 text-sm mb-2">Scheduled Classes</p>
+      <p className="text-2xl font-bold mb-1">{stats?.rosters.weeklyClasses || 0}</p>
+      <p className="text-blue-100 text-xs mb-2">Scheduled Classes</p>
       <div className="flex items-center justify-between">
        {stats && stats.rosters.activeConflicts> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -287,13 +287,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/injury-reports" className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-4">
-       <span className="text-4xl">🏥</span>
-       <span className="text-red-100 text-sm">Active</span>
+     <Link href="/dashboard/injury-reports" className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-2">
+       <span className="text-3xl">🏥</span>
+       <span className="text-red-100 text-xs">Active</span>
       </div>
-      <p className="text-3xl font-bold mb-1">{stats?.safety.openIncidents || 0}</p>
-      <p className="text-red-100 text-sm mb-2">Open Incidents</p>
+      <p className="text-2xl font-bold mb-1">{stats?.safety.openIncidents || 0}</p>
+      <p className="text-red-100 text-xs mb-2">Open Incidents</p>
       <div className="flex items-center justify-between">
        {stats && stats.safety.criticalIssues> 0 ? (
         <span className="text-xs bg-yellow-500 bg-opacity-20 border border-yellow-200 rounded px-2 py-1">
@@ -310,13 +310,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/equipment" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-4">
-       <span className="text-4xl">🔧</span>
-       <span className="text-orange-100 text-sm">Total Items</span>
+     <Link href="/dashboard/equipment" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-2">
+       <span className="text-3xl">🔧</span>
+       <span className="text-orange-100 text-xs">Total Items</span>
       </div>
-      <p className="text-3xl font-bold mb-1">{stats?.equipment.totalItems || 0}</p>
-      <p className="text-orange-100 text-sm mb-2">Equipment Tracked</p>
+      <p className="text-2xl font-bold mb-1">{stats?.equipment.totalItems || 0}</p>
+      <p className="text-orange-100 text-xs mb-2">Equipment Tracked</p>
       <div className="flex items-center justify-between">
        {stats && stats.equipment.maintenanceDue> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -331,13 +331,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/maintenance" className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-4">
-       <span className="text-4xl">📊</span>
-       <span className="text-green-100 text-sm">Maintenance</span>
+     <Link href="/dashboard/maintenance" className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-2">
+       <span className="text-3xl">📊</span>
+       <span className="text-green-100 text-xs">Maintenance</span>
       </div>
-      <p className="text-3xl font-bold mb-1">{stats?.maintenance.completedThisMonth || 0}</p>
-      <p className="text-green-100 text-sm mb-2">Completed This Month</p>
+      <p className="text-2xl font-bold mb-1">{stats?.maintenance.completedThisMonth || 0}</p>
+      <p className="text-green-100 text-xs mb-2">Completed This Month</p>
       <div className="flex items-center justify-between">
        {stats && stats.maintenance.overdueTasks> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -352,13 +352,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/compliance-manager" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-4">
-       <span className="text-4xl">✅</span>
-       <span className="text-purple-100 text-sm">Compliance</span>
+     <Link href="/dashboard/compliance-manager" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-2">
+       <span className="text-3xl">✅</span>
+       <span className="text-purple-100 text-xs">Compliance</span>
       </div>
-      <p className="text-3xl font-bold mb-1">{stats?.compliance.totalItems || 0}</p>
-      <p className="text-purple-100 text-sm mb-2">Total Items</p>
+      <p className="text-2xl font-bold mb-1">{stats?.compliance.totalItems || 0}</p>
+      <p className="text-purple-100 text-xs mb-2">Total Items</p>
       <div className="flex items-center justify-between">
        {stats && stats.compliance.overdueItems> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -375,19 +375,19 @@ export default function DashboardPage() {
     </div>
 
     {/* Charts Section - Row 1 */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
      {/* Weekly Class Schedule */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Weekly Class Schedule</h3>
-        <p className="text-sm text-gray-600">Next 7 days - Classes vs Conflicts</p>
+        <h3 className="text-sm font-semibold text-gray-900">Weekly Class Schedule</h3>
+        <p className="text-xs text-gray-600">Next 7 days</p>
        </div>
-       <Link href="/dashboard/rosters" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+       <Link href="/dashboard/rosters" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
         View All →
        </Link>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={160}>
        <BarChart data={stats?.charts?.weeklyClasses || []}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis dataKey="day" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -403,17 +403,17 @@ export default function DashboardPage() {
      </div>
 
      {/* Injury Trends */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Injury Report Trends</h3>
-        <p className="text-sm text-gray-600">Last 6 months</p>
+        <h3 className="text-sm font-semibold text-gray-900">Injury Report Trends</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
-       <Link href="/dashboard/injury-reports/analytics" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+       <Link href="/dashboard/injury-reports/analytics" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
         View Analytics →
        </Link>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={160}>
        <AreaChart data={stats?.charts?.injuryTrends || []}>
         <defs>
          <linearGradient id="colorIncidents" x1="0" y1="0" x2="0" y2="1">
@@ -439,17 +439,17 @@ export default function DashboardPage() {
      </div>
 
      {/* Compliance Trend */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Compliance Trend</h3>
-        <p className="text-sm text-gray-600">Six-month trend</p>
+        <h3 className="text-sm font-semibold text-gray-900">Compliance Trend</h3>
+        <p className="text-xs text-gray-600">Six-month trend</p>
        </div>
-       <Link href="/dashboard/compliance-manager" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+       <Link href="/dashboard/compliance-manager" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
         View Manager →
        </Link>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={160}>
        <LineChart data={complianceTrend}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -467,17 +467,17 @@ export default function DashboardPage() {
     </div>
 
     {/* Charts Section - Row 2 */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
      {/* Equipment Status Distribution */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Equipment Condition</h3>
-        <p className="text-sm text-gray-600">Current distribution</p>
+        <h3 className="text-sm font-semibold text-gray-900">Equipment Condition</h3>
+        <p className="text-xs text-gray-600">Current distribution</p>
        </div>
       </div>
       {stats?.charts?.equipmentStatus && stats.charts.equipmentStatus.length> 0 ? (
-       <ResponsiveContainer width="100%" height={200}>
+       <ResponsiveContainer width="100%" height={150}>
         <PieChart>
          <Pie
           data={stats.charts.equipmentStatus}
@@ -507,15 +507,15 @@ export default function DashboardPage() {
      </div>
 
      {/* Injury Severity */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Injury Status</h3>
-        <p className="text-sm text-gray-600">This month</p>
+        <h3 className="text-sm font-semibold text-gray-900">Injury Status</h3>
+        <p className="text-xs text-gray-600">This month</p>
        </div>
       </div>
       {stats?.charts?.injurySeverity && stats.charts.injurySeverity.length> 0 ? (
-       <ResponsiveContainer width="100%" height={200}>
+       <ResponsiveContainer width="100%" height={150}>
         <PieChart>
          <Pie
           data={stats.charts.injurySeverity}
@@ -581,16 +581,16 @@ export default function DashboardPage() {
     </div>
 
     {/* Charts Section - Row 3 */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
      {/* Maintenance Trends */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Maintenance Activity</h3>
-        <p className="text-sm text-gray-600">Last 6 months</p>
+        <h3 className="text-sm font-semibold text-gray-900">Maintenance Activity</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={160}>
        <LineChart data={stats?.charts?.maintenanceTrends || []}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis dataKey="month" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -606,14 +606,14 @@ export default function DashboardPage() {
      </div>
 
      {/* Safety Issue Trends */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-4">
+     <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-2">
        <div>
-        <h3 className="text-lg font-semibold text-gray-900">Safety Issues</h3>
-        <p className="text-sm text-gray-600">Last 6 months</p>
+        <h3 className="text-sm font-semibold text-gray-900">Safety Issues</h3>
+        <p className="text-xs text-gray-600">Last 6 months</p>
        </div>
       </div>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={160}>
        <AreaChart data={stats?.charts?.safetyIssueTrends || []}>
         <defs>
          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">

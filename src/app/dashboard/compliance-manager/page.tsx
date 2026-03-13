@@ -432,7 +432,7 @@ export default function ComplianceManagerPage() {
 
  return (
   <DashboardLayout>
-   <div className="space-y-6 p-6">
+   <div className="space-y-4 p-4">
     <div className="flex items-center justify-between">
      <div>
       <h1 className="text-2xl font-bold text-gray-900">Compliance Manager</h1>
@@ -469,27 +469,27 @@ export default function ComplianceManagerPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Total Items</p>
-        <p className="mt-2 text-3xl font-bold text-gray-900">{analytics.totals.totalItems}</p>
+        <p className="mt-2 text-2xl font-bold text-gray-900">{analytics.totals.totalItems}</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Overdue</p>
-        <p className="mt-2 text-3xl font-bold text-red-600">{analytics.totals.overdueItems}</p>
+        <p className="mt-2 text-2xl font-bold text-red-600">{analytics.totals.overdueItems}</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Due in 7 Days</p>
-        <p className="mt-2 text-3xl font-bold text-orange-600">{analytics.totals.dueIn7Days}</p>
+        <p className="mt-2 text-2xl font-bold text-orange-600">{analytics.totals.dueIn7Days}</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Completion Rate</p>
-        <p className="mt-2 text-3xl font-bold text-green-600">{analytics.totals.completionRate}%</p>
+        <p className="mt-2 text-2xl font-bold text-green-600">{analytics.totals.completionRate}%</p>
        </div>
        <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-sm text-gray-600">Items With Files</p>
-        <p className="mt-2 text-3xl font-bold text-blue-600">{analytics.totals.withLinkedFiles}</p>
+        <p className="mt-2 text-2xl font-bold text-blue-600">{analytics.totals.withLinkedFiles}</p>
        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
        <div className="rounded-lg border border-gray-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-gray-900">Category Workload</h2>
         <p className="text-sm text-gray-600">Total, completed, and overdue items by category.</p>

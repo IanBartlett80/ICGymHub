@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
       <DashboardLayout>
         <InjuryReportsSubNav />
         <div className="flex flex-col items-center justify-center h-96">
-          <div className="text-6xl mb-4">📊</div>
+          <div className="text-6xl mb-2">📊</div>
           <div className="text-xl text-gray-500">No analytics data available</div>
           <p className="text-gray-400 mt-2">Start receiving injury reports to see insights</p>
         </div>
@@ -199,11 +199,11 @@ export default function AnalyticsPage() {
     <DashboardLayout>
       <InjuryReportsSubNav />
       
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         {/* Page Title */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Injury & Incidents Analytics</h1>
-          <p className="text-sm text-gray-600 mt-1">Comprehensive insights and data-driven intelligence</p>
+          <h1 className="text-xl font-bold text-gray-900">Injury & Incidents Analytics</h1>
+          <p className="text-xs text-gray-600 mt-1">Comprehensive insights and data-driven intelligence</p>
         </div>
 
         {/* Filters Section */}
@@ -263,15 +263,15 @@ export default function AnalyticsPage() {
         />
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">📋</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">📋</span>
               <span className="text-xs text-gray-500 uppercase">Total</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900">{analytics.totalSubmissions}</div>
-            <div className="text-sm text-gray-600 mt-1">Total Incidents</div>
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="text-2xl font-bold text-gray-900">{analytics.totalSubmissions}</div>
+            <div className="text-xs text-gray-600 mt-1">Total Incidents</div>
+            <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="flex justify-between text-xs text-gray-600">
                 <span>New: {totalNew}</span>
                 <span>Review: {totalUnderReview}</span>
@@ -279,14 +279,14 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">✅</span>
+          <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">✅</span>
               <span className="text-xs text-gray-500 uppercase">Success</span>
             </div>
-            <div className="text-3xl font-bold text-green-600">{resolutionRate}%</div>
-            <div className="text-sm text-gray-600 mt-1">Resolution Rate</div>
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="text-2xl font-bold text-green-600">{resolutionRate}%</div>
+            <div className="text-xs text-gray-600 mt-1">Resolution Rate</div>
+            <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="flex justify-between text-xs text-gray-600">
                 <span>Resolved: {totalResolved}</span>
                 <span>Closed: {totalClosed}</span>
@@ -294,14 +294,14 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">🚨</span>
+          <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">🚨</span>
               <span className="text-xs text-gray-500 uppercase">Urgent</span>
             </div>
-            <div className="text-3xl font-bold text-red-600">{urgentCases}</div>
-            <div className="text-sm text-gray-600 mt-1">High/Critical Priority</div>
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="text-2xl font-bold text-red-600">{urgentCases}</div>
+            <div className="text-xs text-gray-600 mt-1">High/Critical Priority</div>
+            <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="flex justify-between text-xs text-gray-600">
                 <span>Critical: {criticalCount}</span>
                 <span>High: {highCount}</span>
@@ -309,16 +309,16 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">⏱️</span>
+          <div className="bg-white rounded-xl border border-gray-200 p-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">⏱️</span>
               <span className="text-xs text-gray-500 uppercase">Speed</span>
             </div>
-            <div className="text-3xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-purple-600">
               {analytics.avgResponseTimeHours > 0 ? `${Math.round(analytics.avgResponseTimeHours)}h` : 'N/A'}
             </div>
-            <div className="text-sm text-gray-600 mt-1">Avg Response Time</div>
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="text-xs text-gray-600 mt-1">Avg Response Time</div>
+            <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="text-xs text-gray-600">
                 Time to initial review
               </div>
@@ -327,18 +327,18 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Charts Row 1: Status & Priority */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Status Distribution */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Status Distribution</h3>
-                <p className="text-sm text-gray-600">Current incident status breakdown</p>
+                <h3 className="text-sm font-semibold text-gray-900">Status Distribution</h3>
+                <p className="text-xs text-gray-600">Current incident status breakdown</p>
               </div>
             </div>
             {statusChartData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={150}>
                   <PieChart>
                     <Pie
                       data={statusChartData}
@@ -380,16 +380,16 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Priority Breakdown */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Priority Breakdown</h3>
-                <p className="text-sm text-gray-600">Severity levels of incidents</p>
+                <h3 className="text-sm font-semibold text-gray-900">Priority Breakdown</h3>
+                <p className="text-xs text-gray-600">Severity levels of incidents</p>
               </div>
             </div>
             {priorityChartData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={priorityChartData} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis type="number" />
@@ -424,15 +424,15 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Incident Trends */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Incident Trends Over Time</h3>
-              <p className="text-sm text-gray-600">Historical trend analysis showing total, critical, and resolved cases</p>
+              <h3 className="text-sm font-semibold text-gray-900">Incident Trends Over Time</h3>
+              <p className="text-xs text-gray-600">Historical trend analysis showing total, critical, and resolved cases</p>
             </div>
           </div>
           {analytics.trendData && analytics.trendData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={analytics.trendData}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -488,7 +488,7 @@ export default function AnalyticsPage() {
           ) : (
             <div className="flex items-center justify-center h-96 text-gray-400">
               <div className="text-center">
-                <div className="text-6xl mb-4">📉</div>
+                <div className="text-6xl mb-2">📉</div>
                 <div className="text-lg">No trend data available</div>
               </div>
             </div>
@@ -496,17 +496,17 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Charts Row 2: Classes, Zones, Equipment */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Injuries by Class */}
           {topClasses.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Injuries by Class</h3>
-                  <p className="text-sm text-gray-600">Top classes by incident rate</p>
+                  <h3 className="text-sm font-semibold text-gray-900">Injuries by Class</h3>
+                  <p className="text-xs text-gray-600">Top classes by incident rate</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={180}>
               <BarChart data={topClasses} layout="vertical" margin={{ left: 150 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis type="number" />
@@ -527,14 +527,14 @@ export default function AnalyticsPage() {
 
           {/* Injuries by Zone */}
           {topZones.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Injuries by Zone</h3>
-                  <p className="text-sm text-gray-600">Incidents per training zone</p>
+                  <h3 className="text-sm font-semibold text-gray-900">Injuries by Zone</h3>
+                  <p className="text-xs text-gray-600">Incidents per training zone</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={topZones} layout="vertical" margin={{ left: 100 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis type="number" />
@@ -548,14 +548,14 @@ export default function AnalyticsPage() {
 
           {/* Equipment-Related Injuries */}
           {topEquipment.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Equipment Injuries</h3>
-                  <p className="text-sm text-gray-600">Top equipment with incidents</p>
+                  <h3 className="text-sm font-semibold text-gray-900">Equipment Injuries</h3>
+                  <p className="text-xs text-gray-600">Top equipment with incidents</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={topEquipment} layout="vertical" margin={{ left: 100 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis type="number" />
@@ -570,17 +570,17 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Charts Row 3: Day Pattern, Venue, Program */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Day of Week Pattern */}
           {sortedDayData.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Day of Week Pattern</h3>
-                  <p className="text-sm text-gray-600">Identify high-risk days</p>
+                  <h3 className="text-sm font-semibold text-gray-900">Day of Week Pattern</h3>
+                  <p className="text-xs text-gray-600">Identify high-risk days</p>
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={180}>
               <BarChart data={sortedDayData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
@@ -610,14 +610,14 @@ export default function AnalyticsPage() {
 
         {/* Venue Breakdown */}
         {analytics.venueBreakdown && analytics.venueBreakdown.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Injuries by Venue</h3>
-                <p className="text-sm text-gray-600">Compare incident rates across venues</p>
+                <h3 className="text-sm font-semibold text-gray-900">Injuries by Venue</h3>
+                <p className="text-xs text-gray-600">Compare incident rates across venues</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={180}>
               <BarChart data={analytics.venueBreakdown}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
@@ -639,14 +639,14 @@ export default function AnalyticsPage() {
 
         {/* Program Breakdown */}
         {analytics.gymsportBreakdown && analytics.gymsportBreakdown.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Injuries by Program</h3>
-                <p className="text-sm text-gray-600">Incident distribution across programs</p>
+                <h3 className="text-sm font-semibold text-gray-900">Injuries by Program</h3>
+                <p className="text-xs text-gray-600">Incident distribution across programs</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={180}>
               <BarChart data={analytics.gymsportBreakdown}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
