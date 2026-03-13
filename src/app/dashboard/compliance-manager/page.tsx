@@ -348,6 +348,7 @@ export default function ComplianceManagerPage() {
    // 1. quick-add: New owner being created on the fly
    // 2. qa-OwnerName: Existing quick-add owner selected from dropdown
    // 3. Regular user ID: User account selected
+   // 4. none: Unassigned
    if (itemForm.ownerId === 'quick-add') {
     payload.ownerId = 'none'
    } else if (itemForm.ownerId.startsWith('qa-')) {
@@ -359,8 +360,17 @@ export default function ComplianceManagerPage() {
     if (quickAddOwner) {
      payload.ownerEmail = quickAddOwner.email
     }
+   } else if (itemForm.ownerId === 'none') {
+    // Unassigned - clear owner fields
+    payload.ownerId = 'none'
+    payload.ownerName = ''
+    payload.ownerEmail = ''
+   } else {
+    // Regular user ID - clear ownerName and ownerEmail as they're not needed
+    // The user's name and email will come from the User relationship
+    payload.ownerName = ''
+    payload.ownerEmail = ''
    }
-   // else: keep the regular ownerId as is
 
    const url = editingItemId ? `/api/compliance/items/${editingItemId}` : '/api/compliance/items'
    const method = editingItemId ? 'put' : 'post'
@@ -1165,7 +1175,17 @@ export default function ComplianceManagerPage() {
         <label className="mb-1 block text-sm font-medium text-gray-700">Owner</label>
         <select
          value={itemForm.ownerId}
-         onChange={(event) => setItemForm((prev) => ({ ...prev, ownerId: event.target.value }))}
+         onChange={(event) => {
+          const newOwnerId = event.target.value
+          setItemForm((prev) => ({
+           ...prev,
+           ownerId: newOwnerId,
+           // Clear ownerName and ownerEmail when selecting a regular user or unassigned
+           // Only keep them for quick-add or qa-* owners
+           ownerName: (newOwnerId === 'quick-add' || newOwnerId.startsWith('qa-')) ? prev.ownerName : '',
+           ownerEmail: (newOwnerId === 'quick-add' || newOwnerId.startsWith('qa-')) ? prev.ownerEmail : '',
+          }))
+         }}
          className="w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
 >
          <option value="none">Unassigned</option>
