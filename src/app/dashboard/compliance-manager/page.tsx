@@ -273,13 +273,25 @@ export default function ComplianceManagerPage() {
 
  const openEditItemModal = (item: ComplianceItem) => {
   setEditingItemId(item.id)
+  
+  // Determine the correct ownerId value:
+  // - If item has ownerId, use it (regular user)
+  // - If item has ownerName but no ownerId, construct qa-* ID (quick-add owner)
+  // - Otherwise, use 'none' (unassigned)
+  let ownerIdValue = 'none'
+  if (item.ownerId) {
+   ownerIdValue = item.ownerId
+  } else if (item.ownerName) {
+   ownerIdValue = `qa-${item.ownerName}`
+  }
+  
   setItemForm({
    title: item.title,
    description: item.description || '',
    notes: item.notes || '',
    categoryId: item.categoryId || 'none',
    venueId: item.venueId || '',
-   ownerId: item.ownerId || 'none',
+   ownerId: ownerIdValue,
    ownerName: item.ownerName || '',
    ownerEmail: item.ownerEmail || '',
    deadlineDate: item.deadlineDate.split('T')[0],

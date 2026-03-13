@@ -52,17 +52,35 @@ export async function GET(request: NextRequest) {
       clubId: string
       categoryId?: string
       ownerId?: string | null
+      ownerName?: string
       venueId?: string
       status?: string
       deadlineDate?: { gte?: Date; lte?: Date }
-      OR?: Array<{ title?: { contains: string }; description?: { contains: string }; notes?: { contains: string } }>
+      OR?: Array<{ 
+        title?: { contains: string }
+        description?: { contains: string }
+        notes?: { contains: string }
+        venueId?: string | null
+      }>
     } = {
       clubId: club.id,
     }
 
     if (categoryId && categoryId !== 'all') where.categoryId = categoryId
     if (ownerId && ownerId !== 'all') {
-      where.ownerId = ownerId === 'none' ? null : ownerId
+      if (ownerId === 'none') {
+        // Unassigned: no ownerId and no ownerName
+        where.ownerId = null
+        where.ownerName = null
+      } else if (ownerId.startsWith('qa-')) {
+        // Quick-add owner: match by ownerName
+        const ownerName = ownerId.substring(3) // Remove 'qa-' prefix
+        where.ownerId = null
+        where.ownerName = ownerName
+      } else {
+        // Regular user: match by ownerId
+        where.ownerId = ownerId
+      }
     }
     
     // Venue filter: include items for specific venue OR items for "All Venues" (venueId = null)
