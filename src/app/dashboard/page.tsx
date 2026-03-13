@@ -266,13 +266,13 @@ export default function DashboardPage() {
 
     {/* Key Metrics Overview */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-     <Link href="/dashboard/class-rostering" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-2">
-       <span className="text-3xl">📅</span>
+     <Link href="/dashboard/class-rostering" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-1">
+       <span className="text-2xl">📅</span>
        <span className="text-blue-100 text-xs">This Week</span>
       </div>
-      <p className="text-2xl font-bold mb-1">{stats?.rosters.weeklyClasses || 0}</p>
-      <p className="text-blue-100 text-xs mb-2">Scheduled Classes</p>
+      <p className="text-xl font-bold mb-1">{stats?.rosters.weeklyClasses || 0}</p>
+      <p className="text-blue-100 text-xs mb-1">Scheduled Classes</p>
       <div className="flex items-center justify-between">
        {stats && stats.rosters.activeConflicts> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -287,13 +287,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/injury-reports" className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-2">
-       <span className="text-3xl">🏥</span>
+     <Link href="/dashboard/injury-reports" className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-3 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-1">
+       <span className="text-2xl">🏥</span>
        <span className="text-red-100 text-xs">Active</span>
       </div>
-      <p className="text-2xl font-bold mb-1">{stats?.safety.openIncidents || 0}</p>
-      <p className="text-red-100 text-xs mb-2">Open Incidents</p>
+      <p className="text-xl font-bold mb-1">{stats?.safety.openIncidents || 0}</p>
+      <p className="text-red-100 text-xs mb-1">Open Incidents</p>
       <div className="flex items-center justify-between">
        {stats && stats.safety.criticalIssues> 0 ? (
         <span className="text-xs bg-yellow-500 bg-opacity-20 border border-yellow-200 rounded px-2 py-1">
@@ -310,13 +310,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/equipment" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-2">
-       <span className="text-3xl">🔧</span>
+     <Link href="/dashboard/equipment" className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-3 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-1">
+       <span className="text-2xl">🔧</span>
        <span className="text-orange-100 text-xs">Total Items</span>
       </div>
-      <p className="text-2xl font-bold mb-1">{stats?.equipment.totalItems || 0}</p>
-      <p className="text-orange-100 text-xs mb-2">Equipment Tracked</p>
+      <p className="text-xl font-bold mb-1">{stats?.equipment.totalItems || 0}</p>
+      <p className="text-orange-100 text-xs mb-1">Equipment Tracked</p>
       <div className="flex items-center justify-between">
        {stats && stats.equipment.maintenanceDue> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -331,13 +331,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/maintenance" className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-2">
-       <span className="text-3xl">📊</span>
+     <Link href="/dashboard/maintenance" className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-1">
+       <span className="text-2xl">📊</span>
        <span className="text-green-100 text-xs">Maintenance</span>
       </div>
-      <p className="text-2xl font-bold mb-1">{stats?.maintenance.completedThisMonth || 0}</p>
-      <p className="text-green-100 text-xs mb-2">Completed This Month</p>
+      <p className="text-xl font-bold mb-1">{stats?.maintenance.completedThisMonth || 0}</p>
+      <p className="text-green-100 text-xs mb-1">Completed This Month</p>
       <div className="flex items-center justify-between">
        {stats && stats.maintenance.overdueTasks> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">
@@ -352,13 +352,13 @@ export default function DashboardPage() {
       </div>
      </Link>
 
-     <Link href="/dashboard/compliance-manager" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white hover:shadow-lg transition-all hover:scale-105">
-      <div className="flex items-center justify-between mb-2">
-       <span className="text-3xl">✅</span>
+     <Link href="/dashboard/compliance-manager" className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 text-white hover:shadow-lg transition-all hover:scale-105">
+      <div className="flex items-center justify-between mb-1">
+       <span className="text-2xl">✅</span>
        <span className="text-purple-100 text-xs">Compliance</span>
       </div>
-      <p className="text-2xl font-bold mb-1">{stats?.compliance.totalItems || 0}</p>
-      <p className="text-purple-100 text-xs mb-2">Total Items</p>
+      <p className="text-xl font-bold mb-1">{stats?.compliance.totalItems || 0}</p>
+      <p className="text-purple-100 text-xs mb-1">Total Items</p>
       <div className="flex items-center justify-between">
        {stats && stats.compliance.overdueItems> 0 ? (
         <span className="text-xs bg-red-500 bg-opacity-20 border border-red-200 rounded px-2 py-1">

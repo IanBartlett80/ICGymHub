@@ -426,9 +426,10 @@ export async function GET(req: NextRequest) {
     const injurySeverityData = injuryBySeverity.map(item => ({
       name: item.status.replace('_', ' '),
       value: item._count,
-      color: item.status === 'RESOLVED' ? '#10b981' :
-             item.status === 'PENDING' ? '#f59e0b' :
-             item.status === 'IN_REVIEW' ? '#3b82f6' : '#ef4444'
+      color: item.status === 'CLOSED' ? '#10b981' :
+             item.status === 'UNDER_REVIEW' ? '#f59e0b' :
+             item.status === 'RESOLVED' ? '#10b981' :
+             item.status === 'NEW' ? '#ef4444' : '#ef4444'
     }))
 
     // SAFETY ISSUE TRENDS
