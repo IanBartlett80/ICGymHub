@@ -466,26 +466,29 @@ export default function DashboardPage() {
      </div>
     </div>
 
-    {/* Charts Section - Row 2 */}
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    {/* Charts Section - Row 2: Status Distribution */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
      {/* Equipment Status Distribution */}
-     <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center justify-between mb-2">
+     <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
        <div>
-        <h3 className="text-sm font-semibold text-gray-900">Equipment Condition</h3>
+        <h3 className="text-base font-semibold text-gray-900">Equipment Condition</h3>
         <p className="text-xs text-gray-600">Current distribution</p>
        </div>
+       <Link href="/dashboard/equipment" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+        View All →
+       </Link>
       </div>
       {stats?.charts?.equipmentStatus && stats.charts.equipmentStatus.length> 0 ? (
-       <ResponsiveContainer width="100%" height={150}>
+       <ResponsiveContainer width="100%" height={240}>
         <PieChart>
          <Pie
           data={stats.charts.equipmentStatus}
           cx="50%"
           cy="50%"
-          labelLine={false}
+          labelLine={true}
           label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-          outerRadius={70}
+          outerRadius={90}
           fill="#8884d8"
           dataKey="value"
 >
@@ -493,11 +496,18 @@ export default function DashboardPage() {
            <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
          </Pie>
-         <Tooltip />
+         <Tooltip 
+          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+         />
+         <Legend 
+          verticalAlign="bottom" 
+          height={36}
+          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+         />
         </PieChart>
        </ResponsiveContainer>
       ) : (
-       <div className="h-48 flex items-center justify-center text-gray-400">
+       <div className="h-64 flex items-center justify-center text-gray-400">
         <div className="text-center">
          <div className="text-4xl mb-2">📊</div>
          <p className="text-sm">No equipment data yet</p>
@@ -506,24 +516,27 @@ export default function DashboardPage() {
       )}
      </div>
 
-     {/* Injury Severity */}
-     <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center justify-between mb-2">
+     {/* Injury Status */}
+     <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
        <div>
-        <h3 className="text-sm font-semibold text-gray-900">Injury Status</h3>
+        <h3 className="text-base font-semibold text-gray-900">Injury Status</h3>
         <p className="text-xs text-gray-600">This month</p>
        </div>
+       <Link href="/dashboard/injury-reports/analytics" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+        View Analytics →
+       </Link>
       </div>
       {stats?.charts?.injurySeverity && stats.charts.injurySeverity.length> 0 ? (
-       <ResponsiveContainer width="100%" height={150}>
+       <ResponsiveContainer width="100%" height={240}>
         <PieChart>
          <Pie
           data={stats.charts.injurySeverity}
           cx="50%"
           cy="50%"
-          labelLine={false}
+          labelLine={true}
           label={({ name, value }) => `${name}: ${value}`}
-          outerRadius={70}
+          outerRadius={90}
           fill="#8884d8"
           dataKey="value"
 >
@@ -531,52 +544,24 @@ export default function DashboardPage() {
            <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
          </Pie>
-         <Tooltip />
+         <Tooltip 
+          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+         />
+         <Legend 
+          verticalAlign="bottom" 
+          height={36}
+          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+         />
         </PieChart>
        </ResponsiveContainer>
       ) : (
-       <div className="h-48 flex items-center justify-center text-gray-400">
+       <div className="h-64 flex items-center justify-center text-gray-400">
         <div className="text-center">
          <div className="text-4xl mb-2">🏥</div>
          <p className="text-sm">No injury data this month</p>
         </div>
        </div>
       )}
-     </div>
-
-     {/* Key Stats Summary */}
-     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Metrics</h3>
-      <div className="space-y-4">
-       <div>
-        <div className="flex items-center justify-between">
-         <span className="text-sm font-medium text-gray-700">Coach Utilization</span>
-         <span className="text-lg font-bold text-blue-600">{stats?.rosters.coachUtilization || 0}</span>
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Classes per coach/week</div>
-       </div>
-       <div className="border-t pt-3">
-        <div className="flex items-center justify-between">
-         <span className="text-sm font-medium text-gray-700">Avg Response Time</span>
-         <span className="text-lg font-bold text-green-600">{stats?.safety.avgResponseTime || 0}h</span>
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Injury report resolution</div>
-       </div>
-       <div className="border-t pt-3">
-        <div className="flex items-center justify-between">
-         <span className="text-sm font-medium text-gray-700">Recurring Tasks</span>
-         <span className="text-lg font-bold text-purple-600">{stats?.maintenance.recurringTasks || 0}</span>
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Scheduled maintenance</div>
-       </div>
-       <div className="border-t pt-3">
-        <div className="flex items-center justify-between">
-         <span className="text-sm font-medium text-gray-700">Gymsports</span>
-         <span className="text-lg font-bold text-indigo-600">{stats?.rosters.totalGymsports || 0}</span>
-        </div>
-        <div className="mt-1 text-xs text-gray-500">Active programs</div>
-       </div>
-      </div>
      </div>
     </div>
 
