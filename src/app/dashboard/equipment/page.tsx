@@ -7,6 +7,7 @@ import { QrCodeIcon, PrinterIcon, MinusIcon, PlusIcon, BuildingOfficeIcon, Shiel
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import IntelligenceFilter from '@/components/IntelligenceFilter';
+import QRCodeProtectionStatus from '@/components/QRCodeProtectionStatus';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axiosInstance from '@/lib/axios';
 
@@ -675,19 +676,20 @@ export default function EquipmentPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-3 text-center">
            {venueQR.venueName}
           </h3>
-          <div className="w-32 h-32 mb-4">
+          <div className="w-32 h-32 mb-2">
            <img
             src={venueQR.qrCodeDataUrl}
             alt={`QR Code for ${venueQR.venueName}`}
             className="w-full h-full"
            />
           </div>
+          <QRCodeProtectionStatus />
           <button
            onClick={(e) => {
             e.stopPropagation();
             handlePrintVenueQR(venueQR);
            }}
-           className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+           className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-3"
           >
            <PrinterIcon className="h-4 w-4 mr-2" />
            Print
@@ -736,6 +738,7 @@ export default function EquipmentPage() {
               alt="Zone QR Code" 
               className="w-16 h-16 border border-gray-300 rounded"
              />
+             <QRCodeProtectionStatus />
             </div>
            )}
           </div>

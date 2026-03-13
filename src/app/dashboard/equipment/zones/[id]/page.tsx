@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentStatusCard from '@/components/EquipmentStatusCard';
 import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
+import QRCodeProtectionStatus from '@/components/QRCodeProtectionStatus';
 import Link from 'next/link';
 import axiosInstance from '@/lib/axios';
 import { 
@@ -413,12 +414,13 @@ export default function ZoneDetailPage() {
         )}
        </div>
        {qrCodeDataUrl ? (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center">
          <img 
           src={qrCodeDataUrl} 
           alt="Zone QR Code" 
           className="w-32 h-32 border-2 border-gray-200 rounded"
          />
+         <QRCodeProtectionStatus />
         </div>
        ) : (
         <div className="text-center py-4">

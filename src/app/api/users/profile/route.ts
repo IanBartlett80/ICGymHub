@@ -2,18 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAccessToken, hashPassword, verifyPassword } from '@/lib/auth'
 
+// Helper function to get access token from Authorization header or cookie
+function getAccessToken(req: NextRequest): string | null {
+  const headerToken = req.headers.get('authorization')
+  if (headerToken?.startsWith('Bearer ')) {
+    return headerToken.replace('Bearer ', '').trim()
+  }
+  const cookieToken = req.cookies.get('accessToken')?.value
+  return cookieToken || null
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     // Get and verify token
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = getAccessToken(request)
+    if (!token) {
       return NextResponse.json(
         { error: 'Unauthorized - No token provided' },
         { status: 401 }
       )
     }
 
-    const token = authHeader.split(' ')[1]
     const payload = verifyAccessToken(token)
     if (!payload) {
       return NextResponse.json(

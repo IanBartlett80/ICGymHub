@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import QRCodeProtectionStatus from '@/components/QRCodeProtectionStatus';
 import { showToast } from '@/lib/toast';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { PrinterIcon } from '@heroicons/react/24/outline';
@@ -362,6 +363,7 @@ export default function FormTemplatesPage() {
             alt="QR Code" 
             className="mx-auto w-64 h-64"
            />
+           <QRCodeProtectionStatus />
            <p className="text-sm text-gray-600 mt-2">Scan this QR code to access the form</p>
           </div>
          )}
