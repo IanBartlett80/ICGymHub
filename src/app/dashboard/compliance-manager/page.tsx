@@ -591,51 +591,58 @@ export default function ComplianceManagerPage() {
      </div>
     </div>
 
-    {/* Active/Closed Items Toggle Tabs */}
-    <div className="flex items-center gap-2 border-b border-gray-200">
-     <button
-      onClick={() => setItemsView('active')}
-      className={`px-4 py-2 text-sm font-medium transition-colors ${
-       itemsView === 'active'
-        ? 'border-b-2 border-blue-600 text-blue-600'
-        : 'text-gray-600 hover:text-gray-900'
-      }`}
-     >
-      📋 Active Items
-      {items.filter(i => i.computedStatus !== 'COMPLETED' && i.status !== 'COMPLETED').length > 0 && (
-       <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
-        {items.filter(i => i.computedStatus !== 'COMPLETED' && i.status !== 'COMPLETED').length}
-       </span>
-      )}
-     </button>
-     <button
-      onClick={() => setItemsView('closed')}
-      className={`px-4 py-2 text-sm font-medium transition-colors ${
-       itemsView === 'closed'
-        ? 'border-b-2 border-blue-600 text-blue-600'
-        : 'text-gray-600 hover:text-gray-900'
-      }`}
-     >
-      ✅ Closed Items
-      {items.filter(i => i.computedStatus === 'COMPLETED' || i.status === 'COMPLETED').length > 0 && (
-       <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-        {items.filter(i => i.computedStatus === 'COMPLETED' || i.status === 'COMPLETED').length}
-       </span>
-      )}
-     </button>
-     <button
-      onClick={() => setItemsView('all')}
-      className={`px-4 py-2 text-sm font-medium transition-colors ${
-       itemsView === 'all'
-        ? 'border-b-2 border-blue-600 text-blue-600'
-        : 'text-gray-600 hover:text-gray-900'
-      }`}
-     >
-      📊 All Items
-      <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-       {items.length}
-      </span>
-     </button>
+    {/* Active/Closed Items Navigation */}
+    <div className="bg-white border-b border-gray-200">
+     <div className="px-6 py-3">
+      <nav className="flex items-center gap-1 overflow-x-auto">
+       <button
+        onClick={() => setItemsView('active')}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition-colors ${
+         itemsView === 'active'
+          ? 'bg-blue-50 text-blue-600'
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+       >
+        <span className="text-lg">📋</span>
+        <span>Active Items</span>
+        {items.filter(i => i.computedStatus !== 'COMPLETED' && i.status !== 'COMPLETED').length > 0 && (
+         <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
+          {items.filter(i => i.computedStatus !== 'COMPLETED' && i.status !== 'COMPLETED').length}
+         </span>
+        )}
+       </button>
+       <button
+        onClick={() => setItemsView('closed')}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition-colors ${
+         itemsView === 'closed'
+          ? 'bg-blue-50 text-blue-600'
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+       >
+        <span className="text-lg">✅</span>
+        <span>Closed Items</span>
+        {items.filter(i => i.computedStatus === 'COMPLETED' || i.status === 'COMPLETED').length > 0 && (
+         <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+          {items.filter(i => i.computedStatus === 'COMPLETED' || i.status === 'COMPLETED').length}
+         </span>
+        )}
+       </button>
+       <button
+        onClick={() => setItemsView('all')}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition-colors ${
+         itemsView === 'all'
+          ? 'bg-blue-50 text-blue-600'
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+       >
+        <span className="text-lg">📊</span>
+        <span>All Items</span>
+        <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+         {items.length}
+        </span>
+       </button>
+      </nav>
+     </div>
     </div>
 
     {analytics && (
