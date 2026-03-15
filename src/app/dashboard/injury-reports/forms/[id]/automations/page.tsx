@@ -497,9 +497,9 @@ export default function AutomationBuilderPage() {
    );
   }
 
-  // Form field: Check if it's a dropdown field
+  // Form field: Check if it's a dropdown, multiple choice, or checkboxes field
   const formField = allFields.find((f: any) => f.id === selectedField);
-  if (formField && formField.fieldType === 'DROPDOWN' && formField.options) {
+  if (formField && (formField.fieldType === 'DROPDOWN' || formField.fieldType === 'MULTIPLE_CHOICE' || formField.fieldType === 'CHECKBOXES') && formField.options) {
    try {
     const options = JSON.parse(formField.options);
     
@@ -513,8 +513,8 @@ export default function AutomationBuilderPage() {
       >
        <option value="">Select value...</option>
        {options.map((option: any, idx: number) => (
-        <option key={idx} value={option.id || option.name || option}>
-         {option.name || option}
+        <option key={idx} value={option.name || option.id || option}>
+         {option.name || option.id || option}
         </option>
        ))}
       </select>
