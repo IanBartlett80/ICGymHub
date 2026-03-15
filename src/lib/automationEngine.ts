@@ -113,6 +113,19 @@ function replaceVariables(template: string, submissionData: any, submission: any
   result = result.replace(/\{submission\.priority\}/g, submission.priority || 'Not Set');
   result = result.replace(/\{submission\.submittedAt\}/g, new Date(submission.submittedAt).toLocaleString());
 
+  // Find and replace Gym Sport and Class from submission data
+  submissionData.forEach((data: any) => {
+    const fieldLabel = data.field.label;
+    const fieldValue = JSON.parse(data.value);
+    
+    if (fieldLabel === 'Gym Sport' || fieldLabel.toLowerCase() === 'gym sport') {
+      result = result.replace(/\{submission\.gymsport\}/g, fieldValue.displayValue || fieldValue.value || fieldValue.name || '');
+    }
+    if (fieldLabel === 'Class') {
+      result = result.replace(/\{submission\.class\}/g, fieldValue.displayValue || fieldValue.value || fieldValue.name || '');
+    }
+  });
+
   // Replace field variables
   submissionData.forEach((data: any) => {
     const fieldValue = JSON.parse(data.value);

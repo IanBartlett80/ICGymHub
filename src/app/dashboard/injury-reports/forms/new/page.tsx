@@ -260,10 +260,13 @@ export default function FormBuilderPage() {
        </p>
        <ul className="text-sm text-blue-800 space-y-1 ml-4">
         <li><strong>1. Reported By Details</strong> - Reporter name, incident date/time, venue selection, gym zone/area, equipment/apparatus, supervising coach, coach email, coach phone, description</li>
-        <li><strong>2. Athlete Details</strong> - Athlete name, class</li>
+        <li><strong>2. Athlete Details</strong> - Athlete name, gym sport, class</li>
         <li><strong>3. Injury Details</strong> - Body part injured, nature of injury</li>
         <li><strong>4. Action Taken</strong> - First aid, medication, emergency services, medical advice, parent contact, additional details</li>
        </ul>
+       <p className="text-sm text-blue-800 mt-3">
+        💡 <strong>Tip:</strong> After creating your form, click the <strong>"Preview Form"</strong> button in the edit screen to see all default questions and how the form will appear to users.
+       </p>
        <p className="text-sm text-blue-800 mt-2">
         You can add additional custom sections below if needed. Note: Coach email and phone will auto-populate when a coach is selected during form submission.
        </p>

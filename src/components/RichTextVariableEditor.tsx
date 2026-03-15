@@ -69,6 +69,8 @@ export default function RichTextVariableEditor({
       'submission.status': 'Status',
       'submission.priority': 'Priority',
       'submission.submittedAt': 'Submitted At',
+      'submission.gymsport': 'Gym Sport',
+      'submission.class': 'Class',
     };
     
     if (systemVarMap[cleanCode]) {

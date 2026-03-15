@@ -316,6 +316,8 @@ export default function AutomationBuilderPage() {
    { label: 'Status', value: '{submission.status}' },
    { label: 'Priority', value: '{submission.priority}' },
    { label: 'Submitted At', value: '{submission.submittedAt}' },
+   { label: 'Gym Sport', value: '{submission.gymsport}' },
+   { label: 'Class', value: '{submission.class}' },
   ];
 
   const formFieldVariables = allFields.map((field: Field) => ({

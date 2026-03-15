@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.classTemplate.findMany({
         where: { clubId: authResult.user.clubId },
-        select: { id: true, name: true },
+        select: { id: true, name: true, gymsportId: true },
         orderBy: { name: 'asc' },
       }),
       prisma.zone.findMany({
