@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
       serialNumber,
       condition,
       photoUrl,
-      addedBy,
-      addedByEmail,
     } = body;
 
     // Validation
@@ -118,7 +116,7 @@ export async function POST(request: NextRequest) {
         action: 'CREATE_EQUIPMENT',
         entityType: 'Equipment',
         entityId: equipment.id,
-        details: 'Equipment added via QR code scan',
+        changes: JSON.stringify({ message: 'Equipment added via QR code scan', equipmentName: name }),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       },

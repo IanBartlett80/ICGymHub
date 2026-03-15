@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Equipment, Zone, Venue } from '@prisma/client';
-import { PlusIcon, MagnifyingGlassIcon, ArrowDownTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowDownTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
@@ -16,9 +16,6 @@ import axiosInstance from '@/lib/axios';
 interface EquipmentWithRelations extends Equipment {
  zone?: (Zone & { venue?: Venue | null }) | null;
  venue?: Venue | null;
- lastCheckedDate?: Date | null;
- lastCheckStatus?: string | null;
- lastCheckedBy?: string | null;
  _count?: {
   maintenanceLogs: number;
   usageHistory: number;

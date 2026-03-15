@@ -13,9 +13,6 @@ import {
 interface EquipmentWithRelations extends Equipment {
   zone?: (Zone & { venue?: Venue | null }) | null;
   venue?: Venue | null;
-  lastCheckedDate?: Date | null;
-  lastCheckStatus?: string | null;
-  lastCheckedBy?: string | null;
   _count?: {
     maintenanceLogs: number;
     usageHistory: number;

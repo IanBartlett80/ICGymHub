@@ -37,7 +37,7 @@ export async function POST(
         action: 'SAFETY_CHECK',
         entityType: 'Equipment',
         entityId: equipment.id,
-        details: 'Safety check performed via QR code - No Issues Detected',
+        changes: JSON.stringify({ status: 'No Issues Detected', message: 'Safety check performed via QR code' }),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       },
