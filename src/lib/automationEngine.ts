@@ -131,6 +131,31 @@ function evaluateConditions(
 function replaceVariables(template: string, submissionData: any, submission: any): string {
   let result = template;
 
+  // First, extract variables from TipTap HTML pills and replace them with their actual values
+  // TipTap stores variables as: <span data-variable-pill data-variable="{field.xyz}" ...>Label</span>
+  const htmlPillsFound: string[] = [];
+  result = result.replace(/<span[^>]*data-variable="([^"]+)"[^>]*>.*?<\/span>/g, (_match, variableCode) => {
+    htmlPillsFound.push(variableCode);
+    return variableCode; // Replace the entire HTML span with just the variable code
+  });
+  
+  if (htmlPillsFound.length > 0) {
+    console.log(`[Variable Replacement] Found ${htmlPillsFound.length} HTML variable pills:`, htmlPillsFound);
+  }
+
+  // Build a map of all field values for easier lookup
+  const fieldValueMap = new Map<string, any>();
+  submissionData.forEach((data: any) => {
+    const fieldValue = JSON.parse(data.value);
+    const fieldId = data.fieldId;
+    const fieldLabel = data.field.label;
+    
+    fieldValueMap.set(fieldId, fieldValue);
+    fieldValueMap.set(fieldLabel, fieldValue);
+  });
+  
+  console.log(`[Variable Replacement] Available fields:`, Array.from(fieldValueMap.keys()));
+
   // Replace submission variables
   result = result.replace(/\{submission\.id\}/g, submission.id);
   result = result.replace(/\{submission\.status\}/g, submission.status);
@@ -143,22 +168,32 @@ function replaceVariables(template: string, submissionData: any, submission: any
     const fieldValue = JSON.parse(data.value);
     
     if (fieldLabel === 'Gym Sport' || fieldLabel.toLowerCase() === 'gym sport') {
-      result = result.replace(/\{submission\.gymsport\}/g, fieldValue.displayValue || fieldValue.value || fieldValue.name || '');
+      const displayValue = fieldValue.displayValue || fieldValue.name || fieldValue.value || '';
+      result = result.replace(/\{submission\.gymsport\}/g, displayValue);
     }
     if (fieldLabel === 'Class') {
-      result = result.replace(/\{submission\.class\}/g, fieldValue.displayValue || fieldValue.value || fieldValue.name || '');
+      const displayValue = fieldValue.displayValue || fieldValue.name || fieldValue.value || '';
+      result = result.replace(/\{submission\.class\}/g, displayValue);
     }
   });
 
-  // Replace field variables
-  submissionData.forEach((data: any) => {
-    const fieldValue = JSON.parse(data.value);
-    const fieldLabel = data.field.label;
-    const fieldId = data.fieldId;
-    
-    result = result.replace(new RegExp(`\\{field\\.${fieldId}\\}`, 'g'), fieldValue.displayValue || fieldValue.value);
-    result = result.replace(new RegExp(`\\{field\\.${fieldLabel}\\}`, 'g'), fieldValue.displayValue || fieldValue.value);
+  // Replace field variables - use regex to find all {field.xxx} patterns
+  const fieldVariablesReplaced: any[] = [];
+  result = result.replace(/\{field\.([^}]+)\}/g, (match, fieldIdOrLabel) => {
+    const fieldValue = fieldValueMap.get(fieldIdOrLabel);
+    if (fieldValue) {
+      // Return the most appropriate display value
+      const replacement = fieldValue.displayValue || fieldValue.value || fieldValue.label || match;
+      fieldVariablesReplaced.push({ variable: match, value: replacement });
+      return replacement;
+    }
+    console.warn(`[Variable Replacement] Field not found: ${fieldIdOrLabel}`);
+    return match; // If field not found, leave the variable as-is
   });
+  
+  if (fieldVariablesReplaced.length > 0) {
+    console.log(`[Variable Replacement] Replaced ${fieldVariablesReplaced.length} field variables:`, fieldVariablesReplaced);
+  }
 
   return result;
 }
@@ -240,11 +275,15 @@ async function executeSendEmail(
   const recipients = JSON.parse(automation.emailRecipients || '[]');
   console.log(`[Automation ${automation.id}] Email recipients config:`, recipients);
   
+  console.log(`[Automation ${automation.id}] Email subject template:`, automation.emailSubject);
+  console.log(`[Automation ${automation.id}] Email body template (first 200 chars):`, automation.emailTemplate?.substring(0, 200));
+  
   const subject = replaceVariables(automation.emailSubject || 'New Injury Report', submissionData, submission);
   const body = replaceVariables(automation.emailTemplate || 'A new injury report has been submitted.', submissionData, submission);
 
-  console.log(`[Automation ${automation.id}] Email subject:`, subject);
-  console.log(`[Automation ${automation.id}] Email body length:`, body.length);
+  console.log(`[Automation ${automation.id}] Email subject after replacement:`, subject);
+  console.log(`[Automation ${automation.id}] Email body length after replacement:`, body.length);
+  console.log(`[Automation ${automation.id}] Email body (first 500 chars):`, body.substring(0, 500));
 
   // Resolve dynamic recipients (field references)
   const resolvedRecipients: string[] = [];
