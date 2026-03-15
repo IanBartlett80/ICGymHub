@@ -366,7 +366,7 @@ export default function SubmissionDetailPage() {
       </div>
       <button
        onClick={exportPDF}
-       className="px-5 py-2.5 bg-white text-indigo-700 rounded-lg hover:bg-blue-50 font-semibold shadow-lg transition-all flex items-center gap-2"
+       className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-semibold shadow-lg transition-all flex items-center gap-2"
       >
        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -481,14 +481,15 @@ export default function SubmissionDetailPage() {
              <div className="grid grid-cols-1 gap-3">
               {/* Equipment Photo */}
               {submission.equipment.photoUrl && (
-               <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
+               <div className="flex items-center gap-3">
                 <img 
                  src={submission.equipment.photoUrl} 
                  alt={submission.equipment.name}
-                 className="w-full h-48 object-cover"
+                 className="w-20 h-20 object-cover rounded-lg border-2 border-gray-300 shadow-sm"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                 <p className="text-white text-sm font-medium">{submission.equipment.name}</p>
+                <div>
+                 <p className="text-sm font-medium text-gray-900">{submission.equipment.name}</p>
+                 <p className="text-xs text-gray-500">Equipment Image</p>
                 </div>
                </div>
               )}
