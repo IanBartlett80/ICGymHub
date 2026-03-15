@@ -218,58 +218,99 @@ export default function FormBuilderPage() {
    <InjuryReportsSubNav />
    <div className="bg-gray-50 -m-6">
     {/* Header */}
-    <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-     <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Form Builder</h1>
-      <p className="text-sm text-gray-600">Create a custom injury report form</p>
-     </div>
-     <div className="flex gap-3">
-      <button
-       onClick={() => router.back()}
-       className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 border-b border-blue-700 sticky top-0 z-10 shadow-md">
+     <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div>
+       <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Form Builder
+       </h1>
+       <p className="text-sm text-blue-100 mt-1">Create a professional injury report form with custom sections</p>
+      </div>
+      <div className="flex gap-3">
+       <button
+        onClick={() => router.back()}
+        className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/20"
 >
-       Cancel
-      </button>
-      <button
-       onClick={() => setShowPreview(true)}
-       className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+        Cancel
+       </button>
+       <button
+        onClick={() => setShowPreview(true)}
+        className="px-5 py-2.5 bg-white/90 hover:bg-white text-blue-700 rounded-lg transition-colors font-medium flex items-center gap-2"
 >
-       Preview Form
-      </button>
-      <button
-       onClick={saveForm}
-       disabled={saving}
-       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        Preview
+       </button>
+       <button
+        onClick={saveForm}
+        disabled={saving}
+        className="px-6 py-2.5 bg-white text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg flex items-center gap-2"
 >
-       {saving ? 'Saving...' : 'Save Form'}
-      </button>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        {saving ? 'Saving...' : 'Create Form'}
+       </button>
+      </div>
      </div>
     </div>
-   </div>
 
    <div className="max-w-7xl mx-auto px-6 py-8">
     {/* Info Banner */}
-    <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-     <div className="flex items-start">
-      <span className="text-blue-600 text-xl mr-3">ℹ️</span>
-      <div>
-       <h3 className="font-semibold text-blue-900 mb-1">Default Sections Included</h3>
-       <p className="text-sm text-blue-800 mb-2">
-        When you create this form, the following default sections will be automatically added and fully editable:
+    <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+     <div className="flex items-start gap-4">
+      <span className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl flex-shrink-0 shadow-md">ℹ️</span>
+      <div className="flex-1">
+       <h3 className="font-bold text-blue-900 mb-2 text-lg flex items-center gap-2">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Default Sections Included Automatically
+       </h3>
+       <p className="text-sm text-blue-800 mb-3 leading-relaxed">
+        Every form you create includes <strong>4 essential pre-built sections</strong> that cover all standard injury reporting requirements. These are fully editable after creation:
        </p>
-       <ul className="text-sm text-blue-800 space-y-1 ml-4">
-        <li><strong>1. Reported By Details</strong> - Reporter name, incident date/time, venue selection, gym zone/area, equipment/apparatus, supervising coach, coach email, coach phone, description</li>
-        <li><strong>2. Athlete Details</strong> - Athlete name, gym sport, class</li>
-        <li><strong>3. Injury Details</strong> - Body part injured, nature of injury</li>
-        <li><strong>4. Action Taken</strong> - First aid, medication, emergency services, medical advice, parent contact, additional details</li>
-       </ul>
-       <p className="text-sm text-blue-800 mt-3">
-        💡 <strong>Tip:</strong> After creating your form, click the <strong>"Preview Form"</strong> button in the edit screen to see all default questions and how the form will appear to users.
-       </p>
-       <p className="text-sm text-blue-800 mt-2">
-        You can add additional custom sections below if needed. Note: Coach email and phone will auto-populate when a coach is selected during form submission.
-       </p>
+       <div className="grid md:grid-cols-2 gap-3 mb-4">
+        <div className="bg-white rounded-lg p-3 border border-blue-200">
+         <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">📋</span>
+          <strong className="text-sm text-blue-900">1. Reported By Details</strong>
+         </div>
+         <p className="text-xs text-blue-700 ml-7">Reporter info, incident date/time, venue, zone, equipment, coach details, description</p>
+        </div>
+        <div className="bg-white rounded-lg p-3 border border-blue-200">
+         <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">👤</span>
+          <strong className="text-sm text-blue-900">2. Athlete Details</strong>
+         </div>
+         <p className="text-xs text-blue-700 ml-7">Athlete name, gym sport, class assignment</p>
+        </div>
+        <div className="bg-white rounded-lg p-3 border border-blue-200">
+         <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">🏥</span>
+          <strong className="text-sm text-blue-900">3. Injury Details</strong>
+         </div>
+         <p className="text-xs text-blue-700 ml-7">Body part injured, nature and severity of injury</p>
+        </div>
+        <div className="bg-white rounded-lg p-3 border border-blue-200">
+         <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">⚕️</span>
+          <strong className="text-sm text-blue-900">4. Action Taken</strong>
+         </div>
+         <p className="text-xs text-blue-700 ml-7">First aid, medication, emergency services, medical advice, parent contact</p>
+        </div>
+       </div>
+       <div className="bg-blue-100 rounded-lg p-3 border border-blue-300">
+        <p className="text-sm text-blue-900 flex items-start gap-2">
+         <span className="text-lg flex-shrink-0">💡</span>
+         <span><strong>After creating your form:</strong> Use the "Preview Form" button to see all default questions and customize them as needed. Coach email and phone will auto-populate when a coach is selected during submission.</span>
+        </p>
+       </div>
       </div>
      </div>
     </div>
@@ -277,98 +318,134 @@ export default function FormBuilderPage() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
      {/* Form Settings Panel */}
      <div className="lg:col-span-1">
-      <div className="bg-white rounded-lg shadow border border-gray-200 p-6 sticky top-24">
-       <h2 className="text-lg font-semibold text-gray-900 mb-4">Form Settings</h2>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 sticky top-28">
+       {/* Header */}
+       <div className="bg-gradient-to-r from-gray-100 to-gray-50 border-b border-gray-200 px-6 py-4 rounded-t-xl">
+        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+         <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+         </svg>
+         Form Settings
+        </h2>
+        <p className="text-xs text-gray-600 mt-1">Configure basic form properties</p>
+       </div>
        
-       <div className="space-y-4">
+       <div className="p-6 space-y-5">
         <div>
-         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Form Name *
+         <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+          Form Name
+          <span className="text-red-500">*</span>
          </label>
          <input
           type="text"
           value={formName}
           onChange={(e) => setFormName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           placeholder="e.g., General Injury Report"
          />
+         <p className="text-xs text-gray-500 mt-1.5">This name appears in your forms list</p>
         </div>
 
         <div>
-         <label className="block text-sm font-medium text-gray-700 mb-1">
+         <label className="block text-sm font-semibold text-gray-700 mb-2">
           Description
          </label>
          <textarea
           value={formDescription}
           onChange={(e) => setFormDescription(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
           rows={3}
-          placeholder="Brief description of this form"
+          placeholder="Brief description of this form's purpose..."
          />
+         <p className="text-xs text-gray-500 mt-1.5">Helps identify the form's usage</p>
         </div>
 
         <div>
-         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Venue
+         <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Venue Assignment
          </label>
          <VenueSelector
           value={venueId}
           onChange={setVenueId}
           showLabel={false}
          />
-         <p className="mt-1 text-xs text-gray-500">
-          Assign this form to a specific venue (optional)
+         <p className="text-xs text-gray-500 mt-1.5 flex items-start gap-1">
+          <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Optional - Restrict this form to a specific venue</span>
          </p>
         </div>
 
         <div>
-         <label className="block text-sm font-medium text-gray-700 mb-1">
+         <label className="block text-sm font-semibold text-gray-700 mb-2">
           Header Color
          </label>
-         <input
-          type="color"
-          value={headerColor}
-          onChange={(e) => setHeaderColor(e.target.value)}
-          className="w-full h-10 border border-gray-300 rounded-lg cursor-pointer"
-         />
+         <div className="flex items-center gap-3">
+          <input
+           type="color"
+           value={headerColor}
+           onChange={(e) => setHeaderColor(e.target.value)}
+           className="w-16 h-10 border-2 border-gray-300 rounded-lg cursor-pointer"
+          />
+          <div className="flex-1">
+           <div className="text-xs font-mono text-gray-600 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
+            {headerColor.toUpperCase()}
+           </div>
+          </div>
+         </div>
+         <p className="text-xs text-gray-500 mt-1.5">Customize the mobile form header color</p>
         </div>
 
         <div>
-         <label className="block text-sm font-medium text-gray-700 mb-1">
+         <label className="block text-sm font-semibold text-gray-700 mb-2">
           Thank You Message
          </label>
          <textarea
           value={thankYouMessage}
           onChange={(e) => setThankYouMessage(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
           rows={3}
+          placeholder="Message shown after successful submission..."
          />
+         <p className="text-xs text-gray-500 mt-1.5">Displayed when users submit the form</p>
         </div>
        </div>
 
        {/* Add Field Types */}
-       <div className="mt-6 pt-6 border-t border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Add Custom Sections</h3>
-        <p className="text-xs text-gray-600 mb-3">
-         The form will include 4 default sections. You can add additional custom sections here.
+       <div className="border-t border-gray-200 px-6 py-5">
+        <div className="flex items-center gap-2 mb-3">
+         <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+         </svg>
+         <h3 className="text-sm font-bold text-gray-900">Add Custom Sections</h3>
+        </div>
+        <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+         The form includes <strong>4 default sections</strong>. Add additional custom sections with unique fields below.
         </p>
-        {sections.length> 0 && (
-         <>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Add Field to First Custom Section</h4>
+        {sections.length > 0 && (
+         <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+          <h4 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
+           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+           </svg>
+           Add Field to First Custom Section
+          </h4>
           <div className="grid grid-cols-2 gap-2">
            {FIELD_TYPES.map((type) => (
             <button
              key={type.value}
              onClick={() => addField(sections[0].id, type.value)}
-             className="px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded hover:bg-gray-100 text-left"
+             className="px-3 py-2.5 text-xs bg-white border border-green-300 rounded-lg hover:bg-green-100 hover:border-green-400 text-left transition-all group"
              title={type.label}
 >
-             <span className="mr-1">{type.icon}</span>
-             {type.label}
+             <span className="mr-1.5 text-base group-hover:scale-110 inline-block transition-transform">{type.icon}</span>
+             <span className="font-medium text-gray-700">{type.label}</span>
             </button>
            ))}
           </div>
-         </>
+         </div>
         )}
        </div>
       </div>
@@ -377,140 +454,174 @@ export default function FormBuilderPage() {
      {/* Form Builder */}
      <div className="lg:col-span-2 space-y-6">
       {sections.length === 0 ? (
-       <div className="bg-white rounded-lg shadow border border-gray-200 p-12 text-center">
-        <p className="text-gray-600 mb-4">
-         No custom sections yet. The form will include 4 default sections automatically.
+       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12 text-center">
+        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+         <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+         </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">No Custom Sections Yet</h3>
+        <p className="text-gray-600 mb-2">
+         Your form will include the 4 essential default sections automatically.
         </p>
         <p className="text-sm text-gray-500 mb-6">
-         Click "Add Section" below to create additional custom sections.
+         Click <strong>"Add Section"</strong> below to create additional custom sections for specialized questions.
         </p>
        </div>
       ) : (
-       sections.map((section) => (
-        <div key={section.id} className="bg-white rounded-lg shadow border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-         <div className="flex items-center justify-between mb-4">
+       sections.map((section, sectionIndex) => (
+        <div key={section.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+         {/* Section Header */}
+         <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-200 p-6">
+          <div className="flex items-center justify-between mb-3">
+           <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 bg-purple-600 text-white rounded-lg flex items-center justify-center font-bold shadow-md">
+             {sectionIndex + 5}
+            </div>
+            <input
+             type="text"
+             value={section.title}
+             onChange={(e) => updateSection(section.id, { title: e.target.value })}
+             className="flex-1 text-xl font-bold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-500 rounded px-3 py-2"
+             placeholder="Section Title"
+            />
+           </div>
+           <button
+            onClick={() => deleteSection(section.id)}
+            className="ml-4 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm flex items-center gap-2"
+>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete Section
+           </button>
+          </div>
           <input
            type="text"
-           value={section.title}
-           onChange={(e) => updateSection(section.id, { title: e.target.value })}
-           className="text-xl font-semibold text-gray-900 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+           value={section.description || ''}
+           onChange={(e) => updateSection(section.id, { description: e.target.value })}
+           placeholder="Section description (optional)"
+           className="w-full text-sm text-purple-800 bg-white/50 border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-lg px-4 py-2"
           />
-          <button
-           onClick={() => deleteSection(section.id)}
-           className="text-red-600 hover:text-red-800 text-sm"
->
-           Delete Section
-          </button>
          </div>
-         <input
-          type="text"
-          value={section.description || ''}
-          onChange={(e) => updateSection(section.id, { description: e.target.value })}
-          placeholder="Section description (optional)"
-          className="w-full text-gray-600 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-         />
-        </div>
 
-        <div className="p-6 space-y-4">
-         {section.fields.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-           No fields yet. Add fields from the sidebar.
-          </div>
-         ) : (
-          section.fields.map((field, index) => (
-           <div
-            key={field.id}
-            className="border border-gray-200 rounded-lg p-4 hover:border-blue-300"
+         {/* Fields */}
+         <div className="p-6 space-y-4">
+          {section.fields.length === 0 ? (
+           <div className="text-center py-12 bg-purple-50 rounded-lg border-2 border-dashed border-purple-200">
+            <svg className="w-12 h-12 text-purple-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <p className="text-purple-700 font-medium">No fields yet</p>
+            <p className="text-xs text-purple-600 mt-1">Add fields from the sidebar</p>
+           </div>
+          ) : (
+           section.fields.map((field, index) => (
+            <div
+             key={field.id}
+             className="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all bg-gradient-to-r from-white to-purple-50/30"
 >
-            <div className="flex items-start justify-between">
-             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-               <span className="text-sm text-gray-500">
-                {FIELD_TYPES.find(t => t.value === field.fieldType)?.icon}
-               </span>
+             <div className="flex items-start justify-between">
+              <div className="flex-1">
+               <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{FIELD_TYPES.find(t => t.value === field.fieldType)?.icon}</span>
+                <input
+                 type="text"
+                 value={field.label}
+                 onChange={(e) => updateField(section.id, field.id, { label: e.target.value })}
+                 className="flex-1 font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-500 rounded px-2 py-1"
+                 placeholder="Field label"
+                />
+                {field.required && <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-bold">Required</span>}
+               </div>
                <input
                 type="text"
-                value={field.label}
-                onChange={(e) => updateField(section.id, field.id, { label: e.target.value })}
-                className="font-medium text-gray-900 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-                placeholder="Field label"
-               />
-               {field.required && <span className="text-red-500">*</span>}
-              </div>
-              <input
-               type="text"
                value={field.placeholder || ''}
-               onChange={(e) => updateField(section.id, field.id, { placeholder: e.target.value })}
-               placeholder="Placeholder text (optional)"
-               className="text-sm text-gray-600 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
-              />
-              
-              {['DROPDOWN', 'MULTIPLE_CHOICE', 'CHECKBOXES'].includes(field.fieldType) && (
-               <div className="mt-2">
-                <textarea
-                 value={(field.options || []).join('\n')}
-                 onChange={(e) => updateField(section.id, field.id, { 
-                  options: e.target.value.split('\n')
-                 })}
-                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                   e.stopPropagation();
-                  }
-                 }}
-                 placeholder="Enter options (one per line)"
-                 className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg"
-                 rows={5}
-                />
-               </div>
-              )}
-             </div>
-
-             <div className="flex items-center gap-2 ml-4">
-              <label className="flex items-center text-sm">
-               <input
-                type="checkbox"
-                checked={field.required}
-                onChange={(e) => updateField(section.id, field.id, { required: e.target.checked })}
-                className="mr-1"
+                onChange={(e) => updateField(section.id, field.id, { placeholder: e.target.value })}
+                placeholder="Placeholder text (optional)"
+                className="text-sm text-gray-600 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-500 rounded px-2 py-1 w-full"
                />
-               Required
-              </label>
-              <button
-               onClick={() => moveField(section.id, field.id, 'up')}
-               disabled={index === 0}
-               className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+               
+               {['DROPDOWN', 'MULTIPLE_CHOICE', 'CHECKBOXES'].includes(field.fieldType) && (
+                <div className="mt-3 bg-white rounded-lg p-3 border border-gray-200">
+                 <label className="text-xs font-semibold text-gray-700 mb-2 block">Options (one per line)</label>
+                 <textarea
+                  value={(field.options || []).join('\n')}
+                  onChange={(e) => updateField(section.id, field.id, { 
+                   options: e.target.value.split('\n')
+                  })}
+                  onKeyDown={(e) => {
+                   if (e.key === 'Enter') {
+                    e.stopPropagation();
+                   }
+                  }}
+                  placeholder="Enter options (one per line)"
+                  className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  rows={5}
+                 />
+                </div>
+               )}
+              </div>
+
+              <div className="flex flex-col items-end gap-2 ml-4">
+               <label className="flex items-center text-sm cursor-pointer group">
+                <input
+                 type="checkbox"
+                 checked={field.required}
+                 onChange={(e) => updateField(section.id, field.id, { required: e.target.checked })}
+                 className="mr-2 w-4 h-4 text-purple-600 rounded"
+                />
+                <span className="text-gray-700 group-hover:text-purple-700">Required</span>
+               </label>
+               <div className="flex gap-1">
+                <button
+                 onClick={() => moveField(section.id, field.id, 'up')}
+                 disabled={index === 0}
+                 className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 title="Move up"
 >
-               ↑
-              </button>
-              <button
-               onClick={() => moveField(section.id, field.id, 'down')}
-               disabled={index === section.fields.length - 1}
-               className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                 </svg>
+                </button>
+                <button
+                 onClick={() => moveField(section.id, field.id, 'down')}
+                 disabled={index === section.fields.length - 1}
+                 className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 title="Move down"
 >
-               ↓
-              </button>
-              <button
-               onClick={() => deleteField(section.id, field.id)}
-               className="p-1 text-red-600 hover:text-red-800"
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                 </svg>
+                </button>
+                <button
+                 onClick={() => deleteField(section.id, field.id)}
+                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                 title="Delete field"
 >
-               🗑️
-              </button>
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                 </svg>
+                </button>
+               </div>
+              </div>
              </div>
             </div>
-           </div>
-          ))
-         )}
+           ))
+          )}
+         </div>
         </div>
-       </div>
        ))
       )}
 
       <button
        onClick={addSection}
-       className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700"
+       className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-purple-400 hover:text-purple-700 hover:bg-purple-50 transition-all font-medium flex items-center justify-center gap-2"
 >
-       + Add Section
+       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+       </svg>
+       Add Custom Section
       </button>
      </div>
     </div>
