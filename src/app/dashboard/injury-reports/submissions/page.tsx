@@ -136,13 +136,11 @@ export default function SubmissionsReportsPage() {
  return (
   <DashboardLayout title="Injury Reports">
    <InjuryReportsSubNav />
-   <div className="space-y-6">
+   <div className="p-4 space-y-4">
     {/* Header */}
-    <div className="flex justify-between items-center">
-     <div>
-      <h1 className="text-3xl font-bold text-gray-900">All Injury Reports</h1>
-      <p className="text-gray-600 mt-1">View and manage all submitted injury reports</p>
-     </div>
+    <div>
+     <h1 className="text-xl font-bold text-gray-900">Injury and Incident Management</h1>
+     <p className="text-xs text-gray-600 mt-1">View and manage all submitted injury reports</p>
     </div>
 
     {/* Submissions List */}
