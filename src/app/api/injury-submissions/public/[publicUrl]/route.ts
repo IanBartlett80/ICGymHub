@@ -254,10 +254,29 @@ export async function POST(
       submittedAt: new Date().toISOString(),
     });
 
-    const entryRows = safeFormEntries.map(([fieldId, value]) => ({
-      fieldId,
-      value: JSON.stringify({ value, displayValue: value }),
-    }));
+    const entryRows = safeFormEntries.map(([fieldId, value]) => {
+      // Handle values that are already objects (e.g., gym sport, class with id/name)
+      if (typeof value === 'object' && value !== null) {
+        // Value is already an object with displayValue, use it as-is  
+        const objectValue = value as any;
+        return {
+          fieldId,
+          value: JSON.stringify({
+            value: objectValue.value || objectValue.id || value,
+            displayValue: objectValue.displayValue || objectValue.name || value,
+            id: objectValue.id,
+            name: objectValue.name,
+            ...(objectValue.gymsportId && { gymsportId: objectValue.gymsportId }),
+          }),
+        };
+      }
+      
+      // Regular string/number value
+      return {
+        fieldId,
+        value: JSON.stringify({ value, displayValue: value }),
+      };
+    });
 
     const submissionData: any = {
       templateId: template.id,

@@ -459,17 +459,27 @@ export default function PublicSubmissionForm() {
           const gymSportOptions = field.options ? JSON.parse(field.options) : [];
           return (
             <select
-              value={value}
+              value={typeof value === 'object' ? value.id : value}
               onChange={(e) => {
                 const gymSportId = e.target.value;
+                const selectedOption = gymSportOptions.find((opt: any) => 
+                  typeof opt === 'object' ? opt.id === gymSportId : opt === gymSportId
+                );
+                
+                // Store an object with both id and name
+                const gymSportValue = typeof selectedOption === 'object' 
+                  ? { id: selectedOption.id, name: selectedOption.name, value: selectedOption.id, displayValue: selectedOption.name }
+                  : gymSportId;
+                
                 setSelectedGymSportId(gymSportId);
-                updateValue(gymSportId);
+                updateValue(gymSportValue);
+                
                 // Clear class selection when gym sport changes
                 const classField = section.fields.find(f => 
                   f.label.includes('Class') || f.label.includes('Program')
                 );
                 if (classField) {
-                  setFormData({ ...formData, [field.id]: gymSportId, [classField.id]: '' });
+                  setFormData({ ...formData, [field.id]: gymSportValue, [classField.id]: '' });
                 }
               }}
               className={commonInputClass}
@@ -498,8 +508,20 @@ export default function PublicSubmissionForm() {
           
           return (
             <select
-              value={value}
-              onChange={(e) => updateValue(e.target.value)}
+              value={typeof value === 'object' ? value.id : value}
+              onChange={(e) => {
+                const classId = e.target.value;
+                const selectedClass = filteredClasses.find((c: any) => 
+                  typeof c === 'object' ? c.id === classId : c === classId
+                );
+                
+                // Store an object with both id and name
+                const classValue = typeof selectedClass === 'object'
+                  ? { id: selectedClass.id, name: selectedClass.name, value: selectedClass.id, displayValue: selectedClass.name, gymsportId: selectedClass.gymsportId }
+                  : classId;
+                
+                updateValue(classValue);
+              }}
               className={commonInputClass}
               disabled={!selectedGymSportId}
             >
@@ -511,7 +533,7 @@ export default function PublicSubmissionForm() {
                   : 'Select a class...'}
               </option>
               {filteredClasses.map((classOption: any, index: number) => (
-                <option key={index} value={typeof classOption === 'object' ? classOption.name : classOption}>
+                <option key={index} value={typeof classOption === 'object' ? classOption.id : classOption}>
                   {typeof classOption === 'object' ? classOption.name : classOption}
                 </option>
               ))}

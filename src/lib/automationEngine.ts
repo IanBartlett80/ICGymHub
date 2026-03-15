@@ -37,6 +37,10 @@ function evaluateCondition(
     actualValue = submission.status;
   } else if (condition.field === '_priority') {
     actualValue = submission.priority;
+  } else if (condition.field === '_venue') {
+    actualValue = submission.venueId;
+  } else if (condition.field === '_zone') {
+    actualValue = submission.zoneId;
   } else if (condition.field === '_gymsport') {
     // Find the Gym Sport field in submission data
     const gymSportField = submissionData.find((d: any) => 
@@ -44,7 +48,18 @@ function evaluateCondition(
     );
     if (!gymSportField) return condition.operator === 'isEmpty';
     const parsedValue = JSON.parse(gymSportField.value);
-    actualValue = parsedValue.value;
+    
+    // The value could be an ID or the display value could be the name
+    // Check both the value (ID) and displayValue/name (name) for flexibility
+    actualValue = parsedValue.displayValue || parsedValue.name || parsedValue.value;
+    
+    // Also allow matching by ID if the condition value looks like a CUID
+    if (condition.value && typeof condition.value === 'string' && condition.value.startsWith('c')) {
+      // Condition might be an ID, so also check the raw value
+      if (parsedValue.value === condition.value || parsedValue.id === condition.value) {
+        return condition.operator === 'equals';
+      }
+    }
   } else if (condition.field === '_class') {
     // Find the Class field in submission data
     const classField = submissionData.find((d: any) => 
@@ -52,7 +67,16 @@ function evaluateCondition(
     );
     if (!classField) return condition.operator === 'isEmpty';
     const parsedValue = JSON.parse(classField.value);
-    actualValue = parsedValue.value;
+    
+    // Similar to gym sport - check both ID and name
+    actualValue = parsedValue.displayValue || parsedValue.name || parsedValue.value;
+    
+    // Also allow matching by ID
+    if (condition.value && typeof condition.value === 'string' && condition.value.startsWith('c')) {
+      if (parsedValue.value === condition.value || parsedValue.id === condition.value) {
+        return condition.operator === 'equals';
+      }
+    }
   } else {
     // Find the field value in submission data
     const fieldData = submissionData.find((d: any) => d.fieldId === condition.field);

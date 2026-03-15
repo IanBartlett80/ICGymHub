@@ -60,10 +60,59 @@ export default function AutomationBuilderPage() {
  const subjectEditorRefs = useRef<{[key: number]: ((variable: {label: string; value: string}) => void) | null}>({});
  const bodyEditorRefs = useRef<{[key: number]: ((variable: {label: string; value: string}) => void) | null}>({});
 
+ // Reference data for smart dropdowns
+ const [gymSports, setGymSports] = useState<any[]>([]);
+ const [classTemplates, setClassTemplates] = useState<any[]>([]);
+ const [venues, setVenues] = useState<any[]>([]);
+ const [zones, setZones] = useState<any[]>([]);
+ const [coaches, setCoaches] = useState<any[]>([]);
+
  useEffect(() => {
   loadTemplate();
   loadAutomations();
+  loadReferenceData();
  }, [templateId]);
+
+ const loadReferenceData = async () => {
+  try {
+   // Fetch gym sports
+   const gymSportsRes = await fetch('/api/gymsports');
+   if (gymSportsRes.ok) {
+    const gymSportsData = await gymSportsRes.json();
+    setGymSports(gymSportsData.gymsports || []);
+   }
+
+   // Fetch class templates
+   const classesRes = await fetch('/api/classes');
+   if (classesRes.ok) {
+    const classesData = await classesRes.json();
+    setClassTemplates(classesData.classTemplates || []);
+   }
+
+   // Fetch venues
+   const venuesRes = await fetch('/api/venues');
+   if (venuesRes.ok) {
+    const venuesData = await venuesRes.json();
+    setVenues(venuesData.venues || []);
+   }
+
+   // Fetch zones
+   const zonesRes = await fetch('/api/zones');
+   if (zonesRes.ok) {
+    const zonesData = await zonesRes.json();
+    setZones(zonesData.zones || []);
+   }
+
+   // Fetch coaches
+   const coachesRes = await fetch('/api/coaches');
+   if (coachesRes.ok) {
+    const coachesData = await coachesRes.json();
+    setCoaches(coachesData.coaches || []);
+   }
+  } catch (error) {
+   console.error('Error loading reference data:', error);
+  }
+ };
 
  const loadTemplate = async () => {
   try {
@@ -328,6 +377,182 @@ export default function AutomationBuilderPage() {
   return { systemVariables, formFieldVariables };
  };
 
+ // Render smart value input based on selected field
+ const renderValueInput = (condition: any, conditionIndex: number) => {
+  const selectedField = condition.field;
+
+  // System field: Status
+  if (selectedField === '_status') {
+   return (
+    <select
+     value={condition.value || ''}
+     onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+    >
+     <option value="">Select status...</option>
+     <option value="NEW">New</option>
+     <option value="UNDER_REVIEW">Under Review</option>
+     <option value="RESOLVED">Resolved</option>
+     <option value="CLOSED">Closed</option>
+    </select>
+   );
+  }
+
+  // System field: Priority
+  if (selectedField === '_priority') {
+   return (
+    <select
+     value={condition.value || ''}
+     onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+    >
+     <option value="">Select priority...</option>
+     <option value="LOW">Low</option>
+     <option value="MEDIUM">Medium</option>
+     <option value="HIGH">High</option>
+     <option value="CRITICAL">Critical</option>
+    </select>
+   );
+  }
+
+  // System field: Gym Sport
+  if (selectedField === '_gymsport') {
+   return (
+    <select
+     value={condition.value || ''}
+     onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+    >
+     <option value="">Select gym sport...</option>
+     {gymSports.map((gymSport) => (
+      <option key={gymSport.id} value={gymSport.id}>
+       {gymSport.name}
+      </option>
+     ))}
+    </select>
+   );
+  }
+
+  // System field: Class (grouped by gym sport)
+  if (selectedField === '_class') {
+   // Group classes by gym sport
+   const groupedClasses = gymSports.map(gymSport => ({
+    gymSport,
+    classes: classTemplates.filter(c => c.gymsportId === gymSport.id),
+   })).filter(group => group.classes.length > 0);
+
+   return (
+    <select
+     value={condition.value || ''}
+     onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+    >
+     <option value="">Select class...</option>
+     {groupedClasses.map(group => (
+      <optgroup key={group.gymSport.id} label={group.gymSport.name}>
+       {group.classes.map(classTemplate => (
+        <option key={classTemplate.id} value={classTemplate.id}>
+         {classTemplate.name}
+        </option>
+       ))}
+      </optgroup>
+     ))}
+    </select>
+   );
+  }
+
+  // System field: Venue
+  if (selectedField === '_venue') {
+   return (
+    <select
+     value={condition.value || ''}
+     onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+    >
+     <option value="">Select venue...</option>
+     {venues.map((venue) => (
+      <option key={venue.id} value={venue.id}>
+       {venue.name}
+      </option>
+     ))}
+    </select>
+   );
+  }
+
+  // System field: Zone
+  if (selectedField === '_zone') {
+   return (
+    <select
+     value={condition.value || ''}
+     onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+    >
+     <option value="">Select zone...</option>
+     {zones.map((zone) => (
+      <option key={zone.id} value={zone.id}>
+       {zone.name}
+      </option>
+     ))}
+    </select>
+   );
+  }
+
+  // Form field: Check if it's a dropdown field
+  const formField = allFields.find((f: any) => f.id === selectedField);
+  if (formField && formField.fieldType === 'DROPDOWN' && formField.options) {
+   try {
+    const options = JSON.parse(formField.options);
+    
+    // If options are objects with id/name, use them
+    if (options.length > 0 && typeof options[0] === 'object') {
+     return (
+      <select
+       value={condition.value || ''}
+       onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+      >
+       <option value="">Select value...</option>
+       {options.map((option: any, idx: number) => (
+        <option key={idx} value={option.id || option.name || option}>
+         {option.name || option}
+        </option>
+       ))}
+      </select>
+     );
+    } else {
+     // Simple string options
+     return (
+      <select
+       value={condition.value || ''}
+       onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+      >
+       <option value="">Select value...</option>
+       {options.map((option: string, idx: number) => (
+        <option key={idx} value={option}>
+         {option}
+        </option>
+       ))}
+      </select>
+     );
+    }
+   } catch (e) {
+    // Fall through to default input if parsing fails
+   }
+  }
+
+  // Default: Free text input
+  return (
+   <input
+    type="text"
+    value={condition.value || ''}
+    onChange={(e) => updateCondition(conditionIndex, { value: e.target.value })}
+    placeholder="Value"
+    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+   />
+  );
+ };
+
  if (loading) {
   return (
    <DashboardLayout title="Automations">
@@ -550,6 +775,8 @@ export default function AutomationBuilderPage() {
             <option value="_priority">Priority</option>
             <option value="_gymsport">Gym Sport</option>
             <option value="_class">Class</option>
+            <option value="_venue">Venue</option>
+            <option value="_zone">Zone</option>
            </optgroup>
            <optgroup label="Form Fields">
             {allFields.map((field: Field) => (
@@ -570,13 +797,7 @@ export default function AutomationBuilderPage() {
            <option value="lessThan">Less than</option>
           </select>
           
-          <input
-           type="text"
-           value={condition.value}
-           onChange={(e) => updateCondition(index, { value: e.target.value })}
-           placeholder="Value"
-           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-          />
+          {renderValueInput(condition, index)}
           
           <button
            onClick={() => removeCondition(index)}
