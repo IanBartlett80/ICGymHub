@@ -80,7 +80,7 @@ export default function InjuryReportsDashboard() {
  const [submissions, setSubmissions] = useState<Submission[]>([]);
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState<string | null>(null);
- const [filter, setFilter] = useState<string>('all');
+ const [filter, setFilter] = useState<string>('NEW');
  const [programFilter, setProgramFilter] = useState<string>('all');
  const [coachFilter, setCoachFilter] = useState<string>('all');
  const [classFilter, setClassFilter] = useState<string>('all');
