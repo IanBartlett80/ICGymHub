@@ -678,6 +678,7 @@ model InjurySubmission {
   status                       String                    @default("NEW")
   priority                     String?
   assignedToUserId             String?
+  assignedToName               String?
   assignedAt                   DateTime?
   resolvedAt                   DateTime?
   retentionDate                DateTime?

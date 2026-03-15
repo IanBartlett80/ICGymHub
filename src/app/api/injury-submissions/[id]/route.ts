@@ -79,6 +79,7 @@ export async function GET(
               lastCheckedDate: true,
               lastCheckStatus: true,
               lastCheckedBy: true,
+              photoUrl: true,
             },
           },
           data: {
@@ -203,7 +204,7 @@ export async function PATCH(
     const { id } = await params;
 
     const body = await req.json();
-    const { status, assignedToUserId, priority } = body;
+    const { status, assignedToUserId, assignedToName, priority } = body;
 
     // Verify ownership
     const existing = await prisma.injurySubmission.findFirst({
@@ -231,6 +232,17 @@ export async function PATCH(
         newValue: status,
       });
     }
+    
+    if (assignedToName !== undefined && assignedToName !== existing.assignedToName) {
+      updateData.assignedToName = assignedToName || null;
+      auditLogs.push({
+        submissionId: id,
+        userId: authResult.user.id,
+        action: 'ASSIGNED',
+        oldValue: existing.assignedToName,
+        newValue: assignedToName,
+      });
+    }
 
     if (assignedToUserId !== undefined && assignedToUserId !== existing.assignedToUserId) {
       updateData.assignedToUserId = assignedToUserId;
@@ -238,7 +250,7 @@ export async function PATCH(
       auditLogs.push({
         submissionId: id,
         userId: authResult.user.id,
-        action: 'ASSIGNED',
+        action: 'ASSIGNED_USER',
         oldValue: existing.assignedToUserId,
         newValue: assignedToUserId,
       });
