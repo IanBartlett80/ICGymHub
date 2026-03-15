@@ -241,7 +241,7 @@ export default function AutomationBuilderPage() {
 
   // Extract email configuration from SEND_EMAIL action if present
   const sendEmailAction = actions.find(a => a.type === 'SEND_EMAIL');
-  const emailRecipients = sendEmailAction ? JSON.stringify(sendEmailAction.config.recipients || []) : null;
+  const emailRecipients = sendEmailAction ? sendEmailAction.config.recipients || [] : null;
   const emailSubject = sendEmailAction ? sendEmailAction.config.subject || null : null;
   const emailTemplate = sendEmailAction ? sendEmailAction.config.body || null : null;
 
@@ -273,9 +273,15 @@ export default function AutomationBuilderPage() {
    if (res.ok) {
     setShowBuilder(false);
     loadAutomations();
+    alert('Automation saved successfully!');
+   } else {
+    const error = await res.json();
+    console.error('Failed to save automation:', error);
+    alert(`Failed to save automation: ${error.error || 'Unknown error'}`);
    }
   } catch (error) {
    console.error('Error saving automation:', error);
+   alert('Error saving automation. Please try again.');
   }
  };
 
@@ -673,54 +679,107 @@ export default function AutomationBuilderPage() {
 
    {/* Automation Builder */}
    {showBuilder && (
-    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-     <div className="flex items-center justify-between mb-6">
-      <h2 className="text-2xl font-bold text-gray-900">
-       {editingAutomation ? 'Edit Automation' : 'New Automation'}
-      </h2>
+    <div className="bg-white rounded-lg shadow-lg border border-gray-200">
+     {/* Header */}
+     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+      <div>
+       <h2 className="text-2xl font-bold text-gray-900">
+        {editingAutomation ? '✏️ Edit Automation' : '✨ New Automation'}
+       </h2>
+       <p className="text-sm text-gray-600 mt-1">
+        Automate actions when specific events occur on your injury reports
+       </p>
+      </div>
       <button
        onClick={() => setShowBuilder(false)}
-       className="text-gray-600 hover:text-gray-900"
+       className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors"
+       title="Close"
 >
-       ✕
+       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+       </svg>
       </button>
      </div>
 
-     <div className="space-y-6">
-      {/* Basic Info */}
-      <div>
-       <label className="block text-sm font-medium text-gray-700 mb-1">
-        Automation Name *
-       </label>
-       <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-        placeholder="e.g., Notify admin on critical injury"
-       />
+     <div className="p-6 space-y-6">
+      {/* Visual Flow Indicator */}
+      <div className="bg-gradient-to-r from-blue-50 via-amber-50 to-green-50 rounded-lg p-6 border border-gray-200">
+       <h4 className="text-sm font-semibold text-gray-600 mb-3 text-center">Automation Workflow</h4>
+       <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center gap-2">
+         <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">1</div>
+         <span className="text-sm font-medium text-gray-700">Trigger</span>
+        </div>
+        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+        <div className="flex items-center gap-2">
+         <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">2</div>
+         <span className="text-sm font-medium text-gray-700">Conditions</span>
+        </div>
+        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+        <div className="flex items-center gap-2">
+         <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">3</div>
+         <span className="text-sm font-medium text-gray-700">Actions</span>
+        </div>
+       </div>
+       <p className="text-xs text-gray-600 text-center mt-3">
+        When the <strong>trigger</strong> event occurs and <strong>conditions</strong> are met, the <strong>actions</strong> will execute automatically
+       </p>
       </div>
 
-      <div>
-       <label className="block text-sm font-medium text-gray-700 mb-1">
-        Description
-       </label>
-       <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-        rows={2}
-        placeholder="What does this automation do?"
-       />
+      {/* Basic Info */}
+      <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <span className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center text-lg">📝</span>
+        Basic Information
+       </h3>
+       <div className="space-y-4">
+        <div>
+         <label className="block text-sm font-medium text-gray-700 mb-2">
+          Automation Name <span className="text-red-500">*</span>
+         </label>
+         <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          placeholder="e.g., Notify admin on critical injury"
+         />
+        </div>
+
+        <div>
+         <label className="block text-sm font-medium text-gray-700 mb-2">
+          Description
+         </label>
+         <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          rows={2}
+          placeholder="Brief explanation of what this automation does..."
+         />
+        </div>
+       </div>
       </div>
 
       {/* Trigger */}
-      <div className="border-t pt-6">
-       <h3 className="text-lg font-semibold text-gray-900 mb-4">⚡ Trigger</h3>
+      <div className="bg-blue-50 rounded-lg p-5 border border-blue-200">
+       <div className="flex items-start gap-3 mb-4">
+        <span className="w-8 h-8 bg-blue-200 rounded-lg flex items-center justify-center text-lg flex-shrink-0">⚡</span>
+        <div className="flex-1">
+         <h3 className="text-lg font-semibold text-gray-900 mb-1">Trigger Event</h3>
+         <p className="text-sm text-blue-800">
+          Choose when this automation should run. The trigger defines the event that starts the automation.
+         </p>
+        </div>
+       </div>
        <select
         value={trigger}
         onChange={(e) => setTrigger(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        className="w-full px-4 py-2.5 border border-blue-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 >
         <option value="ON_SUBMIT">When a form is submitted</option>
         <option value="ON_STATUS_CHANGE">When status changes</option>
@@ -728,160 +787,217 @@ export default function AutomationBuilderPage() {
       </div>
 
       {/* Conditions */}
-      <div className="border-t pt-6">
-       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">🔍 Conditions</h3>
-        <button
-         onClick={addCondition}
-         className="px-3 py-1 text-sm bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
->
-         + Add Condition
-        </button>
-       </div>
-
-       {conditions.length> 0 && (
-        <div className="mb-4">
-         <label className="inline-flex items-center gap-2 text-sm">
-          <span className="font-medium">Match:</span>
-          <select
-           value={logic}
-           onChange={(e) => setLogic(e.target.value)}
-           className="px-2 py-1 border border-gray-300 rounded"
->
-           <option value="AND">All conditions (AND)</option>
-           <option value="OR">Any condition (OR)</option>
-          </select>
-         </label>
-        </div>
-       )}
-
-       <div className="space-y-3">
-        {conditions.map((condition, index) => (
-         <div key={index} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
-          <select
-           value={condition.field}
-           onChange={(e) => updateCondition(index, { field: e.target.value })}
-           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
->
-           <option value="">Select field...</option>
-           <optgroup label="System Fields">
-            <option value="_status">Status</option>
-            <option value="_priority">Priority</option>
-            <option value="_gymsport">Gym Sport</option>
-            <option value="_class">Class</option>
-            <option value="_venue">Venue</option>
-            <option value="_zone">Zone</option>
-           </optgroup>
-           <optgroup label="Form Fields">
-            {allFields.map((field: Field) => (
-             <option key={field.id} value={field.id}>{field.label}</option>
-            ))}
-           </optgroup>
-          </select>
-          
-          <select
-           value={condition.operator}
-           onChange={(e) => updateCondition(index, { operator: e.target.value })}
-           className="px-3 py-2 border border-gray-300 rounded-lg"
->
-           <option value="equals">Equals</option>
-           <option value="notEquals">Not equals</option>
-           <option value="contains">Contains</option>
-           <option value="greaterThan">Greater than</option>
-           <option value="lessThan">Less than</option>
-          </select>
-          
-          {renderValueInput(condition, index)}
-          
+      <div className="bg-amber-50 rounded-lg p-5 border border-amber-200">
+       <div className="flex items-start gap-3 mb-4">
+        <span className="w-8 h-8 bg-amber-200 rounded-lg flex items-center justify-center text-lg flex-shrink-0">🔍</span>
+        <div className="flex-1">
+         <div className="flex items-center justify-between">
+          <div>
+           <h3 className="text-lg font-semibold text-gray-900 mb-1">Conditions (Optional)</h3>
+           <p className="text-sm text-amber-800">
+            Add conditions to run this automation only when specific criteria are met. Leave empty to run on every trigger event.
+           </p>
+          </div>
           <button
-           onClick={() => removeCondition(index)}
-           className="p-2 text-red-600 hover:bg-red-50 rounded"
+           onClick={addCondition}
+           className="ml-4 px-4 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2 whitespace-nowrap"
 >
-           🗑️
+           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+           </svg>
+           Add Condition
           </button>
          </div>
-        ))}
+        </div>
        </div>
+
+       {conditions.length > 0 && (
+        <>
+         <div className="mb-4 bg-white rounded-lg p-3 border border-amber-300">
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+           <span>Match:</span>
+           <select
+            value={logic}
+            onChange={(e) => setLogic(e.target.value)}
+            className="px-3 py-1.5 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+>
+            <option value="AND">All conditions (AND)</option>
+            <option value="OR">Any condition (OR)</option>
+           </select>
+          </label>
+         </div>
+
+         <div className="space-y-3">
+          {conditions.map((condition, index) => (
+           <div key={index} className="flex items-center gap-2 bg-white p-3 rounded-lg border border-amber-200">
+            <select
+             value={condition.field}
+             onChange={(e) => updateCondition(index, { field: e.target.value })}
+             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+>
+             <option value="">Select field...</option>
+             <optgroup label="System Fields">
+              <option value="_status">Status</option>
+              <option value="_priority">Priority</option>
+              <option value="_gymsport">Gym Sport</option>
+              <option value="_class">Class</option>
+              <option value="_venue">Venue</option>
+              <option value="_zone">Zone</option>
+             </optgroup>
+             <optgroup label="Form Fields">
+              {allFields.map((field: Field) => (
+               <option key={field.id} value={field.id}>{field.label}</option>
+              ))}
+             </optgroup>
+            </select>
+            
+            <select
+             value={condition.operator}
+             onChange={(e) => updateCondition(index, { operator: e.target.value })}
+             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+>
+             <option value="equals">Equals</option>
+             <option value="notEquals">Not equals</option>
+             <option value="contains">Contains</option>
+             <option value="greaterThan">Greater than</option>
+             <option value="lessThan">Less than</option>
+            </select>
+            
+            {renderValueInput(condition, index)}
+            
+            <button
+             onClick={() => removeCondition(index)}
+             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+             title="Remove condition"
+>
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+             </svg>
+            </button>
+           </div>
+          ))}
+         </div>
+        </>
+       )}
+
+       {conditions.length === 0 && (
+        <div className="text-center py-6 bg-white rounded-lg border border-dashed border-amber-300">
+         <p className="text-sm text-gray-500">No conditions added. This automation will run on every trigger event.</p>
+        </div>
+       )}
       </div>
 
       {/* Actions */}
-      <div className="border-t pt-6">
-       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">⚙️ Actions</h3>
-        <div className="relative">
-         <button
-          onClick={() => setShowActionMenu(!showActionMenu)}
-          className="px-3 py-1 text-sm bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
+      <div className="bg-green-50 rounded-lg p-5 border border-green-200">
+       <div className="flex items-start gap-3 mb-4">
+        <span className="w-8 h-8 bg-green-200 rounded-lg flex items-center justify-center text-lg flex-shrink-0">⚙️</span>
+        <div className="flex-1">
+         <div className="flex items-center justify-between">
+          <div>
+           <h3 className="text-lg font-semibold text-gray-900 mb-1">Actions</h3>
+           <p className="text-sm text-green-800">
+            Define what should happen when the trigger fires and conditions are met. You can add multiple actions.
+           </p>
+          </div>
+          <div className="relative ml-4">
+           <button
+            onClick={() => setShowActionMenu(!showActionMenu)}
+            className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 whitespace-nowrap"
 >
-          + Add Action
-         </button>
-         {showActionMenu && (
-          <>
-           {/* Backdrop to close menu when clicking outside */}
-           <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowActionMenu(false)}
-           />
-           <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-            <button
-             onClick={() => addAction('SEND_EMAIL')}
-             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-t-lg"
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Action
+           </button>
+           {showActionMenu && (
+            <>
+             {/* Backdrop to close menu when clicking outside */}
+             <div
+              className="fixed inset-0 z-10"
+              onClick={() => setShowActionMenu(false)}
+             />
+             <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden">
+              <button
+               onClick={() => addAction('SEND_EMAIL')}
+               className="w-full text-left px-4 py-3 text-sm hover:bg-green-50 flex items-center gap-3 transition-colors"
 >
-             📧 Send Email
-            </button>
-            <button
-             onClick={() => addAction('SET_PRIORITY')}
-             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+               <span className="text-lg">📧</span>
+               <div>
+                <div className="font-medium text-gray-900">Send Email</div>
+                <div className="text-xs text-gray-500">Notify via email</div>
+               </div>
+              </button>
+              <button
+               onClick={() => addAction('SET_PRIORITY')}
+               className="w-full text-left px-4 py-3 text-sm hover:bg-green-50 flex items-center gap-3 transition-colors border-t border-gray-100"
 >
-             🔴 Set Priority
-            </button>
-            <button
-             onClick={() => addAction('SET_STATUS')}
-             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+               <span className="text-lg">🔴</span>
+               <div>
+                <div className="font-medium text-gray-900">Set Priority</div>
+                <div className="text-xs text-gray-500">Change priority level</div>
+               </div>
+              </button>
+              <button
+               onClick={() => addAction('SET_STATUS')}
+               className="w-full text-left px-4 py-3 text-sm hover:bg-green-50 flex items-center gap-3 transition-colors border-t border-gray-100"
 >
-             📊 Set Status
-            </button>
-            <button
-             onClick={() => addAction('CREATE_NOTIFICATION')}
-             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-b-lg"
+               <span className="text-lg">📊</span>
+               <div>
+                <div className="font-medium text-gray-900">Set Status</div>
+                <div className="text-xs text-gray-500">Update report status</div>
+               </div>
+              </button>
+              <button
+               onClick={() => addAction('CREATE_NOTIFICATION')}
+               className="w-full text-left px-4 py-3 text-sm hover:bg-green-50 flex items-center gap-3 transition-colors border-t border-gray-100"
 >
-             🔔 Create Notification
-            </button>
-           </div>
-          </>
-         )}
+               <span className="text-lg">🔔</span>
+               <div>
+                <div className="font-medium text-gray-900">Create Notification</div>
+                <div className="text-xs text-gray-500">In-app notification</div>
+               </div>
+              </button>
+             </div>
+            </>
+           )}
+          </div>
+         </div>
         </div>
        </div>
 
-       <div className="space-y-4">
-        {actions.map((action, index) => (
-         <div key={index} className="border border-gray-300 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-           <span className="font-medium text-gray-900">
-            {action.type === 'SEND_EMAIL' && '📧 Send Email'}
-            {action.type === 'SET_PRIORITY' && '🔴 Set Priority'}
-            {action.type === 'SET_STATUS' && '📊 Set Status'}
-            {action.type === 'CREATE_NOTIFICATION' && '🔔 Create Notification'}
-           </span>
-           <button
-            onClick={() => removeAction(index)}
-            className="text-red-600 hover:text-red-800 text-sm"
+       {actions.length > 0 ? (
+        <div className="space-y-3">
+         {actions.map((action, index) => (
+          <div key={index} className="bg-white border border-green-200 rounded-lg p-4 shadow-sm">
+           <div className="flex items-center justify-between mb-3">
+            <span className="font-medium text-gray-900 flex items-center gap-2">
+             {action.type === 'SEND_EMAIL' && <><span className="text-lg">📧</span> Send Email</>}
+             {action.type === 'SET_PRIORITY' && <><span className="text-lg">🔴</span> Set Priority</>}
+             {action.type === 'SET_STATUS' && <><span className="text-lg">📊</span> Set Status</>}
+             {action.type === 'CREATE_NOTIFICATION' && <><span className="text-lg">🔔</span> Create Notification</>}
+            </span>
+            <button
+             onClick={() => removeAction(index)}
+             className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
 >
-            Remove
-           </button>
-          </div>
+             Remove
+            </button>
+           </div>
 
           {action.type === 'SET_PRIORITY' && (
-           <select
-            value={action.config.priority}
-            onChange={(e) => updateAction(index, { config: { ...action.config, priority: e.target.value } })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+           <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Priority Level</label>
+            <select
+             value={action.config.priority}
+             onChange={(e) => updateAction(index, { config: { ...action.config, priority: e.target.value } })}
+             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
 >
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="CRITICAL">Critical</option>
-           </select>
+             <option value="LOW">🟢 Low</option>
+             <option value="MEDIUM">🟡 Medium</option>
+             <option value="HIGH">🟠 High</option>
+             <option value="CRITICAL">🔴 Critical</option>
+            </select>
+           </div>
           )}
 
           {action.type === 'SEND_EMAIL' && (
@@ -950,80 +1066,111 @@ export default function AutomationBuilderPage() {
           )}
 
           {action.type === 'SET_STATUS' && (
-           <select
-            value={action.config.status}
-            onChange={(e) => updateAction(index, { config: { ...action.config, status: e.target.value } })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+           <div className="bg-gray-50 p-3 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Set Status To</label>
+            <select
+             value={action.config.status}
+             onChange={(e) => updateAction(index, { config: { ...action.config, status: e.target.value } })}
+             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
 >
-            <option value="NEW">New</option>
-            <option value="UNDER_REVIEW">Under Review</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="CLOSED">Closed</option>
-           </select>
+             <option value="NEW">New</option>
+             <option value="UNDER_REVIEW">Under Review</option>
+             <option value="RESOLVED">Resolved</option>
+             <option value="CLOSED">Closed</option>
+            </select>
+           </div>
           )}
 
           {action.type === 'CREATE_NOTIFICATION' && (
-           <div className="space-y-3">
-            <input
-             type="text"
-             value={action.config.title || ''}
-             onChange={(e) => updateAction(index, { config: { ...action.config, title: e.target.value } })}
-             placeholder="Notification title"
-             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
-            <textarea
-             value={action.config.message || ''}
-             onChange={(e) => updateAction(index, { config: { ...action.config, message: e.target.value } })}
-             placeholder="Notification message"
-             rows={2}
-             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            />
+           <div className="space-y-3 bg-gray-50 p-3 rounded-lg">
+            <div>
+             <label className="block text-sm font-medium text-gray-700 mb-2">Notification Title</label>
+             <input
+              type="text"
+              value={action.config.title || ''}
+              onChange={(e) => updateAction(index, { config: { ...action.config, title: e.target.value } })}
+              placeholder="e.g., New Critical Injury Report"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+             />
+            </div>
+            <div>
+             <label className="block text-sm font-medium text-gray-700 mb-2">Notification Message</label>
+             <textarea
+              value={action.config.message || ''}
+              onChange={(e) => updateAction(index, { config: { ...action.config, message: e.target.value } })}
+              placeholder="Message content..."
+              rows={3}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+             />
+            </div>
            </div>
           )}
          </div>
         ))}
        </div>
+       ) : (
+        <div className="text-center py-8 bg-white rounded-lg border border-dashed border-green-300">
+         <span className="text-4xl mb-2 block">⚙️</span>
+         <p className="text-sm text-gray-500">No actions added yet. Click "Add Action" to define what should happen.</p>
+        </div>
+       )}
       </div>
 
       {/* Escalation */}
-      <div className="border-t pt-6">
-       <label className="flex items-center gap-2 mb-4">
-        <input
-         type="checkbox"
-         checked={escalationEnabled}
-         onChange={(e) => setEscalationEnabled(e.target.checked)}
-         className="w-4 h-4"
-        />
-        <span className="font-medium text-gray-900">Enable escalation</span>
-       </label>
+      <div className="bg-purple-50 rounded-lg p-5 border border-purple-200">
+       <div className="flex items-start gap-3 mb-4">
+        <span className="w-8 h-8 bg-purple-200 rounded-lg flex items-center justify-center text-lg flex-shrink-0">⏰</span>
+        <div className="flex-1">
+         <h3 className="text-lg font-semibold text-gray-900 mb-1">Escalation (Optional)</h3>
+         <p className="text-sm text-purple-800 mb-3">
+          Automatically escalate if the report isn't addressed within a certain timeframe.
+         </p>
+         <label className="flex items-center gap-2 cursor-pointer">
+          <input
+           type="checkbox"
+           checked={escalationEnabled}
+           onChange={(e) => setEscalationEnabled(e.target.checked)}
+           className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+          />
+          <span className="font-medium text-gray-900">Enable escalation</span>
+         </label>
+        </div>
+       </div>
 
        {escalationEnabled && (
-        <div>
-         <label className="block text-sm text-gray-700 mb-1">
+        <div className="bg-white rounded-lg p-4 border border-purple-200 mt-3">
+         <label className="block text-sm font-medium text-gray-700 mb-2">
           Escalate after (hours)
          </label>
          <input
           type="number"
           value={escalationHours}
           onChange={(e) => setEscalationHours(parseInt(e.target.value))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
           min="1"
+          placeholder="24"
          />
+         <p className="text-xs text-gray-500 mt-2">
+          If no action is taken within this time, the automation will trigger again
+         </p>
         </div>
        )}
       </div>
 
       {/* Save */}
-      <div className="flex gap-3 pt-6 border-t">
+      <div className="flex gap-3 pt-2">
        <button
         onClick={saveAutomation}
-        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 font-medium shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
 >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
         {editingAutomation ? 'Update Automation' : 'Create Automation'}
        </button>
        <button
         onClick={() => setShowBuilder(false)}
-        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+        className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
 >
         Cancel
        </button>

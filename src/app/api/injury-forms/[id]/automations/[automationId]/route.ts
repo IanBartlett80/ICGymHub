@@ -80,7 +80,7 @@ export async function PUT(
         order,
         triggerConditions: JSON.stringify(triggerConditions),
         actions: JSON.stringify(actions),
-        emailRecipients: emailRecipients ? JSON.stringify(emailRecipients) : null,
+        emailRecipients: emailRecipients ? (typeof emailRecipients === 'string' ? emailRecipients : JSON.stringify(emailRecipients)) : null,
         emailSubject,
         emailTemplate,
         escalationEnabled,
