@@ -37,6 +37,22 @@ function evaluateCondition(
     actualValue = submission.status;
   } else if (condition.field === '_priority') {
     actualValue = submission.priority;
+  } else if (condition.field === '_gymsport') {
+    // Find the Gym Sport field in submission data
+    const gymSportField = submissionData.find((d: any) => 
+      d.field && (d.field.label === 'Gym Sport' || d.field.label.toLowerCase().includes('gym sport'))
+    );
+    if (!gymSportField) return condition.operator === 'isEmpty';
+    const parsedValue = JSON.parse(gymSportField.value);
+    actualValue = parsedValue.value;
+  } else if (condition.field === '_class') {
+    // Find the Class field in submission data
+    const classField = submissionData.find((d: any) => 
+      d.field && (d.field.label === 'Class' || d.field.label.toLowerCase().includes('class'))
+    );
+    if (!classField) return condition.operator === 'isEmpty';
+    const parsedValue = JSON.parse(classField.value);
+    actualValue = parsedValue.value;
   } else {
     // Find the field value in submission data
     const fieldData = submissionData.find((d: any) => d.fieldId === condition.field);

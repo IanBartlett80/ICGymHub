@@ -244,13 +244,27 @@ export async function POST(req: NextRequest) {
         templateId: template.id,
         sectionId: section2.id,
         fieldType: 'DROPDOWN',
-        label: 'Class',
-        description: 'Which class was the athlete in?',
+        label: 'Gym Sport',
+        description: 'Select the gym sport',
+        placeholder: 'Choose a gym sport...',
         required: true,
         order: 1,
+        options: gymsports.length > 0 
+          ? JSON.stringify(gymsports.map(g => ({ id: g.id, name: g.name })))
+          : JSON.stringify([]),
+      },
+      {
+        templateId: template.id,
+        sectionId: section2.id,
+        fieldType: 'DROPDOWN',
+        label: 'Class',
+        description: 'Which class was the athlete in?',
+        placeholder: 'Choose a class...',
+        required: true,
+        order: 2,
         options: classTemplates.length > 0 
-          ? JSON.stringify(classTemplates.map(c => c.name))
-          : JSON.stringify(['No classes available']),
+          ? JSON.stringify(classTemplates.map(c => ({ id: c.id, name: c.name, gymsportId: c.gymsportId })))
+          : JSON.stringify([]),
       },
     ];
 

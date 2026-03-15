@@ -61,6 +61,7 @@ export default function EditFormPage() {
 
  const [loading, setLoading] = useState(true);
  const [saving, setSaving] = useState(false);
+ const [showPreview, setShowPreview] = useState(false);
  const [template, setTemplate] = useState<FormTemplate>({
   id: '',
   name: '',
@@ -222,6 +223,12 @@ export default function EditFormPage() {
        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
 >
        Cancel
+      </button>
+      <button
+       onClick={() => setShowPreview(true)}
+       className="px-4 py-2 border border-blue-300 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+      >
+       👁️ Preview Form
       </button>
       <button
        onClick={handleSave}
@@ -452,6 +459,152 @@ export default function EditFormPage() {
       </div>
      )}
     </div>
+
+    {/* Preview Modal */}
+    {showPreview && (
+     <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto">
+      <div className="py-8 px-6" style={{ backgroundColor: template.headerColor }}>
+       <h2 className="text-2xl font-bold text-white">Form Preview</h2>
+       <button
+        onClick={() => setShowPreview(false)}
+        className="absolute top-4 right-4 text-white text-2xl hover:bg-white/20 rounded px-3 py-1"
+>
+        ✕
+       </button>
+      </div>
+      
+      <div className="max-w-3xl mx-auto px-6 py-8">
+       <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{template.name || 'Untitled Form'}</h1>
+        {template.description && <p className="text-gray-600 mb-6">{template.description}</p>}
+
+        {template.sections.map((section, sectionIndex) => (
+         <div key={sectionIndex} className="mb-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+           {sectionIndex + 1}. {section.title}
+          </h3>
+          {section.description && (
+           <p className="text-sm text-gray-600 mb-4">{section.description}</p>
+          )}
+          
+          <div className="space-y-4">
+           {section.fields.map((field, fieldIndex) => (
+            <div key={fieldIndex} className="border-b border-gray-100 pb-4 last:border-0">
+             <label className="block text-sm font-medium text-gray-700 mb-2">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+             </label>
+             {field.description && (
+              <p className="text-sm text-gray-500 mb-2">{field.description}</p>
+             )}
+             
+             {/* Field preview based on type */}
+             {field.fieldType === 'TEXT_SHORT' && (
+              <input
+               type="text"
+               placeholder={field.placeholder || ''}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'TEXT_LONG' && (
+              <textarea
+               placeholder={field.placeholder || ''}
+               rows={4}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'EMAIL' && (
+              <input
+               type="email"
+               placeholder={field.placeholder || 'email@example.com'}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'PHONE' && (
+              <input
+               type="tel"
+               placeholder={field.placeholder || ''}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'NUMBER' && (
+              <input
+               type="number"
+               placeholder={field.placeholder || ''}
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'DATE' && (
+              <input
+               type="date"
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'TIME' && (
+              <input
+               type="time"
+               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+               disabled
+              />
+             )}
+             {field.fieldType === 'DROPDOWN' && (
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" disabled>
+               <option>{field.placeholder || 'Select an option...'}</option>
+               {field.options?.map((option: string, idx: number) => (
+                <option key={idx}>{typeof option === 'object' ? (option as any).name : option}</option>
+               ))}
+              </select>
+             )}
+             {field.fieldType === 'RADIO' && (
+              <div className="space-y-2">
+               {field.options?.map((option: string, idx: number) => (
+                <label key={idx} className="flex items-center">
+                 <input type="radio" name={`${field.id}-preview`} className="mr-2" disabled />
+                 <span>{option}</span>
+                </label>
+               ))}
+              </div>
+             )}
+             {field.fieldType === 'CHECKBOX' && (
+              <div className="space-y-2">
+               {field.options?.map((option: string, idx: number) => (
+                <label key={idx} className="flex items-center">
+                 <input type="checkbox" className="mr-2" disabled />
+                 <span>{option}</span>
+                </label>
+               ))}
+              </div>
+             )}
+            </div>
+           ))}
+          </div>
+         </div>
+        ))}
+
+        {/* Thank You Message Preview */}
+        {template.thankYouMessage && (
+         <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Thank You Message:</h4>
+          <p className="text-gray-600">{template.thankYouMessage}</p>
+         </div>
+        )}
+
+        <button
+         onClick={() => setShowPreview(false)}
+         className="mt-6 w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+>
+         Close Preview
+        </button>
+       </div>
+      </div>
+     </div>
+    )}
    </div>
   </DashboardLayout>
  );

@@ -54,12 +54,6 @@ interface Equipment {
   zoneId: string | null;
 }
 
-interface ClassTemplate {
-  id: string;
-  name: string;
-  venueId: string | null;
-}
-
 export default function PublicSubmissionForm() {
   const params = useParams();
   const publicUrl = params.publicUrl as string;
@@ -69,9 +63,9 @@ export default function PublicSubmissionForm() {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [classTemplates, setClassTemplates] = useState<ClassTemplate[]>([]);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [selectedGymSportId, setSelectedGymSportId] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -105,8 +99,7 @@ export default function PublicSubmissionForm() {
           await Promise.all([
             loadCoaches(data.template.clubId),
             loadZones(data.template.clubId),
-            loadEquipment(data.template.clubId),
-            loadClassTemplates(data.template.clubId)
+            loadEquipment(data.template.clubId)
           ]);
         }
       } else {
@@ -152,18 +145,6 @@ export default function PublicSubmissionForm() {
       }
     } catch (error) {
       console.error('Error loading equipment:', error);
-    }
-  };
-
-  const loadClassTemplates = async (clubId: string) => {
-    try {
-      const res = await fetch(`/api/classes/public/${clubId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setClassTemplates(data.classes || []);
-      }
-    } catch (error) {
-      console.error('Error loading class templates:', error);
     }
   };
 
@@ -372,6 +353,7 @@ export default function PublicSubmissionForm() {
         const isVenueField = field.label.includes('Venue') || field.label.includes('Location');
         const isZoneField = field.label.includes('Zone') || field.label.includes('Area');
         const isEquipmentField = field.label.includes('Equipment') || field.label.includes('Apparatus');
+        const isGymSportField = field.label.includes('Gym Sport') || field.label.includes('Sport');
         const isClassField = field.label.includes('Class') || field.label.includes('Program');
         
         // Venue dropdown - track selection for filtering zones
@@ -472,27 +454,65 @@ export default function PublicSubmissionForm() {
           );
         }
         
-        // Class Template dropdown - filtered by selected venue
+        // Gym Sport dropdown - track selection for filtering classes
+        if (isGymSportField) {
+          const gymSportOptions = field.options ? JSON.parse(field.options) : [];
+          return (
+            <select
+              value={value}
+              onChange={(e) => {
+                const gymSportId = e.target.value;
+                setSelectedGymSportId(gymSportId);
+                updateValue(gymSportId);
+                // Clear class selection when gym sport changes
+                const classField = section.fields.find(f => 
+                  f.label.includes('Class') || f.label.includes('Program')
+                );
+                if (classField) {
+                  setFormData({ ...formData, [field.id]: gymSportId, [classField.id]: '' });
+                }
+              }}
+              className={commonInputClass}
+            >
+              <option value="">Select a gym sport...</option>
+              {gymSportOptions.map((option: any, index: number) => (
+                <option key={index} value={typeof option === 'object' ? option.id : option}>
+                  {typeof option === 'object' ? option.name : option}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        
+        // Class Template dropdown - filtered by selected gym sport
         if (isClassField) {
-          const filteredClasses = selectedVenueId 
-            ? classTemplates.filter(c => c.venueId === selectedVenueId)
-            : classTemplates;
+          // Parse options from field to get classes with their gymSportId
+          const classOptions = field.options ? JSON.parse(field.options) : [];
+          
+          // Filter classes by selected gym sport
+          const filteredClasses = selectedGymSportId
+            ? classOptions.filter((c: any) => 
+                typeof c === 'object' && c.gymsportId === selectedGymSportId
+              )
+            : classOptions;
           
           return (
             <select
               value={value}
               onChange={(e) => updateValue(e.target.value)}
               className={commonInputClass}
-              disabled={!!(selectedVenueId && filteredClasses.length === 0)}
+              disabled={!selectedGymSportId}
             >
               <option value="">
-                {selectedVenueId && filteredClasses.length === 0 
-                  ? 'No classes available for selected venue' 
+                {!selectedGymSportId 
+                  ? 'Please select a gym sport first'
+                  : filteredClasses.length === 0
+                  ? 'No classes available for selected gym sport'
                   : 'Select a class...'}
               </option>
-              {filteredClasses.map((classTemplate) => (
-                <option key={classTemplate.id} value={classTemplate.name}>
-                  {classTemplate.name}
+              {filteredClasses.map((classOption: any, index: number) => (
+                <option key={index} value={typeof classOption === 'object' ? classOption.name : classOption}>
+                  {typeof classOption === 'object' ? classOption.name : classOption}
                 </option>
               ))}
             </select>

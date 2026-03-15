@@ -53,6 +53,7 @@ export default function AutomationBuilderPage() {
  const [actions, setActions] = useState<any[]>([]);
  const [escalationEnabled, setEscalationEnabled] = useState(false);
  const [escalationHours, setEscalationHours] = useState(24);
+ const [showVariablePicker, setShowVariablePicker] = useState<{show: boolean; target: 'subject' | 'body' | null; actionIndex: number | null}>({show: false, target: null, actionIndex: null});
 
  useEffect(() => {
   loadTemplate();
@@ -276,6 +277,44 @@ export default function AutomationBuilderPage() {
   }
  };
 
+ const insertVariable = (variable: string) => {
+  const { target, actionIndex } = showVariablePicker;
+  if (target === null || actionIndex === null) return;
+
+  const action = actions[actionIndex];
+  if (action.type !== 'SEND_EMAIL') return;
+
+  if (target === 'subject') {
+   const currentSubject = action.config.subject || '';
+   updateAction(actionIndex, {
+    config: { ...action.config, subject: currentSubject + variable }
+   });
+  } else if (target === 'body') {
+   const currentBody = action.config.body || '';
+   updateAction(actionIndex, {
+    config: { ...action.config, body: currentBody + variable }
+   });
+  }
+
+  setShowVariablePicker({ show: false, target: null, actionIndex: null });
+ };
+
+ const getAvailableVariables = () => {
+  const systemVariables = [
+   { label: 'Submission ID', value: '{submission.id}' },
+   { label: 'Submission Status', value: '{submission.status}' },
+   { label: 'Submission Priority', value: '{submission.priority}' },
+   { label: 'Submitted At', value: '{submission.submittedAt}' },
+  ];
+
+  const formFieldVariables = allFields.map((field: Field) => ({
+   label: field.label,
+   value: `{field.${field.id}}`,
+  }));
+
+  return { systemVariables, formFieldVariables };
+ };
+
  if (loading) {
   return (
    <DashboardLayout title="Automations">
@@ -493,11 +532,17 @@ export default function AutomationBuilderPage() {
            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
 >
            <option value="">Select field...</option>
-           <option value="_status">Status</option>
-           <option value="_priority">Priority</option>
-           {allFields.map((field: Field) => (
-            <option key={field.id} value={field.id}>{field.label}</option>
-           ))}
+           <optgroup label="System Fields">
+            <option value="_status">Status</option>
+            <option value="_priority">Priority</option>
+            <option value="_gymsport">Gym Sport</option>
+            <option value="_class">Class</option>
+           </optgroup>
+           <optgroup label="Form Fields">
+            {allFields.map((field: Field) => (
+             <option key={field.id} value={field.id}>{field.label}</option>
+            ))}
+           </optgroup>
           </select>
           
           <select
@@ -636,9 +681,18 @@ export default function AutomationBuilderPage() {
              </p>
             </div>
             <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Subject
-             </label>
+             <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+               Email Subject
+              </label>
+              <button
+               type="button"
+               onClick={() => setShowVariablePicker({ show: true, target: 'subject', actionIndex: index })}
+               className="text-xs px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100"
+              >
+               📋 Insert Variable
+              </button>
+             </div>
              <input
               type="text"
               value={action.config.subject || ''}
@@ -648,9 +702,18 @@ export default function AutomationBuilderPage() {
              />
             </div>
             <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Body (HTML supported)
-             </label>
+             <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+               Email Body (HTML supported)
+              </label>
+              <button
+               type="button"
+               onClick={() => setShowVariablePicker({ show: true, target: 'body', actionIndex: index })}
+               className="text-xs px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100"
+              >
+               📋 Insert Variable
+              </button>
+             </div>
              <textarea
               value={action.config.body || ''}
               onChange={(e) => updateAction(index, { config: { ...action.config, body: e.target.value } })}
@@ -658,11 +721,6 @@ export default function AutomationBuilderPage() {
               rows={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
              />
-             <p className="text-xs text-gray-500 mt-1">
-              💡 Available variables: <code className="bg-gray-100 px-1 rounded">{'{submission.id}'}</code>, 
-              <code className="bg-gray-100 px-1 rounded ml-1">{'{submission.status}'}</code>, 
-              <code className="bg-gray-100 px-1 rounded ml-1">{'{field.FIELD_ID}'}</code>
-             </p>
             </div>
            </div>
           )}
@@ -787,6 +845,102 @@ export default function AutomationBuilderPage() {
 >
         Close
        </button>
+      </div>
+     </div>
+    </div>
+   )}
+
+   {/* Variable Picker Sidebar */}
+   {showVariablePicker.show && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-end z-50">
+     <div 
+      className="fixed inset-0" 
+      onClick={() => setShowVariablePicker({ show: false, target: null, actionIndex: null })}
+     />
+     <div className="bg-white h-full w-96 shadow-2xl flex flex-col relative z-10">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+       <h3 className="text-lg font-semibold">Insert Variable</h3>
+       <button
+        onClick={() => setShowVariablePicker({ show: false, target: null, actionIndex: null })}
+        className="text-white hover:bg-white/20 rounded p-1"
+       >
+        ✕
+       </button>
+      </div>
+
+      {/* Variable Lists */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+       {(() => {
+        const { systemVariables, formFieldVariables } = getAvailableVariables();
+        
+        return (
+         <>
+          {/* System Variables */}
+          <div>
+           <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <span className="text-lg">⚙️</span>
+            System Variables
+           </h4>
+           <div className="space-y-2">
+            {systemVariables.map((variable, idx) => (
+             <button
+              key={idx}
+              onClick={() => insertVariable(variable.value)}
+              className="w-full text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors group"
+             >
+              <div className="text-sm font-medium text-gray-900 group-hover:text-blue-700">
+               {variable.label}
+              </div>
+              <div className="text-xs text-gray-500 font-mono mt-1">
+               {variable.value}
+              </div>
+             </button>
+            ))}
+           </div>
+          </div>
+
+          {/* Form Field Variables */}
+          <div>
+           <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <span className="text-lg">📝</span>
+            Form Fields
+           </h4>
+           <div className="space-y-2">
+            {formFieldVariables.length === 0 ? (
+             <div className="text-sm text-gray-500 text-center py-4">
+              No form fields available
+             </div>
+            ) : (
+             formFieldVariables.map((variable: any, idx: number) => (
+              <button
+               key={idx}
+               onClick={() => insertVariable(variable.value)}
+               className="w-full text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors group"
+              >
+               <div className="text-sm font-medium text-gray-900 group-hover:text-blue-700">
+                {variable.label}
+               </div>
+               <div className="text-xs text-gray-500 font-mono mt-1">
+                {variable.value}
+               </div>
+              </button>
+             ))
+            )}
+           </div>
+          </div>
+         </>
+        );
+       })()}
+      </div>
+
+      {/* Footer with instructions */}
+      <div className="border-t bg-gray-50 p-4">
+       <div className="text-xs text-gray-600">
+        <p className="font-medium mb-1">💡 How to use:</p>
+        <p>Click any variable above to insert it into your email {showVariablePicker.target === 'subject' ? 'subject' : 'body'}.</p>
+        <p className="mt-2">Variables will be replaced with actual values when the email is sent.</p>
+       </div>
       </div>
      </div>
     </div>
