@@ -20,7 +20,7 @@ export default function InjuryReportsSubNav() {
       icon: '📊',
     },
     {
-      label: 'Manage Forms',
+      label: 'Injury Form Templates',
       href: '/dashboard/injury-reports/forms',
       icon: '📝',
     },

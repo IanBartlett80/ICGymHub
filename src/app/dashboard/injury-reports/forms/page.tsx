@@ -15,6 +15,7 @@ interface FormTemplate {
  active: boolean;
  publicUrl: string;
  qrCode: string | null;
+ headerColor: string;
  createdAt: string;
  _count: {
   submissions: number;
@@ -276,7 +277,7 @@ export default function FormTemplatesPage() {
      {templates.map((template) => (
       <div key={template.id} className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
        {/* Template Header */}
-       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+       <div className="px-6 py-4" style={{ background: template.headerColor || '#0078d4' }}>
         <div className="flex items-center justify-between">
          <div className="flex items-center gap-3">
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
