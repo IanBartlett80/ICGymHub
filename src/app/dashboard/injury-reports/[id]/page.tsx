@@ -73,6 +73,18 @@ interface Submission {
  template: {
   id: string;
   name: string;
+  sections: {
+   id: string;
+   title: string;
+   description: string | null;
+   order: number;
+   fields: {
+    id: string;
+    label: string;
+    fieldType: string;
+    order: number;
+   }[];
+  }[];
  };
  venue: Venue | null;
  zone: Zone | null;
@@ -232,7 +244,82 @@ export default function SubmissionDetailPage() {
  }
 
  const submitterInfo = parseJsonSafe(submission.submitterInfo) || {};
- const sortedData = [...submission.data].sort((a, b) => a.field.order - b.field.order);
+ 
+ // Helper function to get field value for display
+ const getFieldDisplayValue = (data: SubmissionData): string => {
+  const value = parseJsonSafe(data.value) || { value: data.value, displayValue: data.value };
+  
+  // Handle date/time fields
+  if (data.field.fieldType === 'datetime' || data.field.label.toLowerCase().includes('date') || data.field.label.toLowerCase().includes('time')) {
+   try {
+    const dateValue = value.value || data.value;
+    if (dateValue && dateValue !== 'N/A') {
+     const date = new Date(dateValue);
+     if (!isNaN(date.getTime())) {
+      const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const day = date.getDate();
+      const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
+                    day === 2 || day === 22 ? 'nd' : 
+                    day === 3 || day === 23 ? 'rd' : 'th';
+      const month = date.toLocaleDateString('en-US', { month: 'long' });
+      const year = date.getFullYear();
+      return `${time} ${weekday} ${day}${suffix} ${month}, ${year}`;
+     }
+    }
+   } catch {}
+  }
+  // Handle Venue field
+  else if (data.field.label.toLowerCase().includes('venue') && submission.venue) {
+   return submission.venue.name;
+  }
+  // Handle Zone/Area field
+  else if ((data.field.label.toLowerCase().includes('zone') || data.field.label.toLowerCase().includes('area')) && submission.zone) {
+   return submission.zone.name;
+  }
+  // Handle Equipment field
+  else if ((data.field.label.toLowerCase().includes('equipment') || data.field.label.toLowerCase().includes('apparatus')) && submission.equipment) {
+   return submission.equipment.name;
+  }
+  // Handle array values
+  else if (Array.isArray(value.value)) {
+   return value.value.join(', ');
+  }
+  
+  return value.displayValue || value.value || 'N/A';
+ };
+ 
+ // Group data by section for organized display
+ const groupDataBySection = () => {
+  if (!submission.template.sections) return [];
+  
+  return submission.template.sections.map(section => {
+   const sectionFields = section.fields.map(field => {
+    const data = submission.data.find(d => d.fieldId === field.id);
+    if (!data) return null;
+    
+    return {
+     ...data,
+     displayValue: getFieldDisplayValue(data)
+    };
+   }).filter(Boolean);
+   
+   return {
+    ...section,
+    data: sectionFields.sort((a, b) => (a?.field.order || 0) - (b?.field.order || 0))
+   };
+  }).filter(section => section.data.length > 0);
+ };
+ 
+ const sectionsWithData = groupDataBySection();
+ 
+ // Extract key information for professional summary
+ const getKeyInfo = (label: string) => {
+  const data = submission.data.find(d => 
+   d.field.label.toLowerCase().includes(label.toLowerCase())
+  );
+  return data ? getFieldDisplayValue(data) : null;
+ };
 
  const getStatusColor = (status: string) => {
   switch (status) {
@@ -411,76 +498,115 @@ export default function SubmissionDetailPage() {
       </div>
      )}
 
-     {/* Report Data */}
-     <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Report Data</h2>
-      <div className="space-y-4">
-       {sortedData.map((data) => {
-        const value = parseJsonSafe(data.value) || { value: data.value, displayValue: data.value };
-        
-        // Format display value based on field type and label
-        let displayValue: string;
-        
-        // Handle date/time fields
-        if (data.field.fieldType === 'datetime' || data.field.label.toLowerCase().includes('date') || data.field.label.toLowerCase().includes('time')) {
-         try {
-          const dateValue = value.value || data.value;
-          if (dateValue && dateValue !== 'N/A') {
-           const date = new Date(dateValue);
-           if (!isNaN(date.getTime())) {
-            // Format as: "5:47pm Saturday 7th March, 2026"
-            const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-            const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
-            const day = date.getDate();
-            const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
-                          day === 2 || day === 22 ? 'nd' : 
-                          day === 3 || day === 23 ? 'rd' : 'th';
-            const month = date.toLocaleDateString('en-US', { month: 'long' });
-            const year = date.getFullYear();
-            displayValue = `${time} ${weekday} ${day}${suffix} ${month}, ${year}`;
-           } else {
-            displayValue = value.displayValue || value.value || 'N/A';
-           }
-          } else {
-           displayValue = 'N/A';
-          }
-         } catch {
-          displayValue = value.displayValue || value.value || 'N/A';
-         }
-        }
-        // Handle Venue field - show name from submission.venue if available
-        else if (data.field.label.toLowerCase().includes('venue') && submission.venue) {
-         displayValue = submission.venue.name;
-        }
-        // Handle Zone/Area field - show name from submission.zone if available
-        else if ((data.field.label.toLowerCase().includes('zone') || data.field.label.toLowerCase().includes('area')) && submission.zone) {
-         displayValue = submission.zone.name;
-        }
-        // Handle Equipment field - show name from submission.equipment if available
-        else if ((data.field.label.toLowerCase().includes('equipment') || data.field.label.toLowerCase().includes('apparatus')) && submission.equipment) {
-         displayValue = submission.equipment.name;
-        }
-        // Handle array values
-        else if (Array.isArray(value.value)) {
-         displayValue = value.value.join(', ');
-        }
-        // Default: use displayValue, then value, then 'N/A'
-        else {
-         displayValue = value.displayValue || value.value || 'N/A';
-        }
-        
-        return (
-         <div key={data.id} className="border-b border-gray-200 pb-4 last:border-0">
-          <div className="text-sm font-medium text-gray-700 mb-1">
-           {data.field.label}
-          </div>
-          <div className="text-gray-900">
-           {displayValue}
-          </div>
+     {/* Professional Summary */}
+     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow border border-blue-200 p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+       <span className="text-2xl">📋</span>
+       Report Summary
+      </h2>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+       <div className="col-span-2">
+        <div className="text-blue-800 font-semibold text-lg mb-2">{submission.template.name}</div>
+       </div>
+       <div>
+        <div className="text-gray-600 font-medium">Submitted</div>
+        <div className="text-gray-900 font-semibold">
+         {new Date(submission.submittedAt).toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+         })}
+        </div>
+       </div>
+       {submission.venue && (
+        <div>
+         <div className="text-gray-600 font-medium">Location</div>
+         <div className="text-gray-900 font-semibold">{submission.venue.name}</div>
+        </div>
+       )}
+       {getKeyInfo('athlete') && (
+        <div>
+         <div className="text-gray-600 font-medium">Athlete</div>
+         <div className="text-gray-900 font-semibold">{getKeyInfo('athlete')}</div>
+        </div>
+       )}
+       {getKeyInfo('injury') || getKeyInfo('body part') && (
+        <div>
+         <div className="text-gray-600 font-medium">Injury Type</div>
+         <div className="text-gray-900 font-semibold">
+          {getKeyInfo('injury') || getKeyInfo('body part') || 'Not specified'}
          </div>
-        );
-       })}
+        </div>
+       )}
+       <div className="col-span-2 border-t border-blue-200 mt-2 pt-3">
+        <div className="flex items-center justify-between">
+         <div className="flex items-center gap-4">
+          <div>
+           <div className="text-xs text-gray-600">Status</div>
+           <div className={`mt-1 px-3 py-1 rounded text-xs font-semibold ${getStatusColor(submission.status)}`}>
+            {submission.status.replace('_', ' ')}
+           </div>
+          </div>
+          {submission.priority && (
+           <div>
+            <div className="text-xs text-gray-600">Priority</div>
+            <div className={`mt-1 px-3 py-1 rounded text-xs font-semibold ${getPriorityColor(submission.priority)}`}>
+             {submission.priority}
+            </div>
+           </div>
+          )}
+         </div>
+         {submission.assignedTo && (
+          <div className="text-right">
+           <div className="text-xs text-gray-600">Assigned to</div>
+           <div className="text-sm font-medium text-gray-900">{submission.assignedTo.fullName}</div>
+          </div>
+         )}
+        </div>
+       </div>
       </div>
+     </div>
+
+     {/* Report Data - Grouped by Sections */}
+     <div className="space-y-6">
+      {sectionsWithData.map((section, sectionIndex) => (
+       <div key={section.id} className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+        {/* Section Header */}
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-6 py-4">
+         <h3 className="text-lg font-semibold text-gray-900">
+          {sectionIndex + 1}. {section.title}
+         </h3>
+         {section.description && (
+          <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+         )}
+        </div>
+        
+        {/* Section Fields */}
+        <div className="p-6">
+         <div className="space-y-4">
+          {section.data.map((data: any) => (
+           <div key={data.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+            <div className="text-sm font-medium text-gray-700 mb-1.5">
+             {data.field.label}
+            </div>
+            <div className="text-base text-gray-900">
+             {data.displayValue}
+            </div>
+           </div>
+          ))}
+         </div>
+        </div>
+       </div>
+      ))}
+      
+      {sectionsWithData.length === 0 && (
+       <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+        <div className="text-center text-gray-400">No report data available</div>
+       </div>
+      )}
      </div>
 
      {/* Comments */}

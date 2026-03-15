@@ -121,6 +121,18 @@ async function executeActions(
 ): Promise<void> {
   console.log(`[Automation ${automation.id}] Executing ${actions.actions.length} action(s)`);
   
+  // Check for legacy email configuration (email config in DB columns but not in actions array)
+  const hasEmailAction = actions.actions.some((a: any) => a.type === 'SEND_EMAIL');
+  const hasLegacyEmailConfig = automation.emailRecipients && automation.emailSubject;
+  
+  if (!hasEmailAction && hasLegacyEmailConfig) {
+    console.log(`[Automation ${automation.id}] ⚠️  Detected legacy email configuration - adding implicit SEND_EMAIL action`);
+    actions.actions.push({
+      type: 'SEND_EMAIL',
+      config: {}
+    });
+  }
+  
   for (const action of actions.actions) {
     try {
       console.log(`[Automation ${automation.id}] Executing action:`, action.type);
@@ -162,6 +174,16 @@ async function executeSendEmail(
 ): Promise<void> {
   console.log(`[Automation ${automation.id}] Starting email send action`);
   
+  // Validate email configuration exists
+  if (!automation.emailRecipients || !automation.emailSubject || !automation.emailTemplate) {
+    console.error(`[Automation ${automation.id}] ❌ Email configuration incomplete! Missing:`, {
+      hasRecipients: !!automation.emailRecipients,
+      hasSubject: !!automation.emailSubject,
+      hasTemplate: !!automation.emailTemplate,
+    });
+    throw new Error('Email configuration incomplete - please check automation settings');
+  }
+  
   const recipients = JSON.parse(automation.emailRecipients || '[]');
   console.log(`[Automation ${automation.id}] Email recipients config:`, recipients);
   
@@ -197,11 +219,12 @@ async function executeSendEmail(
   console.log(`[Automation ${automation.id}] Final resolved recipients:`, resolvedRecipients);
 
   if (resolvedRecipients.length === 0) {
-    console.warn(`[Automation ${automation.id}] No recipients to send email to!`);
+    console.warn(`[Automation ${automation.id}] ⚠️  No recipients to send email to!`);
     return;
   }
 
   // Send emails
+  const emailErrors: string[] = [];
   for (const recipient of resolvedRecipients) {
     try {
       console.log(`[Automation ${automation.id}] Sending email to:`, recipient);
@@ -212,9 +235,18 @@ async function executeSendEmail(
       });
       console.log(`[Automation ${automation.id}] ✅ Email sent successfully to ${recipient}:`, result);
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(`[Automation ${automation.id}] ❌ Failed to send email to ${recipient}:`, error);
-      throw error; // Re-throw to be caught by outer error handler
+      emailErrors.push(`${recipient}: ${errorMsg}`);
+      // Don't throw - continue sending to other recipients
     }
+  }
+  
+  // If all emails failed, throw an error
+  if (emailErrors.length === resolvedRecipients.length) {
+    throw new Error(`Failed to send emails to all recipients:\n${emailErrors.join('\n')}`);
+  } else if (emailErrors.length > 0) {
+    console.warn(`[Automation ${automation.id}] ⚠️  Some emails failed to send:`, emailErrors);
   }
 }
 
