@@ -507,7 +507,7 @@ export async function GET(
   </style>
 </head>
 <body>
-  <!-- Action Buttons -->
+  <!-- Action Button -->
   <div class="action-buttons">
     <button onclick="window.print()" class="btn btn-print">
       <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -515,261 +515,8 @@ export async function GET(
       </svg>
       Print PDF
     </button>
-    <button onclick="saveAsPDF()" class="btn btn-save">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
-      </svg>
-      Save PDF
-    </button>
   </div>
 
-  <div class="page">
-    
-    /* Header with Gradient */
-    .header {
-      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%);
-      color: white;
-      padding: 40px;
-      margin: -40px -40px 40px -40px;
-      border-radius: 16px 16px 0 0;
-    }
-    
-    .header-title {
-      font-size: 32px;
-      font-weight: bold;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .header-subtitle {
-      font-size: 18px;
-      color: rgba(191, 219, 254, 1);
-      margin-bottom: 4px;
-    }
-    
-    .header-meta {
-      margin-top: 20px;
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.9);
-    }
-    
-    .club-info {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      font-size: 14px;
-    }
-    
-    /* Sections */
-    .section {
-      margin-bottom: 30px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .section-header {
-      padding: 16px 24px;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .section-content {
-      padding: 24px;
-      background: white;
-    }
-    
-    /* Section Colors */
-    .section-blue .section-header {
-      background: linear-gradient(90deg, #2563eb 0%, #4f46e5 100%);
-    }
-    
-    .section-green .section-header {
-      background: linear-gradient(90deg, #059669 0%, #10b981 100%);
-    }
-    
-    .section-purple .section-header {
-      background: linear-gradient(90deg, #9333ea 0%, #ec4899 100%);
-    }
-    
-    .section-gray .section-header {
-      background: linear-gradient(90deg, #4b5563 0%, #64748b 100%);
-    }
-    
-    /* Fields */
-    .field {
-      margin-bottom: 20px;
-      page-break-inside: avoid;
-    }
-    
-    .field-label {
-      font-weight: 600;
-      color: #4b5563;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-    
-    .field-value {
-      padding: 12px;
-      background: #f9fafb;
-      border-radius: 8px;
-      color: #1f2937;
-      border: 1px solid #e5e7eb;
-    }
-    
-    .field-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-    }
-    
-    /* Status badges */
-    .status-badge {
-      display: inline-block;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: bold;
-      border: 2px solid;
-    }
-    
-    .status-new { 
-      background: #fff4e6; 
-      color: #d46b08; 
-      border-color: #ffd591;
-    }
-    
-    .status-under-review { 
-      background: #e6f7ff; 
-      color: #0050b3; 
-      border-color: #91d5ff;
-    }
-    
-    .status-resolved { 
-      background: #f6ffed; 
-      color: #389e0d; 
-      border-color: #b7eb8f;
-    }
-    
-    .status-closed { 
-      background: #f0f0f0; 
-      color: #595959; 
-      border-color: #d9d9d9;
-    }
-    
-    .priority-critical {
-      background: #fff1f0;
-      color: #cf1322;
-      border-color: #ffa39e;
-    }
-    
-    .priority-high {
-      background: #fff7e6;
-      color: #d46b08;
-      border-color: #ffd591;
-    }
-    
-    .priority-medium {
-      background: #fffbe6;
-      color: #d48806;
-      border-color: #ffe58f;
-    }
-    
-    .priority-low {
-      background: #f6ffed;
-      color: #389e0d;
-      border-color: #b7eb8f;
-    }
-    
-    /* Equipment photo */
-    .equipment-photo {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 2px solid #e5e7eb;
-      margin-right: 16px;
-      float: left;
-    }
-    
-    .equipment-info {
-      overflow: hidden;
-    }
-    
-    /* Safety check styling */
-    .safety-check {
-      background: #dbeafe;
-      border: 1px solid: #93c5fd;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 12px;
-    }
-    
-    .safety-check.never-checked {
-      background: #fef3c7;
-      border-color: #fde68a;
-    }
-    
-    .safety-check-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    
-    .safety-check-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #4b5563;
-    }
-    
-    .safety-check-value {
-      font-size: 14px;
-      font-weight: bold;
-      color: #1f2937;
-    }
-    
-    /* Footer */
-    .footer {
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 2px solid #e5e7eb;
-      font-size: 12px;
-      color: #6b7280;
-    }
-    
-    .confidential {
-      background: #fef3c7;
-      border: 2px solid #fde68a;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-weight: 600;
-      color: #92400e;
-    }
-    
-    @media print {
-      body {
-        background: white;
-      }
-      
-      .page {
-        margin: 0;
-        padding: 20px;
-      }
-      
-      .section {
-        page-break-inside: avoid;
-      }
-    }
-  </style>
-</head>
-<body>
   <div class="page">
     <!-- Header -->
     <div class="header">
@@ -907,7 +654,17 @@ export async function GET(
             ${submission.equipment.lastCheckedDate ? `
               <div class="safety-check-row">
                 <span class="safety-check-label">Last Checked:</span>
-                <span class="safety-check-value">${new Date(submission.equipment.lastCheckedDate).toLocaleDateString()}</span>
+                <span class="safety-check-value">${(() => {
+                  const date = new Date(submission.equipment.lastCheckedDate);
+                  const day = date.getDate();
+                  const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
+                               day === 2 || day === 22 ? 'nd' : 
+                               day === 3 || day === 23 ? 'rd' : 'th';
+                  const weekday = date.toLocaleDateString('en-AU', { weekday: 'long' });
+                  const month = date.toLocaleDateString('en-AU', { month: 'long' });
+                  const year = date.getFullYear();
+                  return `${weekday}, ${day}${suffix} ${month}, ${year}`;
+                })()}</span>
               </div>
               ${submission.equipment.lastCheckStatus ? `
               <div class="safety-check-row">
@@ -1053,13 +810,6 @@ export async function GET(
       </div>
     </div>
   </div>
-  
-  <script>
-    function saveAsPDF() {
-      // Trigger browser's print dialog with save as PDF option
-      window.print();
-    }
-  </script>
 </body>
 </html>
     `;
