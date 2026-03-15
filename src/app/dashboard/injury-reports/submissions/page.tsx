@@ -48,6 +48,7 @@ export default function SubmissionsReportsPage() {
  const [programFilter, setProgramFilter] = useState<string>('all');
  const [coachFilter, setCoachFilter] = useState<string>('all');
  const [classFilter, setClassFilter] = useState<string>('all');
+ const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
 
  useEffect(() => {
   loadSubmissions();
@@ -106,8 +107,15 @@ export default function SubmissionsReportsPage() {
  const uniqueCoaches = Array.from(new Set(submissions.map(s => s.coachName).filter(Boolean))) as string[];
  const uniqueClasses = Array.from(new Set(submissions.map(s => s.className).filter(Boolean))) as string[];
 
+ // Separate active and history submissions
+ const activeSubmissions = submissions.filter(s => s.status === 'NEW' || s.status === 'UNDER_REVIEW');
+ const historySubmissions = submissions.filter(s => s.status === 'RESOLVED' || s.status === 'CLOSED');
+
+ // Get current tab submissions
+ const currentTabSubmissions = activeTab === 'active' ? activeSubmissions : historySubmissions;
+
  // Filter submissions based on selected filters
- const filteredSubmissions = submissions.filter(submission => {
+ const filteredSubmissions = currentTabSubmissions.filter(submission => {
   if (programFilter !== 'all' && submission.programName !== programFilter) return false;
   if (coachFilter !== 'all' && submission.coachName !== coachFilter) return false;
   if (classFilter !== 'all' && submission.className !== classFilter) return false;
@@ -139,46 +147,36 @@ export default function SubmissionsReportsPage() {
 
     {/* Submissions List */}
     <div className="bg-white rounded-lg shadow border border-gray-200">
-     <div className="p-6 border-b border-gray-200">
-      <div className="flex items-center justify-between mb-4">
-       <h2 className="text-lg font-semibold text-gray-900">All Submissions ({filteredSubmissions.length})</h2>
-       <div className="flex gap-2">
-        <button
-         onClick={() => setStatusFilter('all')}
-         className={`px-3 py-1 text-sm rounded ${statusFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
->
-         All
-        </button>
-        <button
-         onClick={() => setStatusFilter('NEW')}
-         className={`px-3 py-1 text-sm rounded ${statusFilter === 'NEW' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
->
-         New
-        </button>
-        <button
-         onClick={() => setStatusFilter('UNDER_REVIEW')}
-         className={`px-3 py-1 text-sm rounded ${statusFilter === 'UNDER_REVIEW' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
->
-         Under Review
-        </button>
-        <button
-         onClick={() => setStatusFilter('RESOLVED')}
-         className={`px-3 py-1 text-sm rounded ${statusFilter === 'RESOLVED' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
->
-         Resolved
-        </button>
-        <button
-         onClick={() => setStatusFilter('CLOSED')}
-         className={`px-3 py-1 text-sm rounded ${statusFilter === 'CLOSED' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
->
-         Closed
-        </button>
-       </div>
+     {/* Tabs */}
+     <div className="border-b border-gray-200">
+      <div className="flex">
+       <button
+        onClick={() => setActiveTab('active')}
+        className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+         activeTab === 'active'
+          ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+        }`}
+       >
+        Active Injury Reports ({activeSubmissions.length})
+       </button>
+       <button
+        onClick={() => setActiveTab('history')}
+        className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+         activeTab === 'history'
+          ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+        }`}
+       >
+        Injury Reports History ({historySubmissions.length})
+       </button>
       </div>
+     </div>
 
+     <div className="p-6 border-b border-gray-200">
       {/* Filters */}
       <IntelligenceFilter
-        title="Submission Filters"
+        title={activeTab === 'active' ? 'Active Report Filters' : 'History Filters'}
         subtitle="Filter injury reports by venue, program, coach, and class"
         variant="gradient"
         filters={[
@@ -194,20 +192,6 @@ export default function SubmissionsReportsPage() {
                 showAllOption={true}
               />
             ),
-          },
-          {
-            type: 'select',
-            label: 'Status',
-            value: statusFilter,
-            onChange: setStatusFilter,
-            icon: <CheckCircleIcon className="h-4 w-4" />,
-            options: [
-              { value: 'all', label: 'All Statuses' },
-              { value: 'NEW', label: 'New' },
-              { value: 'UNDER_REVIEW', label: 'Under Review' },
-              { value: 'RESOLVED', label: 'Resolved' },
-              { value: 'CLOSED', label: 'Closed' },
-            ],
           },
           {
             type: 'select',
@@ -254,7 +238,6 @@ export default function SubmissionsReportsPage() {
         ]}
         onReset={() => {
           setVenueId(null);
-          setStatusFilter('all');
           setProgramFilter('all');
           setCoachFilter('all');
           setClassFilter('all');
