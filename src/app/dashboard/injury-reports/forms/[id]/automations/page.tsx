@@ -6,6 +6,8 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import RichTextVariableEditor from '@/components/RichTextVariableEditor';
+import TipTapEditor from '@/components/TipTapEditor';
+import EmailRecipientsInput from '@/components/EmailRecipientsInput';
 import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface Field {
@@ -65,7 +67,6 @@ export default function AutomationBuilderPage() {
  const [classTemplates, setClassTemplates] = useState<any[]>([]);
  const [venues, setVenues] = useState<any[]>([]);
  const [zones, setZones] = useState<any[]>([]);
- const [coaches, setCoaches] = useState<any[]>([]);
 
  useEffect(() => {
   loadTemplate();
@@ -101,13 +102,6 @@ export default function AutomationBuilderPage() {
    if (zonesRes.ok) {
     const zonesData = await zonesRes.json();
     setZones(zonesData.zones || []);
-   }
-
-   // Fetch coaches
-   const coachesRes = await fetch('/api/coaches');
-   if (coachesRes.ok) {
-    const coachesData = await coachesRes.json();
-    setCoaches(coachesData.coaches || []);
    }
   } catch (error) {
    console.error('Error loading reference data:', error);
@@ -894,23 +888,13 @@ export default function AutomationBuilderPage() {
            <div className="space-y-3">
             <div>
              <label className="block text-sm font-medium text-gray-700 mb-1">
-              Recipients (one email per line)
+              Email Recipients
              </label>
-             <textarea
-              value={
-               Array.isArray(action.config.recipients)
-                ? action.config.recipients.join('\n')
-                : action.config.recipients || ''
-              }
-              onChange={(e) => {
-               const recipients = e.target.value.split('\n').filter(r => r.trim());
-               updateAction(index, { config: { ...action.config, recipients } });
-              }}
-              placeholder="admin@example.com&#10;coach@example.com&#10;or use: field:{fieldId} to send to an email from a form field"
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+             <EmailRecipientsInput
+              recipients={Array.isArray(action.config.recipients) ? action.config.recipients : []}
+              onChange={(recipients) => updateAction(index, { config: { ...action.config, recipients } })}
              />
-             <p className="text-xs text-gray-500 mt-1">
+             <p className="text-xs text-gray-500 mt-2">
               💡 Tip: Use <code className="bg-gray-100 px-1 rounded">field:FIELD_ID</code> to send to an email captured in the form
              </p>
             </div>
@@ -940,7 +924,7 @@ export default function AutomationBuilderPage() {
             <div>
              <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-medium text-gray-700">
-               Email Body (HTML supported)
+               Email Body
               </label>
               <button
                type="button"
@@ -950,17 +934,16 @@ export default function AutomationBuilderPage() {
                📋 Insert Variable
               </button>
              </div>
-             <RichTextVariableEditor
+             <TipTapEditor
               value={action.config.body || ''}
               onChange={(newValue) => updateAction(index, { config: { ...action.config, body: newValue } })}
-              placeholder="Email content..."
-              multiline={true}
+              placeholder="Compose your email message..."
               onInsertVariable={(insertFn) => {
                 bodyEditorRefs.current[index] = insertFn;
               }}
              />
              <p className="text-xs text-gray-500 mt-2">
-              💡 Click "Insert Variable" to add dynamic content from the form
+              💡 Use the toolbar to format text and click "Insert Variable" to add dynamic content from the form
              </p>
             </div>
            </div>
