@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
+import RichTextVariableEditor from '@/components/RichTextVariableEditor';
 import { showToast, confirmAndDelete } from '@/lib/toast';
 
 interface Field {
@@ -54,6 +55,10 @@ export default function AutomationBuilderPage() {
  const [escalationEnabled, setEscalationEnabled] = useState(false);
  const [escalationHours, setEscalationHours] = useState(24);
  const [showVariablePicker, setShowVariablePicker] = useState<{show: boolean; target: 'subject' | 'body' | null; actionIndex: number | null}>({show: false, target: null, actionIndex: null});
+ 
+ // Refs for rich text editors to call insertVariable
+ const subjectEditorRefs = useRef<{[key: number]: ((variable: {label: string; value: string}) => void) | null}>({});
+ const bodyEditorRefs = useRef<{[key: number]: ((variable: {label: string; value: string}) => void) | null}>({});
 
  useEffect(() => {
   loadTemplate();
@@ -66,6 +71,17 @@ export default function AutomationBuilderPage() {
    if (res.ok) {
     const data = await res.json();
     setTemplate(data.template);
+    
+    // Store field label mapping for the rich text editor
+    if (data.template.sections && typeof window !== 'undefined') {
+      const fieldLabelMap: {[key: string]: string} = {};
+      data.template.sections.forEach((section: any) => {
+        section.fields.forEach((field: any) => {
+          fieldLabelMap[field.id] = field.label;
+        });
+      });
+      (window as any).__fieldLabelMap = fieldLabelMap;
+    }
    }
   } catch (error) {
    console.error('Error loading template:', error);
@@ -277,23 +293,18 @@ export default function AutomationBuilderPage() {
   }
  };
 
- const insertVariable = (variable: string) => {
+ const insertVariable = (variableInfo: {label: string; value: string}) => {
   const { target, actionIndex } = showVariablePicker;
   if (target === null || actionIndex === null) return;
 
   const action = actions[actionIndex];
   if (action.type !== 'SEND_EMAIL') return;
 
-  if (target === 'subject') {
-   const currentSubject = action.config.subject || '';
-   updateAction(actionIndex, {
-    config: { ...action.config, subject: currentSubject + variable }
-   });
-  } else if (target === 'body') {
-   const currentBody = action.config.body || '';
-   updateAction(actionIndex, {
-    config: { ...action.config, body: currentBody + variable }
-   });
+  // Use the rich text editor's insert function
+  if (target === 'subject' && subjectEditorRefs.current[actionIndex]) {
+    subjectEditorRefs.current[actionIndex]!(variableInfo);
+  } else if (target === 'body' && bodyEditorRefs.current[actionIndex]) {
+    bodyEditorRefs.current[actionIndex]!(variableInfo);
   }
 
   setShowVariablePicker({ show: false, target: null, actionIndex: null });
@@ -302,8 +313,8 @@ export default function AutomationBuilderPage() {
  const getAvailableVariables = () => {
   const systemVariables = [
    { label: 'Submission ID', value: '{submission.id}' },
-   { label: 'Submission Status', value: '{submission.status}' },
-   { label: 'Submission Priority', value: '{submission.priority}' },
+   { label: 'Status', value: '{submission.status}' },
+   { label: 'Priority', value: '{submission.priority}' },
    { label: 'Submitted At', value: '{submission.submittedAt}' },
   ];
 
@@ -693,12 +704,14 @@ export default function AutomationBuilderPage() {
                📋 Insert Variable
               </button>
              </div>
-             <input
-              type="text"
+             <RichTextVariableEditor
               value={action.config.subject || ''}
-              onChange={(e) => updateAction(index, { config: { ...action.config, subject: e.target.value } })}
+              onChange={(newValue) => updateAction(index, { config: { ...action.config, subject: newValue } })}
               placeholder="e.g., New Injury Report Submitted"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              multiline={false}
+              onInsertVariable={(insertFn) => {
+                subjectEditorRefs.current[index] = insertFn;
+              }}
              />
             </div>
             <div>
@@ -714,13 +727,18 @@ export default function AutomationBuilderPage() {
                📋 Insert Variable
               </button>
              </div>
-             <textarea
+             <RichTextVariableEditor
               value={action.config.body || ''}
-              onChange={(e) => updateAction(index, { config: { ...action.config, body: e.target.value } })}
+              onChange={(newValue) => updateAction(index, { config: { ...action.config, body: newValue } })}
               placeholder="Email content..."
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+              multiline={true}
+              onInsertVariable={(insertFn) => {
+                bodyEditorRefs.current[index] = insertFn;
+              }}
              />
+             <p className="text-xs text-gray-500 mt-2">
+              💡 Click "Insert Variable" to add dynamic content from the form
+             </p>
             </div>
            </div>
           )}
@@ -886,7 +904,7 @@ export default function AutomationBuilderPage() {
             {systemVariables.map((variable, idx) => (
              <button
               key={idx}
-              onClick={() => insertVariable(variable.value)}
+              onClick={() => insertVariable(variable)}
               className="w-full text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors group"
              >
               <div className="text-sm font-medium text-gray-900 group-hover:text-blue-700">
@@ -915,7 +933,7 @@ export default function AutomationBuilderPage() {
              formFieldVariables.map((variable: any, idx: number) => (
               <button
                key={idx}
-               onClick={() => insertVariable(variable.value)}
+               onClick={() => insertVariable(variable)}
                className="w-full text-left px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors group"
               >
                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-700">
@@ -938,8 +956,9 @@ export default function AutomationBuilderPage() {
       <div className="border-t bg-gray-50 p-4">
        <div className="text-xs text-gray-600">
         <p className="font-medium mb-1">💡 How to use:</p>
-        <p>Click any variable above to insert it into your email {showVariablePicker.target === 'subject' ? 'subject' : 'body'}.</p>
-        <p className="mt-2">Variables will be replaced with actual values when the email is sent.</p>
+        <p>Click any variable to insert it as a pill into your email {showVariablePicker.target === 'subject' ? 'subject' : 'body'}.</p>
+        <p className="mt-2">Variables appear as blue pills with friendly names. Hover over them to see the code.</p>
+        <p className="mt-1">You can type freely around the variables and delete them with backspace.</p>
        </div>
       </div>
      </div>
