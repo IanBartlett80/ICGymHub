@@ -102,12 +102,38 @@ export async function GET(
     const classLevel = getFieldValue('class');
     const sportInfo = [gymSport, classLevel].filter(Boolean).join(' ');
 
+    // Helper function to get equipment condition color
+    const getConditionColor = (condition: string | null) => {
+      if (!condition) return { bg: '#f3f4f6', text: '#6b7280', border: '#d1d5db' };
+      const lower = condition.toLowerCase();
+      if (lower === 'good') return { bg: '#dcfce7', text: '#166534', border: '#86efac' };
+      if (lower === 'fair') return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+      return { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' }; // Poor/Bad
+    };
+
+    // Helper function to get safety check status color
+    const getSafetyStatusColor = (status: string | null) => {
+      if (!status) return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+      const lower = status.toLowerCase();
+      if (lower.includes('no issues') || lower.includes('passed')) {
+        return { bg: '#dcfce7', text: '#166534', border: '#86efac' };
+      }
+      if (lower.includes('minor') || lower.includes('attention')) {
+        return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+      }
+      return { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' }; // Issues detected
+    };
+
+    const conditionColors = getConditionColor(submission.equipment?.condition || null);
+    const safetyColors = getSafetyStatusColor(submission.equipment?.lastCheckStatus || null);
+
     // Build HTML for PDF
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <title>Injury Report - ${athleteName}</title>
   <style>
     * {
       margin: 0;
@@ -120,6 +146,53 @@ export async function GET(
       color: #333;
       line-height: 1.6;
       background: #f8f9fa;
+      padding: 20px;
+    }
+
+    /* Print/Save Buttons */
+    .action-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 12px;
+      z-index: 1000;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-print {
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+      color: white;
+    }
+
+    .btn-print:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-save {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: white;
+    }
+
+    .btn-save:hover {
+      background: linear-gradient(135deg, #047857 0%, #059669 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
     
     .page {
@@ -127,7 +200,330 @@ export async function GET(
       margin: 0 auto;
       background: white;
       padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+    
+    /* Header with Gradient */
+    .header {
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%);
+      color: white;
+      padding: 40px;
+      margin: -40px -40px 40px -40px;
+      border-radius: 8px 8px 0 0;
+    }
+    
+    .header-title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .header-subtitle {
+      font-size: 18px;
+      color: rgba(191, 219, 254, 1);
+      margin-bottom: 4px;
+    }
+    
+    .header-meta {
+      margin-top: 20px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .club-info {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 14px;
+    }
+    
+    /* Sections */
+    .section {
+      margin-bottom: 30px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      page-break-inside: avoid;
+    }
+    
+    .section-header {
+      padding: 16px 24px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-content {
+      padding: 24px;
+      background: white;
+    }
+    
+    /* Section Colors */
+    .section-blue .section-header {
+      background: linear-gradient(90deg, #2563eb 0%, #4f46e5 100%);
+    }
+    
+    .section-green .section-header {
+      background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+    }
+    
+    .section-purple .section-header {
+      background: linear-gradient(90deg, #9333ea 0%, #ec4899 100%);
+    }
+    
+    .section-gray .section-header {
+      background: linear-gradient(90deg, #4b5563 0%, #64748b 100%);
+    }
+    
+    /* Fields */
+    .field {
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+    
+    .field-label {
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    
+    .field-value {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      color: #1f2937;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    /* Status/Condition Cards */
+    .status-card {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      border: 2px solid;
+      text-align: center;
+    }
+
+    .card-green {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #86efac;
+    }
+
+    .card-amber {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fde68a;
+    }
+
+    .card-red {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+    
+    /* Status badges */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 2px solid;
+    }
+    
+    .status-new { 
+      background: #fff4e6; 
+      color: #d46b08; 
+      border-color: #ffd591;
+    }
+    
+    .status-under-review { 
+      background: #e6f7ff; 
+      color: #0050b3; 
+      border-color: #91d5ff;
+    }
+    
+    .status-resolved { 
+      background: #f6ffed; 
+      color: #389e0d; 
+      border-color: #b7eb8f;
+    }
+    
+    .status-closed { 
+      background: #f0f0f0; 
+      color: #595959; 
+      border-color: #d9d9d9;
+    }
+    
+    .priority-critical {
+      background: #fff1f0;
+      color: #cf1322;
+      border-color: #ffa39e;
+    }
+    
+    .priority-high {
+      background: #fff7e6;
+      color: #d46b08;
+      border-color: #ffd591;
+    }
+    
+    .priority-medium {
+      background: #fffbe6;
+      color: #d48806;
+      border-color: #ffe58f;
+    }
+    
+    .priority-low {
+      background: #f6ffed;
+      color: #389e0d;
+      border-color: #b7eb8f;
+    }
+    
+    /* Equipment info */
+    .equipment-details {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 16px;
+    }
+
+    .equipment-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .equipment-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .equipment-label {
+      font-weight: 600;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .equipment-value {
+      font-weight: 500;
+      color: #1f2937;
+    }
+    
+    /* Safety check styling */
+    .safety-check {
+      background: #dbeafe;
+      border: 2px solid #93c5fd;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    
+    .safety-check.never-checked {
+      background: #fef3c7;
+      border-color: #fde68a;
+    }
+    
+    .safety-check-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .safety-check-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .safety-check-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4b5563;
+    }
+    
+    .safety-check-value {
+      font-size: 14px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 2px solid #e5e7eb;
+      font-size: 12px;
+      color: #6b7280;
+      page-break-inside: avoid;
+    }
+    
+    .confidential {
+      background: #fef3c7;
+      border: 2px solid #fde68a;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      color: #92400e;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      
+      .page {
+        margin: 0;
+        padding: 20px;
+        box-shadow: none;
+      }
+
+      .action-buttons {
+        display: none !important;
+      }
+      
+      .section {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button onclick="window.print()" class="btn btn-print">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Print PDF
+    </button>
+    <button onclick="saveAsPDF()" class="btn btn-save">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+      </svg>
+      Save PDF
+    </button>
+  </div>
+
+  <div class="page">
     
     /* Header with Gradient */
     .header {
@@ -474,13 +870,35 @@ export async function GET(
         ${submission.equipment ? `
         <div class="field">
           <div class="field-label">Equipment / Apparatus</div>
-          <div class="field-value">
-            <div class="equipment-info">
-              <strong>${submission.equipment.name}</strong>
-              ${submission.equipment.serialNumber ? `<br>Serial: ${submission.equipment.serialNumber}` : ''}
-              ${submission.equipment.category ? `<br>Category: <span class="status-badge" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;">${submission.equipment.category}</span>` : ''}
-              ${submission.equipment.condition ? `<br>Condition: ${submission.equipment.condition}` : ''}
+          <div class="equipment-details">
+            <div class="equipment-row">
+              <span class="equipment-label">Name:</span>
+              <span class="equipment-value"><strong>${submission.equipment.name}</strong></span>
             </div>
+            ${submission.equipment.serialNumber ? `
+            <div class="equipment-row">
+              <span class="equipment-label">Serial Number:</span>
+              <span class="equipment-value">${submission.equipment.serialNumber}</span>
+            </div>
+            ` : ''}
+            ${submission.equipment.category ? `
+            <div class="equipment-row">
+              <span class="equipment-label">Category:</span>
+              <span class="equipment-value">
+                <span class="status-badge" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;">${submission.equipment.category}</span>
+              </span>
+            </div>
+            ` : ''}
+            ${submission.equipment.condition ? `
+            <div class="equipment-row">
+              <span class="equipment-label">Condition:</span>
+              <span class="equipment-value">
+                <span class="status-card" style="background: ${conditionColors.bg}; color: ${conditionColors.text}; border-color: ${conditionColors.border};">
+                  ${submission.equipment.condition}
+                </span>
+              </span>
+            </div>
+            ` : ''}
           </div>
         </div>
         <div class="field">
@@ -494,7 +912,11 @@ export async function GET(
               ${submission.equipment.lastCheckStatus ? `
               <div class="safety-check-row">
                 <span class="safety-check-label">Status:</span>
-                <span class="safety-check-value">${submission.equipment.lastCheckStatus}</span>
+                <span class="equipment-value">
+                  <span class="status-card" style="background: ${safetyColors.bg}; color: ${safetyColors.text}; border-color: ${safetyColors.border};">
+                    ${submission.equipment.lastCheckStatus}
+                  </span>
+                </span>
               </div>
               ` : ''}
               ${submission.equipment.lastCheckedBy ? `
@@ -631,6 +1053,13 @@ export async function GET(
       </div>
     </div>
   </div>
+  
+  <script>
+    function saveAsPDF() {
+      // Trigger browser's print dialog with save as PDF option
+      window.print();
+    }
+  </script>
 </body>
 </html>
     `;
