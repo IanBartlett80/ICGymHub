@@ -207,7 +207,7 @@ export default function FormTemplatesPage() {
 
  if (loading) {
   return (
-   <DashboardLayout title="Form Templates">
+   <DashboardLayout>
     <InjuryReportsSubNav />
     <div className="flex items-center justify-center h-64">
      <div className="text-gray-500">Loading...</div>
@@ -217,7 +217,7 @@ export default function FormTemplatesPage() {
  }
 
  return (
-  <DashboardLayout title="Injury and Incident Management">
+  <DashboardLayout>
    <InjuryReportsSubNav />
    <div className="p-4 space-y-4">
    {/* Header */}

@@ -124,7 +124,7 @@ export default function SubmissionsReportsPage() {
 
  if (loading) {
   return (
-   <DashboardLayout title="Injury Reports">
+   <DashboardLayout>
     <InjuryReportsSubNav />
     <div className="flex items-center justify-center h-64">
      <div className="text-gray-500">Loading...</div>
@@ -134,12 +134,12 @@ export default function SubmissionsReportsPage() {
  }
 
  return (
-  <DashboardLayout title="Injury Reports">
+  <DashboardLayout>
    <InjuryReportsSubNav />
    <div className="p-4 space-y-4">
     {/* Header */}
     <div>
-     <h1 className="text-xl font-bold text-gray-900">Injury and Incident Management</h1>
+     <h1 className="text-xl font-bold text-gray-900">Submitted Injury Reports</h1>
      <p className="text-xs text-gray-600 mt-1">View and manage all submitted injury reports</p>
     </div>
 
