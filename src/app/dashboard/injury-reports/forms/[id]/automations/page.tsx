@@ -578,27 +578,43 @@ export default function AutomationBuilderPage() {
  const allFields = template.sections?.flatMap((s: any) => s.fields) || [];
 
  return (
-  <DashboardLayout title="Automations">
+  <DashboardLayout title="Injury and Incident Management">
    <InjuryReportsSubNav />
    <div className="space-y-6">
-   {/* Header */}
-   <div className="flex items-start justify-between">
-    <div>
+   {/* Header with Gradient */}
+   <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg">
+    <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
+    <div className="relative p-6">
      <Link
       href="/dashboard/injury-reports/forms"
-      className="text-blue-600 hover:text-blue-800 text-sm mb-2 inline-block"
->
-      ← Back to Forms
+      className="text-white/90 hover:text-white text-sm mb-2 inline-flex items-center gap-2 transition-colors"
+     >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      </svg>
+      Back to Forms
      </Link>
-     <h1 className="text-3xl font-bold text-gray-900">Automations</h1>
-     <p className="text-gray-600 mt-1">{template.name}</p>
+     <div className="flex items-start justify-between">
+      <div>
+       <h1 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Injury and Incident Management
+       </h1>
+       <p className="text-blue-100 text-sm">{template.name} - Automations</p>
+      </div>
+      <button
+       onClick={startNewAutomation}
+       className="px-5 py-2 bg-white text-indigo-700 rounded-lg hover:bg-blue-50 font-semibold shadow-lg transition-all flex items-center gap-2"
+      >
+       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+       </svg>
+       Create Automation
+      </button>
+     </div>
     </div>
-    <button
-     onClick={startNewAutomation}
-     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
->
-     + Create Automation
-    </button>
    </div>
 
    {/* Automations List */}

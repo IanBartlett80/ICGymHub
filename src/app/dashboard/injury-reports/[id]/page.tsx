@@ -335,16 +335,16 @@ export default function SubmissionDetailPage() {
  const classLevel = getKeyInfo('class');
 
  return (
-  <DashboardLayout title="Submission Details">
+  <DashboardLayout title="Injury and Incident Management">
    <InjuryReportsSubNav />
    <div className="space-y-6">
    {/* Header with Gradient */}
-   <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl shadow-xl">
+   <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg">
     <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
-    <div className="relative p-8">
+    <div className="relative p-6">
      <Link
       href="/dashboard/injury-reports"
-      className="text-white/90 hover:text-white text-sm mb-3 inline-flex items-center gap-2 transition-colors"
+      className="text-white/90 hover:text-white text-sm mb-2 inline-flex items-center gap-2 transition-colors"
      >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -353,19 +353,19 @@ export default function SubmissionDetailPage() {
      </Link>
      <div className="flex items-start justify-between">
       <div>
-       <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <h1 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        Injury Report Details for {athleteName}
+        Injury and Incident Management
        </h1>
-       <p className="text-blue-100 text-lg">{submission.template.name}</p>
+       <p className="text-blue-100 text-sm">{submission.template.name} - {athleteName}</p>
        {(gymSport || classLevel) && (
-        <p className="text-blue-100 text-lg">
+        <p className="text-blue-100 text-sm">
          {[gymSport, classLevel].filter(Boolean).join(' ')}
         </p>
        )}
-       <div className="mt-4 flex items-center gap-4">
+       <div className="mt-3 flex items-center gap-4">
         <div className="flex items-center gap-2 text-white/90">
          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

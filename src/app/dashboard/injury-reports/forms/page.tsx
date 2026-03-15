@@ -216,26 +216,26 @@ export default function FormTemplatesPage() {
  }
 
  return (
-  <DashboardLayout title="Form Templates">
+  <DashboardLayout title="Injury and Incident Management">
    <InjuryReportsSubNav />
    <div className="space-y-6">
    {/* Header with Gradient */}
-   <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl shadow-xl">
+   <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg">
     <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]"></div>
-    <div className="relative p-8">
+    <div className="relative p-6">
      <div className="flex items-start justify-between">
       <div>
-       <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <h1 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        Injury Report Forms
+        Injury and Incident Management
        </h1>
-       <p className="text-blue-100 text-lg">Create and manage custom injury report forms</p>
+       <p className="text-blue-100 text-sm">Create and manage custom injury report forms</p>
       </div>
       <Link
        href="/dashboard/injury-reports/forms/new"
-       className="px-6 py-3 bg-white text-indigo-700 rounded-lg hover:bg-blue-50 font-semibold shadow-lg transition-all flex items-center gap-2"
+       className="px-5 py-2 bg-white text-indigo-700 rounded-lg hover:bg-blue-50 font-semibold shadow-lg transition-all flex items-center gap-2"
       >
        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

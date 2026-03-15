@@ -198,7 +198,7 @@ export default function EditFormPage() {
 
  if (loading) {
   return (
-   <DashboardLayout title="Edit Form">
+   <DashboardLayout title="Injury and Incident Management">
     <InjuryReportsSubNav />
     <div className="flex items-center justify-center h-64">
      <div className="text-gray-500">Loading...</div>
@@ -208,20 +208,20 @@ export default function EditFormPage() {
  }
 
  return (
-  <DashboardLayout title="Edit Form">
+  <DashboardLayout title="Injury and Incident Management">
    <InjuryReportsSubNav />
    <div className="max-w-6xl mx-auto space-y-6">
     {/* Header */}
     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-6 mb-6">
      <div className="flex justify-between items-center">
       <div>
-       <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <h1 className="text-xl font-bold text-white flex items-center gap-3">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
-        Edit Injury Report Form
+        Form Builder - Edit {template.name}
        </h1>
-       <p className="text-blue-100 mt-2">Customize sections and fields for your injury reporting</p>
+       <p className="text-sm text-blue-100 mt-2">Customize sections and fields for your injury reporting</p>
       </div>
       <div className="flex gap-3">
        <button
