@@ -95,8 +95,16 @@ export default function Step3Zones({ onComplete }: Step3ZonesProps) {
           <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
             <h3 className="font-semibold text-blue-900 mb-1">About Gym Zones</h3>
+            <p className="text-sm text-blue-800 mb-2">
+              Zones define specific training areas and equipment zones within each venue. These zones are used throughout the system:
+            </p>
+            <ul className="text-sm text-blue-800 mb-2 ml-4 list-disc space-y-1">
+              <li><strong>Rostering:</strong> Assign classes to zones for space management</li>
+              <li><strong>Injuries & Incidents:</strong> Track incident locations</li>
+              <li><strong>Equipment Management:</strong> Associate equipment items to zones</li>
+            </ul>
             <p className="text-sm text-blue-800">
-              Zones define specific training areas and equipment zones within each venue. These help organize classes, allocate equipment, and manage space efficiently. Create zones that match your facility's layout.
+              Create zones that match your facility's layout (e.g., Floor Area, Vault Area, Beam Area, Warm-up Area).
             </p>
           </div>
         </div>

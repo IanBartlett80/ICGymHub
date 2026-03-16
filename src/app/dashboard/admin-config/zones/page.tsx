@@ -139,10 +139,15 @@ export default function AdminZonesPage() {
      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
       <h3 className="text-lg font-semibold text-blue-900 mb-2">About Gym Zones</h3>
       <p className="text-sm text-blue-800 mb-2">
-       Gym Zones define specific training areas and equipment zones within each venue. These help organize classes, allocate equipment, and manage space efficiently.
+       Gym Zones define specific training areas and equipment zones within each venue. These zones are used throughout the system to organize and manage your facility:
       </p>
+      <ul className="text-sm text-blue-800 mb-2 ml-4 list-disc space-y-1">
+       <li><strong>Rostering:</strong> Assign classes to specific zones to manage space allocation and avoid conflicts</li>
+       <li><strong>Injuries & Incidents:</strong> Record the location where incidents occurred for better tracking and safety analysis</li>
+       <li><strong>Equipment Management:</strong> Associate equipment items to zones for easier inventory management and maintenance</li>
+      </ul>
       <p className="text-sm text-blue-800">
-       <strong>Examples:</strong> Floor, Vault, Uneven Bars, Parallel Bars, Beam, Pommel Horse, Rings, Tumble Track, Ballet Barre, Rec Beams, Foam Pit, Trampoline Area
+       <strong>Examples:</strong> Floor Area, Vault Area, Uneven Bars Area, Parallel Bars Area, Beam Area, Pommel Horse Area, Rings Area, Tumble Track Area, Ballet Barre Area, Rec Beams Area, Foam Pit Area, Trampoline Area, Warm-up Area
       </p>
      </div>
 
