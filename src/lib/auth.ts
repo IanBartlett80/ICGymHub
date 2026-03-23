@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import bcryptjs from 'bcryptjs'
 
@@ -65,5 +66,5 @@ export const verifyRefreshToken = (token: string): TokenPayload | null => {
 
 // Hash token for storage
 export const hashToken = (token: string): string => {
-  return require('crypto').createHash('sha256').update(token).digest('hex')
+  return crypto.createHash('sha256').update(token).digest('hex')
 }

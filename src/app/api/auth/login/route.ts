@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword, generateTokens } from '@/lib/auth'
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: user.id,
         clubId: user.clubId,
-        refreshToken: require('crypto')
+        refreshToken: crypto
           .createHash('sha256')
           .update(tokens.refreshToken)
           .digest('hex'),
