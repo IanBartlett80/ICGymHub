@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import PasswordVerificationModal from '@/components/PasswordVerificationModal'
 import axiosInstance from '@/lib/axios'
+import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react'
 
 interface UserData {
  id: string
@@ -28,6 +30,14 @@ export default function ProfilePage() {
  })
  const [loading, setLoading] = useState(false)
  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+ 
+ // Club management states
+ const [deletionStatus, setDeletionStatus] = useState<any>(null)
+ const [showDeleteModal, setShowDeleteModal] = useState(false)
+ const [showCancelDeleteModal, setShowCancelDeleteModal] = useState(false)
+ const [showRestoreModal, setShowRestoreModal] = useState(false)
+ const [restoreFile, setRestoreFile] = useState<File | null>(null)
+ const [clubActionLoading, setClubActionLoading] = useState(false)
 
  useEffect(() => {
   const userData = localStorage.getItem('userData')
@@ -43,7 +53,19 @@ export default function ProfilePage() {
    email: parsed.email,
    username: parsed.username
   }))
+  
+  // Fetch deletion status
+  fetchDeletionStatus()
  }, [router])
+ 
+ const fetchDeletionStatus = async () => {
+  try {
+   const response = await axiosInstance.get('/api/clubs/delete')
+   setDeletionStatus(response.data)
+  } catch (error) {
+   console.error('Failed to fetch deletion status:', error)
+  }
+ }
 
  const handleUpdateProfile = async (e: React.FormEvent) => {
   e.preventDefault()
@@ -114,6 +136,117 @@ export default function ProfilePage() {
    setMessage({ type: 'error', text: errorMessage })
   } finally {
    setLoading(false)
+  }
+ }
+
+ const handleBackupClub = async () => {
+  setClubActionLoading(true)
+  setMessage(null)
+  
+  try {
+   const response = await axiosInstance.post('/api/clubs/backup', {}, {
+    responseType: 'blob',
+   })
+   
+   // Create download link
+   const blob = new Blob([response.data], { type: 'application/zip' })
+   const url = window.URL.createObjectURL(blob)
+   const link = document.createElement('a')
+   link.href = url
+   link.download = `gymhub-backup-${user?.clubName?.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.zip`
+   document.body.appendChild(link)
+   link.click()
+   document.body.removeChild(link)
+   window.URL.revokeObjectURL(url)
+   
+   setMessage({ type: 'success', text: 'Backup downloaded successfully' })
+  } catch (error: any) {
+   console.error('Backup error:', error)
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to create backup' })
+  } finally {
+   setClubActionLoading(false)
+  }
+ }
+
+ const handleRestoreClub = async (password: string) => {
+  if (!restoreFile) return
+  
+  setClubActionLoading(true)
+  setMessage(null)
+  
+  try {
+   const formData = new FormData()
+   formData.append('file', restoreFile)
+   formData.append('password', password)
+   
+   await axiosInstance.post('/api/clubs/restore', formData, {
+    headers: {
+     'Content-Type': 'multipart/form-data',
+    },
+   })
+   
+   setMessage({ type: 'success', text: 'Club data restored successfully. Please refresh the page.' })
+   setShowRestoreModal(false)
+   setRestoreFile(null)
+   
+   // Refresh page after 2 seconds
+   setTimeout(() => {
+    window.location.reload()
+   }, 2000)
+  } catch (error: any) {
+   console.error('Restore error:', error)
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to restore backup' })
+  } finally {
+   setClubActionLoading(false)
+  }
+ }
+
+ const handleDeleteClub = async (password: string) => {
+  setClubActionLoading(true)
+  setMessage(null)
+  
+  try {
+   await axiosInstance.post('/api/clubs/delete', {
+    password,
+    confirmationText: user?.clubName,
+   })
+   
+   setMessage({ 
+    type: 'success', 
+    text: `Club deletion scheduled. All data will be permanently deleted in 30 days.`,
+   })
+   setShowDeleteModal(false)
+   await fetchDeletionStatus()
+  } catch (error: any) {
+   console.error('Delete error:', error)
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to schedule deletion' })
+  } finally {
+   setClubActionLoading(false)
+  }
+ }
+
+ const handleCancelDeletion = async () => {
+  setClubActionLoading(true)
+  setMessage(null)
+  
+  try {
+   await axiosInstance.delete('/api/clubs/delete')
+   setMessage({ type: 'success', text: 'Club deletion cancelled successfully' })
+   setShowCancelDeleteModal(false)
+   await fetchDeletionStatus()
+  } catch (error: any) {
+   console.error('Cancel deletion error:', error)
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to cancel deletion' })
+  } finally {
+   setClubActionLoading(false)
+  }
+ }
+
+ const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0]
+  if (file) {
+   setRestoreFile(file)
+   setShowRestoreModal(true)
   }
  }
 
@@ -286,6 +419,159 @@ export default function ProfilePage() {
       </div>
      </form>
     </div>
+
+    {/* Danger Zone - Club Management */}
+    {user?.role === 'ADMIN' && (
+     <div className="bg-white rounded-lg shadow-sm border border-red-200 mt-6">
+      <div className="p-6 border-b border-red-200 bg-red-50">
+       <div className="flex items-center gap-2">
+        <AlertTriangle className="w-5 h-5 text-red-600" />
+        <h2 className="text-lg font-semibold text-red-900">Danger Zone - Club Management</h2>
+       </div>
+       <p className="text-sm text-red-700 mt-1">
+        Perform sensitive club-wide operations. These actions require password verification.
+       </p>
+      </div>
+
+      <div className="p-6 space-y-6">
+       {/* Deletion Warning Banner */}
+       {deletionStatus?.isPendingDeletion && (
+        <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4">
+         <div className="flex items-start gap-3">
+          <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+           <h3 className="font-semibold text-red-900 mb-1">Club Deletion Scheduled</h3>
+           <p className="text-sm text-red-800 mb-2">
+            This club is scheduled for permanent deletion on{' '}
+            <strong>{new Date(deletionStatus.deletionScheduledFor).toLocaleDateString()}</strong>.
+            All data will be permanently deleted in{' '}
+            <strong>{deletionStatus.daysUntilDeletion} days</strong>.
+           </p>
+           <p className="text-sm text-red-800 mb-3">
+            Deleted by: {deletionStatus.deletedBy}
+           </p>
+           <button
+            onClick={() => setShowCancelDeleteModal(true)}
+            disabled={clubActionLoading}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 text-sm font-medium"
+           >
+            Cancel Deletion
+           </button>
+          </div>
+         </div>
+        </div>
+       )}
+
+       {/* Backup & Restore */}
+       <div className="border border-gray-200 rounded-lg p-4">
+        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+         <Download className="w-5 h-5 text-blue-600" />
+         Backup & Restore
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+         Export all your club data as a compressed backup file, or restore from a previous backup.
+        </p>
+        <div className="flex flex-wrap gap-3">
+         <button
+          onClick={handleBackupClub}
+          disabled={clubActionLoading}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+         >
+          <Download className="w-4 h-4" />
+          {clubActionLoading ? 'Creating Backup...' : 'Download Backup'}
+         </button>
+         
+         <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition cursor-pointer flex items-center gap-2 disabled:opacity-50">
+          <Upload className="w-4 h-4" />
+          Restore from Backup
+          <input
+           type="file"
+           accept=".zip"
+           onChange={handleFileSelect}
+           disabled={clubActionLoading}
+           className="hidden"
+          />
+         </label>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+         <strong>Note:</strong> Backups include all club data, settings, and records. Restoring will overwrite all current data.
+        </p>
+       </div>
+
+       {/* Delete Club */}
+       {!deletionStatus?.isPendingDeletion && (
+        <div className="border border-red-300 rounded-lg p-4 bg-red-50">
+         <h3 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
+          <Trash2 className="w-5 h-5 text-red-600" />
+          Delete Club
+         </h3>
+         <div className="space-y-3">
+          <p className="text-sm text-red-800">
+           Permanently delete this club and all associated data. This action cannot be undone.
+          </p>
+          <div className="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm text-yellow-900">
+           <strong>⚠️ Important:</strong>
+           <ul className="mt-2 ml-4 list-disc space-y-1">
+            <li>All club data will be deleted after a 30-day cooling-off period</li>
+            <li>All users, venues, equipment, rosters, and submissions will be removed</li>
+            <li>Injury reports must be retained for 7 years per Australian WHS regulations</li>
+            <li>You should download a backup before proceeding</li>
+           </ul>
+          </div>
+          <button
+           onClick={() => setShowDeleteModal(true)}
+           disabled={clubActionLoading}
+           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+           <Trash2 className="w-4 h-4" />
+           Schedule Club Deletion
+          </button>
+         </div>
+        </div>
+       )}
+      </div>
+     </div>
+    )}
+
+    {/* Password Verification Modals */}
+    <PasswordVerificationModal
+     isOpen={showDeleteModal}
+     onClose={() => setShowDeleteModal(false)}
+     onVerify={handleDeleteClub}
+     title="Confirm Club Deletion"
+     message="This will schedule your club for permanent deletion in 30 days. All data will be permanently removed. You can cancel this action within 30 days."
+     confirmButtonText="Schedule Deletion"
+     confirmButtonColor="bg-red-600 hover:bg-red-700"
+     requireConfirmation={true}
+     confirmationText={user?.clubName || ''}
+     confirmationPlaceholder={`Type "${user?.clubName}" to confirm`}
+     loading={clubActionLoading}
+    />
+
+    <PasswordVerificationModal
+     isOpen={showCancelDeleteModal}
+     onClose={() => setShowCancelDeleteModal(false)}
+     onVerify={handleCancelDeletion}
+     title="Cancel Club Deletion"
+     message="Cancel the scheduled deletion of your club. Your club will remain active."
+     confirmButtonText="Cancel Deletion"
+     confirmButtonColor="bg-green-600 hover:bg-green-700"
+     loading={clubActionLoading}
+    />
+
+    <PasswordVerificationModal
+     isOpen={showRestoreModal}
+     onClose={() => {
+      setShowRestoreModal(false)
+      setRestoreFile(null)
+     }}
+     onVerify={handleRestoreClub}
+     title="Restore Club Data"
+     message={`This will restore your club data from the backup file: ${restoreFile?.name}. This will overwrite all current data. This action cannot be undone.`}
+     confirmButtonText="Restore Data"
+     confirmButtonColor="bg-orange-600 hover:bg-orange-700"
+     loading={clubActionLoading}
+    />
    </div>
   </DashboardLayout>
  )
