@@ -69,8 +69,5 @@
     "@types/unzipper": "^0.10.11",
     "eslint": "^8.0.0",
     "eslint-config-next": "^15.0.0"
-  },
-  "optionalDependencies": {
-    "@floating-ui/dom": "1.7.6"
   }
 }
