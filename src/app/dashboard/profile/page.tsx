@@ -162,7 +162,9 @@ export default function ProfilePage() {
    const formData = new FormData()
    formData.append('file', restoreFile)
    formData.append('password', password)
-   const response = await axiosInstance.post('/api/clubs/restore', formData)
+   const response = await axiosInstance.post('/api/clubs/restore', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+   })
    setMessage({ type: 'success', text: `Backup validated: ${response.data.summary.recordCount} records from ${new Date(response.data.summary.exportedAt).toLocaleDateString()}` })
    setRestoreFile(null)
   } catch (error: any) {
