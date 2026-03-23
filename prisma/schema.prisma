@@ -27,9 +27,13 @@ model Club {
   qrPinResetToken       String?              @unique
   qrPinResetTokenExpiry DateTime?
   qrPinUpdatedAt        DateTime?
+  deletedAt             DateTime?
+  deletionScheduledFor  DateTime?
+  deletedBy             String?
   auditLogs             AuditLog[]
   classSessions         ClassSession[]
   classTemplates        ClassTemplate[]
+  clubBackups           ClubBackup[]
   clubDomains           ClubDomain[]
   services              ClubService[]
   coaches               Coach[]
@@ -59,6 +63,8 @@ model Club {
 
   @@index([status])
   @@index([domain])
+  @@index([deletedAt])
+  @@index([deletionScheduledFor])
 }
 
 model ClubDomain {
@@ -1058,4 +1064,22 @@ model RepairQuoteRequest {
   @@index([approvedAt])
   @@index([approvedBy])
   @@index([scheduledRepairDate])
+}
+
+model ClubBackup {
+  id             String    @id @default(cuid())
+  clubId         String
+  backupType     String    @default("MANUAL")
+  status         String    @default("PENDING")
+  fileSize       Int?
+  recordCount    Int?
+  createdBy      String?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+  club           Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@index([status])
+  @@index([createdAt])
 }
