@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import { formatTimeShort } from '@/lib/timezone'
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfDay, endOfDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
 
 type Coach = {
@@ -341,8 +342,8 @@ export default function RosterReportsPage() {
     venueName: session.venueName,
     date: session.date,
     dayOfWeek: format(new Date(session.date), 'EEEE'),
-    startTime: format(earliestStart, 'h:mm a'),
-    endTime: format(latestEnd, 'h:mm a'),
+    startTime: formatTimeShort(earliestStart),
+    endTime: formatTimeShort(latestEnd),
     sessionId: session.sessionId
    }
   })
@@ -382,8 +383,8 @@ export default function RosterReportsPage() {
   
   // Get unique time slots
   const timeSlots = Array.from(new Set(daySlots.map(slot => ({
-   start: format(new Date(slot.startsAt), 'h:mm a'),
-   end: format(new Date(slot.endsAt), 'h:mm a'),
+   start: formatTimeShort(slot.startsAt),
+   end: formatTimeShort(slot.endsAt),
    startTime: new Date(slot.startsAt).getTime()
   })))).sort((a, b) => a.startTime - b.startTime)
 
@@ -395,8 +396,8 @@ export default function RosterReportsPage() {
    
    classNames.forEach(className => {
     const slotsForThisTime = daySlots.filter(slot => 
-     format(new Date(slot.startsAt), 'h:mm a') === start &&
-     format(new Date(slot.endsAt), 'h:mm a') === end &&
+     formatTimeShort(slot.startsAt) === start &&
+     formatTimeShort(slot.endsAt) === end &&
      (slot.session.template?.name || 'Unknown') === className
     )
     

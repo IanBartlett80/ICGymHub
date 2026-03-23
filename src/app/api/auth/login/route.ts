@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
           role: user.role,
           clubId: user.clubId,
           clubName: user.club.name,
+          clubTimezone: user.club.timezone,
         },
         tokens,
       },

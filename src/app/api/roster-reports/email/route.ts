@@ -4,19 +4,17 @@ import { prisma } from '@/lib/prisma'
 import { format } from 'date-fns'
 import { sendEmail } from '@/lib/email'
 
-// Helper function to format time without timezone conversion
-function formatLocalTime(date: Date, formatStr: string): string {
-  // Create a date string that represents the local time components
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  
-  // Reconstruct the date treating the components as local
-  const localDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`)
-  return format(localDate, formatStr)
+// Helper function to format time in the club's timezone
+function formatLocalTime(date: Date, formatStr: string, timeZone: string): string {
+  if (formatStr === 'h:mm a') {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone,
+    })
+  }
+  return date.toLocaleString('en-US', { timeZone })
 }
 
 function getAccessToken(req: NextRequest): string | null {
@@ -63,6 +61,8 @@ export async function POST(request: NextRequest) {
     if (!user.club) {
       return NextResponse.json({ error: 'Club not found' }, { status: 404 })
     }
+
+    const clubTimezone = user.club.timezone || 'Australia/Sydney'
 
     // Fetch rosters with slots - use overlap logic to find all rosters that cover the date range
     const rosters = await prisma.roster.findMany({
@@ -190,8 +190,8 @@ export async function POST(request: NextRequest) {
           return {
             className: session.className,
             date: format(new Date(session.date), 'EEE, MMM dd, yyyy'),
-            startTime: formatLocalTime(earliestStart, 'h:mm a'),
-            endTime: formatLocalTime(latestEnd, 'h:mm a'),
+            startTime: formatLocalTime(earliestStart, 'h:mm a', clubTimezone),
+            endTime: formatLocalTime(latestEnd, 'h:mm a', clubTimezone),
           }
         }).sort((a, b) => a.date.localeCompare(b.date))
 
@@ -275,8 +275,8 @@ export async function POST(request: NextRequest) {
         return {
           className: session.className,
           date: format(new Date(session.date), 'EEE, MMM dd, yyyy'),
-          startTime: formatLocalTime(earliestStart, 'h:mm a'),
-          endTime: formatLocalTime(latestEnd, 'h:mm a'),
+          startTime: formatLocalTime(earliestStart, 'h:mm a', clubTimezone),
+          endTime: formatLocalTime(latestEnd, 'h:mm a', clubTimezone),
         }
       }).sort((a, b) => a.date.localeCompare(b.date))
 

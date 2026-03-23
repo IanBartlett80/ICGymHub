@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay } from 'date-fns'
 import DashboardLayout from '@/components/DashboardLayout'
+import { formatTime } from '@/lib/timezone'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { showToast, confirmDelete } from '@/lib/toast'
 
@@ -596,14 +597,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
          {roster.slots.map((slot) => {
-          const startTime = new Date(slot.startsAt).toLocaleTimeString('en-US', {
-           hour: '2-digit',
-           minute: '2-digit',
-          })
-          const endTime = new Date(slot.endsAt).toLocaleTimeString('en-US', {
-           hour: '2-digit',
-           minute: '2-digit',
-          })
+          const startTime = formatTime(slot.startsAt)
+          const endTime = formatTime(slot.endsAt)
           const duration = Math.round((new Date(slot.endsAt).getTime() - new Date(slot.startsAt).getTime()) / 60000)
 
           return (
@@ -671,13 +666,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         </h3>
         <p className="text-sm text-gray-600 mb-4">
          Zone: {editingSlot.zone.name}<br />
-         Time: {new Date(editingSlot.startsAt).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-         })} - {new Date(editingSlot.endsAt).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-         })}
+         Time: {formatTime(editingSlot.startsAt)} - {formatTime(editingSlot.endsAt)}
         </p>
         
         {/* Edit Scope - Only show if part of a template */}
@@ -937,14 +926,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
            </thead>
            <tbody className="bg-white divide-y divide-gray-200">
             {reorderedSlots.map((slot, index) => {
-             const startTime = new Date(slot.startsAt).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-             })
-             const endTime = new Date(slot.endsAt).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-             })
+             const startTime = formatTime(slot.startsAt)
+             const endTime = formatTime(slot.endsAt)
              const hasConflict = conflicts.some(c => c.index === index)
 
              return (

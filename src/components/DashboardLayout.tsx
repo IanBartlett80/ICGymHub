@@ -17,6 +17,7 @@ interface UserData {
   role: string
   clubId: string
   clubName: string
+  clubTimezone: string
 }
 
 interface DashboardLayoutProps {

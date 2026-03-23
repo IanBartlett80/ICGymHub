@@ -19,6 +19,7 @@ interface UserData {
   role: string
   clubId: string
   clubName: string
+  clubTimezone: string
 }
 
 const AuthContext = createContext<AuthContextType>({

@@ -60,6 +60,25 @@ export default function AdminConfigPage() {
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+     {/* Club Profile Card */}
+     <Link href="/dashboard/admin-config/club-profile">
+      <div className="bg-white rounded-lg shadow-md border border-blue-200 p-6 hover:shadow-lg transition cursor-pointer relative">
+       <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+        ⚙
+       </div>
+       <div className="flex items-center gap-3 mb-3">
+        <span className="text-3xl">🌐</span>
+        <h2 className="text-xl font-bold text-gray-900">Club Profile</h2>
+       </div>
+       <p className="text-gray-600 text-sm">
+        Core club settings including timezone configuration. The timezone setting controls how all times are displayed across rosters, reports, and emails.
+       </p>
+       <div className="mt-4 text-blue-600 text-sm font-medium">
+        Configure →
+       </div>
+      </div>
+     </Link>
+
      {/* Venues Card */}
      <Link href="/dashboard/admin-config/venues">
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition cursor-pointer relative">

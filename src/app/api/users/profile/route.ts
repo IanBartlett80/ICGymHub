@@ -47,7 +47,8 @@ export async function PATCH(request: NextRequest) {
         clubId: true,
         club: {
           select: {
-            name: true
+            name: true,
+            timezone: true
           }
         }
       }
@@ -157,7 +158,8 @@ export async function PATCH(request: NextRequest) {
           fullName: user.fullName,
           role: user.role,
           clubId: user.clubId,
-          clubName: user.club.name
+          clubName: user.club.name,
+          clubTimezone: user.club.timezone
         }
       })
     }
@@ -175,7 +177,8 @@ export async function PATCH(request: NextRequest) {
         clubId: true,
         club: {
           select: {
-            name: true
+            name: true,
+            timezone: true
           }
         }
       }
@@ -190,7 +193,8 @@ export async function PATCH(request: NextRequest) {
         fullName: updatedUser.fullName,
         role: updatedUser.role,
         clubId: updatedUser.clubId,
-        clubName: updatedUser.club.name
+        clubName: updatedUser.club.name,
+        clubTimezone: updatedUser.club.timezone
       }
     })
   } catch (error) {

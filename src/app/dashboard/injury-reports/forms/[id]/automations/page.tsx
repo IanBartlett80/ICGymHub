@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import { formatDateTime } from '@/lib/timezone';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import RichTextVariableEditor from '@/components/RichTextVariableEditor';
 import TipTapEditor from '@/components/TipTapEditor';
@@ -654,7 +655,7 @@ export default function AutomationBuilderPage() {
            </div>
            {automation.lastExecuted && (
             <div>
-             Last run: {new Date(automation.lastExecuted).toLocaleString()}
+             Last run: {formatDateTime(automation.lastExecuted)}
             </div>
            )}
           </div>

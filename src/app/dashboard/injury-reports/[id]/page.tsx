@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
+import { formatDateTime, getClubTimezone } from '@/lib/timezone';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 
 interface User {
@@ -244,14 +245,15 @@ export default function SubmissionDetailPage() {
     if (dateValue && dateValue !== 'N/A') {
      const date = new Date(dateValue);
      if (!isNaN(date.getTime())) {
-      const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-      const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
-      const day = date.getDate();
+      const tz = getClubTimezone();
+      const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz });
+      const weekday = date.toLocaleDateString('en-US', { weekday: 'long', timeZone: tz });
+      const day = parseInt(date.toLocaleDateString('en-US', { day: 'numeric', timeZone: tz }));
       const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
                     day === 2 || day === 22 ? 'nd' : 
                     day === 3 || day === 23 ? 'rd' : 'th';
-      const month = date.toLocaleDateString('en-US', { month: 'long' });
-      const year = date.getFullYear();
+      const month = date.toLocaleDateString('en-US', { month: 'long', timeZone: tz });
+      const year = parseInt(date.toLocaleDateString('en-US', { year: 'numeric', timeZone: tz }));
       return `${time} ${weekday} ${day}${suffix} ${month}, ${year}`;
      }
     }
@@ -370,7 +372,7 @@ export default function SubmissionDetailPage() {
          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
          </svg>
-         <span className="text-sm">Submitted on {new Date(submission.submittedAt).toLocaleString()}</span>
+         <span className="text-sm">Submitted on {formatDateTime(submission.submittedAt)}</span>
         </div>
        </div>
       </div>
@@ -404,7 +406,7 @@ export default function SubmissionDetailPage() {
        <div className="grid grid-cols-2 gap-4 text-sm">
        <div>
         <div className="text-gray-600 font-medium">Submitted At</div>
-        <div className="text-gray-900">{new Date(submission.submittedAt).toLocaleString()}</div>
+        <div className="text-gray-900">{formatDateTime(submission.submittedAt)}</div>
        </div>
        {submitterInfo.name && (
         <div>
@@ -724,7 +726,7 @@ export default function SubmissionDetailPage() {
            <div>
             <div className="font-medium text-gray-900">{comment.user.fullName}</div>
             <div className="text-xs text-gray-500">
-             {new Date(comment.createdAt).toLocaleString()}
+             {formatDateTime(comment.createdAt)}
             </div>
            </div>
            {comment.isInternal && (
@@ -767,7 +769,7 @@ export default function SubmissionDetailPage() {
             )}
            </div>
            <div className="text-xs text-gray-500">
-            {new Date(log.createdAt).toLocaleString()}
+            {formatDateTime(log.createdAt)}
            </div>
           </div>
          </div>

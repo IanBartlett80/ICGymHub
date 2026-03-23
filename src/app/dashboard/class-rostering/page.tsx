@@ -8,6 +8,7 @@ import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { format, startOfWeek, endOfWeek } from 'date-fns'
+import { formatTimeShort } from '@/lib/timezone'
 
 const localizer = momentLocalizer(moment)
 
@@ -551,7 +552,7 @@ export default function ClassRosteringPage() {
              </td>
              <td className="px-4 py-3 text-sm text-gray-700">{slot.zoneName}</td>
              <td className="px-4 py-3 text-sm text-gray-700">
-              {format(new Date(slot.startsAt), 'h:mm a')} - {format(new Date(slot.endsAt), 'h:mm a')}
+              {formatTimeShort(slot.startsAt)} - {formatTimeShort(slot.endsAt)}
              </td>
              <td className="px-4 py-3 text-sm text-gray-700">
               {slot.coaches.map(c => c.coach.name).join(', ') || 'None'}
@@ -648,11 +649,11 @@ export default function ClassRosteringPage() {
           <div className="grid grid-cols-2 gap-4">
            <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-            <div className="text-gray-900">{format(new Date(selectedSlot.startsAt), 'h:mm a')}</div>
+            <div className="text-gray-900">{formatTimeShort(selectedSlot.startsAt)}</div>
            </div>
            <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-            <div className="text-gray-900">{format(new Date(selectedSlot.endsAt), 'h:mm a')}</div>
+            <div className="text-gray-900">{formatTimeShort(selectedSlot.endsAt)}</div>
            </div>
           </div>
           <div>
@@ -694,7 +695,7 @@ export default function ClassRosteringPage() {
          <p className="text-sm text-gray-600 mb-4">
           <strong>Class:</strong> {selectedSlot.session.template?.name || 'Unknown Class'}<br />
           <strong>Zone:</strong> {selectedSlot.zoneName}<br />
-          <strong>Time:</strong> {format(new Date(selectedSlot.startsAt), 'h:mm a')} - {format(new Date(selectedSlot.endsAt), 'h:mm a')}
+          <strong>Time:</strong> {formatTimeShort(selectedSlot.startsAt)} - {formatTimeShort(selectedSlot.endsAt)}
          </p>
 
          {selectedSlot.conflictFlag && (

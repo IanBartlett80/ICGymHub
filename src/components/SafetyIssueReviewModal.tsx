@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/lib/axios';
+import { formatDateTime } from '@/lib/timezone';
 import { showToast } from '@/lib/toast';
 import {
   XMarkIcon,
@@ -175,7 +176,7 @@ export default function SafetyIssueReviewModal({ issueId, onClose, onUpdate }: S
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return formatDateTime(dateString);
   };
 
   if (loading) {

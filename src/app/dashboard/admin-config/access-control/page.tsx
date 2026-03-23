@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { formatDateTime } from '@/lib/timezone';
 import { 
   ShieldCheckIcon, 
   KeyIcon,
@@ -288,7 +289,7 @@ export default function AccessControlPage() {
 
           {lastUpdated && (
             <div className="text-sm text-gray-500 mb-4">
-              Last updated: {new Date(lastUpdated).toLocaleString()}
+              Last updated: {formatDateTime(lastUpdated)}
             </div>
           )}
 
