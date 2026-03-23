@@ -228,52 +228,6 @@ export default function DashboardPage() {
      </div>
     )}
 
-    {/* Quick Actions */}
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-     <h3 className="text-base font-semibold text-gray-900 mb-3">Quick Actions</h3>
-     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-      <Link href="/dashboard/class-rostering" className="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
-       <span className="text-3xl">📋</span>
-       <div>
-        <p className="font-medium text-gray-900">View Rosters</p>
-        <p className="text-xs text-gray-600">Manage class schedules</p>
-       </div>
-      </Link>
-
-      <Link href="/dashboard/injury-reports" className="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition">
-       <span className="text-3xl">📝</span>
-       <div>
-        <p className="font-medium text-gray-900">Review Incidents</p>
-        <p className="text-xs text-gray-600">Review Injury Reports</p>
-       </div>
-      </Link>
-
-      <Link href="/dashboard/equipment" className="flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition">
-       <span className="text-3xl">🔧</span>
-       <div>
-        <p className="font-medium text-gray-900">Equipment</p>
-        <p className="text-xs text-gray-600">Manage equipment</p>
-       </div>
-      </Link>
-
-      <Link href="/dashboard/compliance-manager" className="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
-       <span className="text-3xl">✅</span>
-       <div>
-        <p className="font-medium text-gray-900">Compliance</p>
-        <p className="text-xs text-gray-600">Manage compliance</p>
-       </div>
-      </Link>
-
-      <Link href="/dashboard/admin-config" className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
-       <span className="text-3xl">⚙️</span>
-       <div>
-        <p className="font-medium text-gray-900">Settings</p>
-        <p className="text-xs text-gray-600">Configure club</p>
-       </div>
-      </Link>
-     </div>
-    </div>
-
     {/* Key Metrics Overview */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
      <Link href="/dashboard/class-rostering" className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white hover:shadow-lg transition-all hover:scale-105">
@@ -490,17 +444,30 @@ export default function DashboardPage() {
        </Link>
       </div>
       {stats?.charts?.equipmentStatus && stats.charts.equipmentStatus.length> 0 ? (
-       <ResponsiveContainer width="100%" height={240}>
+       <ResponsiveContainer width="100%" height={280}>
         <PieChart>
          <Pie
           data={stats.charts.equipmentStatus}
           cx="50%"
-          cy="50%"
-          labelLine={true}
-          label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-          outerRadius={90}
+          cy="45%"
+          labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+          label={({ name, percent, x, y, midAngle }: any) => {
+           const RADIAN = Math.PI / 180
+           const angle = midAngle || 0
+           const radius = 10
+           const dx = Math.cos(-angle * RADIAN) * radius
+           const dy = Math.sin(-angle * RADIAN) * radius
+           return (
+            <text x={x + dx} y={y + dy} fill="#374151" textAnchor={x > 200 ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={500}>
+             {`${name} ${((percent || 0) * 100).toFixed(0)}%`}
+            </text>
+           )
+          }}
+          outerRadius={75}
+          innerRadius={30}
           fill="#8884d8"
           dataKey="value"
+          paddingAngle={2}
 >
           {stats.charts.equipmentStatus.map((entry, index) => (
            <Cell key={`cell-${index}`} fill={entry.color} />
@@ -511,8 +478,9 @@ export default function DashboardPage() {
          />
          <Legend 
           verticalAlign="bottom" 
-          height={36}
-          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+          height={40}
+          wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }}
+          formatter={(value: string) => <span style={{ color: '#374151', fontWeight: 500 }}>{value}</span>}
          />
         </PieChart>
        </ResponsiveContainer>
@@ -538,17 +506,30 @@ export default function DashboardPage() {
        </Link>
       </div>
       {stats?.charts?.injurySeverity && stats.charts.injurySeverity.length> 0 ? (
-       <ResponsiveContainer width="100%" height={240}>
+       <ResponsiveContainer width="100%" height={280}>
         <PieChart>
          <Pie
           data={stats.charts.injurySeverity}
           cx="50%"
-          cy="50%"
-          labelLine={true}
-          label={({ name, value }) => `${name}: ${value}`}
-          outerRadius={90}
+          cy="45%"
+          labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
+          label={({ name, value, x, y, midAngle }: any) => {
+           const RADIAN = Math.PI / 180
+           const angle = midAngle || 0
+           const radius = 10
+           const dx = Math.cos(-angle * RADIAN) * radius
+           const dy = Math.sin(-angle * RADIAN) * radius
+           return (
+            <text x={x + dx} y={y + dy} fill="#374151" textAnchor={x > 200 ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={500}>
+             {`${name}: ${value}`}
+            </text>
+           )
+          }}
+          outerRadius={75}
+          innerRadius={30}
           fill="#8884d8"
           dataKey="value"
+          paddingAngle={2}
 >
           {stats.charts.injurySeverity.map((entry, index) => (
            <Cell key={`cell-${index}`} fill={entry.color} />
@@ -559,8 +540,9 @@ export default function DashboardPage() {
          />
          <Legend 
           verticalAlign="bottom" 
-          height={36}
-          wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+          height={40}
+          wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }}
+          formatter={(value: string) => <span style={{ color: '#374151', fontWeight: 500 }}>{value}</span>}
          />
         </PieChart>
        </ResponsiveContainer>
