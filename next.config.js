@@ -3,8 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   // Optimize for containerized deployments (Digital Ocean App Platform)
   output: 'standalone',
-  // Exclude server-side packages from webpack bundling
-  serverComponentsExternalPackages: ['archiver', 'unzipper'],
+  // Exclude server-side packages from webpack bundling (Next.js 15 syntax)
+  serverExternalPackages: ['archiver', 'unzipper'],
   // Disable typescript and linting checks during build (run separately in CI/CD)
   typescript: {
     // !! WARN !!
