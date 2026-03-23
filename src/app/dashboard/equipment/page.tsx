@@ -80,7 +80,7 @@ export default function EquipmentPage() {
  const loadData = async () => {
   try {
    setLoading(true);
-   const [zonesRes, venuesRes, statsRes, statusRes, monthlyRes, monthlyByVenueRes] = await Promise.all([
+   const [zonesRes, venuesRes, statsRes, statusRes, monthlyRes, monthlyByVenueRes] = await Promise.allSettled([
     axiosInstance.get('/api/zones'),
     axiosInstance.get('/api/venues'),
     axiosInstance.get('/api/equipment/analytics/overview'),
@@ -89,36 +89,29 @@ export default function EquipmentPage() {
     axiosInstance.get('/api/equipment/analytics/safety-issues-monthly-by-venue?months=6'),
    ]);
 
-   const zonesData: Zone[] = zonesRes.data.zones || zonesRes.data;
-   const venuesData: Venue[] = venuesRes.data.venues || venuesRes.data;
-   const statusData: ZoneStatus[] = Array.isArray(statusRes.data) ? statusRes.data : [];
+   const zonesData: Zone[] = zonesRes.status === 'fulfilled' ? (zonesRes.value.data.zones || zonesRes.value.data) : [];
+   const venuesData: Venue[] = venuesRes.status === 'fulfilled' ? (venuesRes.value.data.venues || venuesRes.value.data) : [];
+   const statusData: ZoneStatus[] = statusRes.status === 'fulfilled' && Array.isArray(statusRes.value.data) ? statusRes.value.data : [];
 
    setVenues(venuesData);
    setStats({
-    total: statsRes.data.totalCount || 0,
-    inUse: statsRes.data.inUseCount || 0,
-    maintenanceDue: statsRes.data.maintenanceDueCount || 0,
-    needsAttention: statsRes.data.needsAttentionCount || 0,
+    total: statsRes.status === 'fulfilled' ? (statsRes.value.data.totalCount || 0) : 0,
+    inUse: statsRes.status === 'fulfilled' ? (statsRes.value.data.inUseCount || 0) : 0,
+    maintenanceDue: statsRes.status === 'fulfilled' ? (statsRes.value.data.maintenanceDueCount || 0) : 0,
+    needsAttention: statsRes.status === 'fulfilled' ? (statsRes.value.data.needsAttentionCount || 0) : 0,
    });
-   console.log('[equipment-page] Zone status data:', statusData);
 
-   setMonthlyData(monthlyRes.data.data || []);
-   setZoneNames(monthlyRes.data.zones || []);
+   setMonthlyData(monthlyRes.status === 'fulfilled' ? (monthlyRes.value.data.data || []) : []);
+   setZoneNames(monthlyRes.status === 'fulfilled' ? (monthlyRes.value.data.zones || []) : []);
 
-   setMonthlyDataByVenue(monthlyByVenueRes.data.data || []);
-   setVenueNames(monthlyByVenueRes.data.venues || []);
+   setMonthlyDataByVenue(monthlyByVenueRes.status === 'fulfilled' ? (monthlyByVenueRes.value.data.data || []) : []);
+   setVenueNames(monthlyByVenueRes.status === 'fulfilled' ? (monthlyByVenueRes.value.data.venues || []) : []);
 
    // Merge zone data with status info
    const zonesWithStatus = zonesData.map(zone => ({
     ...zone,
     statusInfo: statusData.find(s => s.zoneId === zone.id),
    }));
-
-   console.log('[equipment-page] Zones with status:', zonesWithStatus.map(z => ({ 
-    name: z.name, 
-    hasStatusInfo: !!z.statusInfo,
-    equipmentCount: z.statusInfo?.equipmentCount 
-   })));
 
    setZones(zonesWithStatus);
    
@@ -129,7 +122,6 @@ export default function EquipmentPage() {
    loadExistingVenueQRCodes();
   } catch (error) {
    console.error('Failed to load data:', error);
-   alert('Failed to load equipment data');
   } finally {
    setLoading(false);
   }

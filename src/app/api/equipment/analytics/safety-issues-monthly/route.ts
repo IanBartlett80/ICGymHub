@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       if (monthlyData[monthKey]) {
         monthlyData[monthKey].total++;
         
-        if (issue.equipment.zoneId && zoneMap[issue.equipment.zoneId]) {
+        if (issue.equipment?.zoneId && zoneMap[issue.equipment.zoneId]) {
           const zoneName = zoneMap[issue.equipment.zoneId];
           monthlyData[monthKey][zoneName]++;
         }

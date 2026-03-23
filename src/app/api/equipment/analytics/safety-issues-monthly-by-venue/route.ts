@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       if (monthlyData[monthKey]) {
         monthlyData[monthKey].total++;
         
-        if (issue.equipment.venueId && venueMap[issue.equipment.venueId]) {
+        if (issue.equipment?.venueId && venueMap[issue.equipment.venueId]) {
           const venueName = venueMap[issue.equipment.venueId];
           monthlyData[monthKey][venueName]++;
         }
