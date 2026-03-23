@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Wand2 } from 'lucide-react'
+import { Wand2, Rocket } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
 import ConfigWizard from '@/components/ConfigWizard/ConfigWizard'
 
@@ -21,14 +21,23 @@ export default function AdminConfigPage() {
       </p>
      </div>
      
-     {/* Run Setup Wizard Button */}
-     <button
-      onClick={() => setShowWizard(true)}
-      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-     >
-      <Wand2 className="w-5 h-5" />
-      Run Setup Wizard
-     </button>
+     {/* Action Buttons */}
+     <div className="flex items-center gap-3">
+      <Link
+       href="/dashboard/welcome"
+       className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold px-5 py-3 rounded-lg shadow-sm hover:shadow-md transition-all"
+      >
+       <Rocket className="w-5 h-5" />
+       First Launch Page
+      </Link>
+      <button
+       onClick={() => setShowWizard(true)}
+       className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+      >
+       <Wand2 className="w-5 h-5" />
+       Run Setup Wizard
+      </button>
+     </div>
     </div>
 
     {/* Setup Tips */}

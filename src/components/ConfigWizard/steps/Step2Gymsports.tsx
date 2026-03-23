@@ -169,6 +169,18 @@ export default function Step2Gymsports({ onComplete }: Step2GymsportsProps) {
         </div>
       )}
 
+      {/* Help text - shown before custom form when none active */}
+      {activeGymsports.length === 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-yellow-800">
+              <strong>Activate at least one gym sport</strong> to continue. Click on any sport above to activate it for your club.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add custom gymsport */}
       <div className="border border-gray-200 rounded-lg p-6">
         {!showAddForm ? (
@@ -224,17 +236,6 @@ export default function Step2Gymsports({ onComplete }: Step2GymsportsProps) {
         )}
       </div>
 
-      {/* Help text */}
-      {activeGymsports.length === 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-yellow-800">
-              <strong>Activate at least one gym sport</strong> to continue. Click on any sport above to activate it for your club.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

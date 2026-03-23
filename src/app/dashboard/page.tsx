@@ -97,44 +97,54 @@ export default function DashboardPage() {
   setLoading(false)
  }, [router])
 
- // Auto-launch Configuration Wizard for new admins
+ // Auto-launch Welcome Page or Configuration Wizard for new admins
  useEffect(() => {
-  const checkAndLaunchWizard = async () => {
+  const checkAndLaunchForNewUsers = async () => {
    if (!user) return
    
    // Only auto-launch for admins
    if (user.role !== 'ADMIN') return
    
+   // Check if welcome page has been seen
+   const welcomeSeen = localStorage.getItem('gymhub_welcome_seen')
+   
    // Check if wizard was recently completed or dismissed
    const completed = localStorage.getItem('gymhub_wizard_completed')
    const dismissed = localStorage.getItem('gymhub_wizard_dismissed')
    
-   if (completed) return
-   
-   if (dismissed) {
-    const dismissedAt = localStorage.getItem('gymhub_wizard_dismissed_at')
-    if (dismissedAt) {
-     const dismissedDate = new Date(dismissedAt)
-     const hoursSinceDismissed = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60)
-     // Don't auto-launch if dismissed within last 24 hours
-     if (hoursSinceDismissed < 24) return
-    }
-   }
-   
    try {
     // Check if venues exist (indicates if club is configured)
     const venuesRes = await axiosInstance.get('/api/venues')
-    if (venuesRes.data.venues?.length === 0) {
-     // No venues = new/unconfigured club, launch wizard
-     setShowWizard(true)
+    const hasVenues = venuesRes.data.venues?.length > 0
+    
+    if (!hasVenues) {
+     // New/unconfigured club
+     if (!welcomeSeen) {
+      // First time: redirect to welcome page
+      router.push('/dashboard/welcome')
+      return
+     }
+     
+     // Welcome seen but wizard not completed: launch wizard
+     if (!completed) {
+      if (dismissed) {
+       const dismissedAt = localStorage.getItem('gymhub_wizard_dismissed_at')
+       if (dismissedAt) {
+        const dismissedDate = new Date(dismissedAt)
+        const hoursSinceDismissed = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60)
+        if (hoursSinceDismissed < 24) return
+       }
+      }
+      setShowWizard(true)
+     }
     }
    } catch (err) {
-    console.error('Failed to check venues for wizard auto-launch', err)
+    console.error('Failed to check venues for auto-launch', err)
    }
   }
   
-  checkAndLaunchWizard()
- }, [user])
+  checkAndLaunchForNewUsers()
+ }, [user, router])
 
  const fetchDashboardStats = async () => {
   try {

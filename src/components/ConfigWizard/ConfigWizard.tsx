@@ -100,8 +100,8 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
   const handleFinish = () => {
     localStorage.removeItem('gymhub_wizard_progress')
     onClose()
-    // Reload page to refresh data
-    window.location.reload()
+    // Navigate to dashboard
+    window.location.href = '/dashboard'
   }
 
   if (!isOpen) return null
@@ -186,6 +186,7 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
           onNext={handleNext}
           onSkip={handleSkip}
           isStepComplete={completedSteps.includes(currentStep)}
+          canSkipStep={currentStep === 4}
         />
       </div>
     </div>

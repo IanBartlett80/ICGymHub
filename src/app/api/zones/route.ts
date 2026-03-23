@@ -71,7 +71,7 @@ const zoneSchema = z.object({
   allowOverlap: z.boolean().optional(),
   active: z.boolean().optional(),
   isFirst: z.boolean().optional(),
-  venueId: z.string().optional(),
+  venueId: z.string().nullable().optional(),
 })
 
 // POST /api/zones - Create a new zone

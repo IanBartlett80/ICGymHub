@@ -9,6 +9,7 @@ interface WizardNavigationProps {
   onNext: () => void
   onSkip: () => void
   isStepComplete: boolean
+  canSkipStep?: boolean
 }
 
 export default function WizardNavigation({
@@ -18,22 +19,33 @@ export default function WizardNavigation({
   onNext,
   onSkip,
   isStepComplete,
+  canSkipStep = true,
 }: WizardNavigationProps) {
   const isFirstStep = currentStep === 1
   const isLastStep = currentStep === totalSteps
 
   return (
     <div className="bg-gray-50 px-8 py-4 border-t border-gray-200 flex justify-between items-center">
-      {/* Skip button */}
-      <button
-        onClick={onSkip}
-        className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
-      >
-        Skip for now
-      </button>
+      {/* Skip button - only shown on skippable steps */}
+      {canSkipStep ? (
+        <button
+          onClick={onSkip}
+          className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors"
+        >
+          Skip for now
+        </button>
+      ) : (
+        <div />
+      )}
 
       {/* Navigation buttons */}
-      <div className="flex gap-3">
+      <div className="flex items-center gap-3">
+        {!isStepComplete && !isLastStep && (
+          <span className="text-sm text-amber-600 mr-2">
+            Complete this step to continue
+          </span>
+        )}
+
         {/* Back button */}
         {!isFirstStep && (
           <button
@@ -52,7 +64,7 @@ export default function WizardNavigation({
             flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all
             ${isStepComplete 
               ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl' 
-              : 'bg-blue-400 text-white cursor-not-allowed opacity-75'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }
           `}
           disabled={!isStepComplete}

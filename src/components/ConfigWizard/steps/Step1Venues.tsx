@@ -110,6 +110,18 @@ export default function Step1Venues({ onComplete }: Step1VenuesProps) {
         </div>
       )}
 
+      {/* Help text - shown before form when no venues exist */}
+      {venues.length === 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-yellow-800">
+              <strong>First-time setup?</strong> You need at least one venue to continue. Most clubs start with a single main venue and can add more later if needed.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create venue form */}
       <div className="border border-gray-200 rounded-lg p-6">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -120,13 +132,13 @@ export default function Step1Venues({ onComplete }: Step1VenuesProps) {
         <form onSubmit={handleCreate} className="space-y-4">
           {/* Venue Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center">
               Venue Name *
               <span 
                 className="ml-2 text-gray-400 cursor-help" 
                 title="The name of your gymnastics facility or location"
               >
-                ℹ️
+                <Info className="w-4 h-4" />
               </span>
             </label>
             <input
@@ -144,13 +156,13 @@ export default function Step1Venues({ onComplete }: Step1VenuesProps) {
 
           {/* Slug (auto-generated) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center">
               URL Slug (auto-generated)
               <span 
                 className="ml-2 text-gray-400 cursor-help" 
                 title="A URL-friendly identifier used in web addresses"
               >
-                ℹ️
+                <Info className="w-4 h-4" />
               </span>
             </label>
             <input
@@ -182,17 +194,6 @@ export default function Step1Venues({ onComplete }: Step1VenuesProps) {
         </form>
       </div>
 
-      {/* Help text */}
-      {venues.length === 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-yellow-800">
-              <strong>First-time setup?</strong> You need at least one venue to continue. Most clubs start with a single main venue and can add more later if needed.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

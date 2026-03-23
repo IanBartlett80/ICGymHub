@@ -79,8 +79,23 @@ export default function Step3Zones({ onComplete }: Step3ZonesProps) {
     { name: 'Foam Pit', desc: 'Soft landing area' },
   ]
 
-  const quickAddZone = (zoneName: string) => {
-    setFormData({ ...formData, name: zoneName })
+  const [quickAdding, setQuickAdding] = useState<string | null>(null)
+
+  const handleQuickAdd = async (zoneName: string) => {
+    setQuickAdding(zoneName)
+    setError('')
+    try {
+      await axiosInstance.post('/api/zones', {
+        name: zoneName,
+        active: true,
+        allowOverlap: false,
+      })
+      await fetchZones()
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create zone')
+    } finally {
+      setQuickAdding(null)
+    }
   }
 
   if (loading) {
@@ -135,18 +150,36 @@ export default function Step3Zones({ onComplete }: Step3ZonesProps) {
         </div>
       )}
 
+      {/* Help text - shown above form when no zones exist */}
+      {zones.length === 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-yellow-800">
+              <strong>Create at least one zone</strong> to organize your training areas. You can always add more zones later as your needs grow.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick add buttons */}
       {zones.length === 0 && (
         <div className="border border-gray-200 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-3">Quick Add Common Zones</h3>
+          <p className="text-sm text-gray-500 mb-3">Click a zone below to instantly create it, or use the form to create a custom zone.</p>
           <div className="grid grid-cols-2 gap-2">
             {commonZones.map((zone) => (
               <button
                 key={zone.name}
-                onClick={() => quickAddZone(zone.name)}
-                className="text-left border border-gray-200 hover:border-blue-400 hover:bg-blue-50 rounded-lg px-3 py-2 transition-all text-sm"
+                onClick={() => handleQuickAdd(zone.name)}
+                disabled={quickAdding === zone.name}
+                className={`text-left border rounded-lg px-3 py-2 transition-all text-sm ${
+                  quickAdding === zone.name
+                    ? 'border-green-400 bg-green-50'
+                    : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                }`}
               >
-                <div className="font-medium text-gray-900">{zone.name}</div>
+                <div className="font-medium text-gray-900">{quickAdding === zone.name ? '✓ Created!' : zone.name}</div>
                 <div className="text-xs text-gray-500">{zone.desc}</div>
               </button>
             ))}
@@ -164,13 +197,13 @@ export default function Step3Zones({ onComplete }: Step3ZonesProps) {
         <form onSubmit={handleCreate} className="space-y-4">
           {/* Zone Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center">
               Zone Name *
               <span 
                 className="ml-2 text-gray-400 cursor-help" 
                 title="Name of the training area or equipment zone"
               >
-                ℹ️
+                <Info className="w-4 h-4" />
               </span>
             </label>
             <input
@@ -244,17 +277,6 @@ export default function Step3Zones({ onComplete }: Step3ZonesProps) {
         </form>
       </div>
 
-      {/* Help text */}
-      {zones.length === 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-yellow-800">
-              <strong>Create at least one zone</strong> to organize your training areas. You can always add more zones later as your needs grow.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -160,13 +160,13 @@ export default function Step4Coaches({ onComplete }: Step4CoachesProps) {
         <form onSubmit={handleCreate} className="space-y-4">
           {/* Coach Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center">
               Coach Name *
               <span 
                 className="ml-2 text-gray-400 cursor-help" 
                 title="Full name of the coach"
               >
-                ℹ️
+                <Info className="w-4 h-4" />
               </span>
             </label>
             <input

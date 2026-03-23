@@ -99,6 +99,10 @@ export default function CompletionCelebration({ data, onFinish }: CompletionCele
               <span className="text-blue-600 font-bold">•</span>
               <span>Configure compliance items in <strong>Compliance Manager</strong></span>
             </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 font-bold">•</span>
+              <span>Report and track injuries in <strong>Injuries & Incidents</strong></span>
+            </li>
           </ul>
         </div>
 
