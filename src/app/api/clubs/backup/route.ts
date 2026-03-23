@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth';
-import JSZip from 'jszip';
+import archiver from 'archiver';
 
 function getAccessToken(req: NextRequest): string | null {
   const headerToken = req.headers.get('authorization');
@@ -212,11 +212,8 @@ export async function POST(request: NextRequest) {
         data: clubData,
       };
 
-      // Create ZIP file with backup
-      const zip = new JSZip();
-      
-      // Add main backup JSON
-      zip.file('backup.json', JSON.stringify(exportData, null, 2));
+      // Prepare data that will be added to the archive
+      const exportDataJson = JSON.stringify(exportData, null, 2);
       
       // Add README
       const readme = `# GymHub Club Backup
@@ -251,14 +248,33 @@ This will overwrite all existing data for your club with the data from this back
 ⚠️ **Warning**: Restoration is irreversible and will replace all current data.
 `;
       
-      zip.file('README.md', readme);
-
-      // Generate ZIP buffer
-      const zipBuffer = await zip.generateAsync({ 
-        type: 'nodebuffer',
-        compression: 'DEFLATE',
-        compressionOptions: { level: 9 },
+      // Create ZIP buffer using archiver
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Maximum compression
       });
+
+      const chunks: Buffer[] = [];
+      
+      // Collect archive data into chunks
+      archive.on('data', (chunk) => chunks.push(chunk));
+      
+      // Wait for archive to finish
+      const archivePromise = new Promise<Buffer>((resolve, reject) => {
+        archive.on('end', () => {
+          resolve(Buffer.concat(chunks));
+        });
+        archive.on('error', reject);
+      });
+
+      // Add files to archive
+      archive.append(JSON.stringify(exportData, null, 2), { name: 'backup.json' });
+      archive.append(readme, { name: 'README.md' });
+      exportDataJson
+      // Finalize the archive
+      archive.finalize();
+
+      // Wait for archiving to complete
+      const zipBuffer = await archivePromise;
 
       const totalRecords = Object.values(stats).reduce((sum, count) => sum + count, 0);
 

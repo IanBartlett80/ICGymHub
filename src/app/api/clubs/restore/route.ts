@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from '@/lib/auth';
-import JSZip from 'jszip';
+import * as unzipper from 'unzipper';
 import bcrypt from 'bcryptjs';
 
 function getAccessToken(req: NextRequest): string | null {
@@ -65,19 +65,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 
-    // Read the ZIP file
+    // Read the ZIP file using unzipper
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const zip = new JSZip();
-    const zipContents = await zip.loadAsync(fileBuffer);
-
-    // Extract backup.json
-    const backupFile = zipContents.file('backup.json');
+    
+    // Parse the zip file
+    const directory = await unzipper.Open.buffer(fileBuffer);
+    
+    // Find backup.json in the archive
+    const backupFile = directory.files.find((f: any) => f.path === 'backup.json');
+    
     if (!backupFile) {
-      return NextResponse.json({ error: 'Invalid backup file format' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid backup file format - backup.json not found' }, { status: 400 });
     }
 
-    const backupContent = await backupFile.async('string');
-    const backupData = JSON.parse(backupContent);
+    // Extract and parse the backup content
+    const backupContent = await backupFile.buffer();
+    const backupData = JSON.parse(backupContent.toString('utf-8'));
 
     // Validate backup data structure
     if (!backupData.metadata || !backupData.data) {
