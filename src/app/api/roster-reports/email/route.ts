@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Club not found' }, { status: 404 })
     }
 
-    // Fetch rosters with slots
+    // Fetch rosters with slots - use overlap logic to find all rosters that cover the date range
     const rosters = await prisma.roster.findMany({
       where: {
         clubId: user.club.id,
-        startDate: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
-        },
+        AND: [
+          { startDate: { lte: new Date(endDate) } },
+          { endDate: { gte: new Date(startDate) } },
+        ],
         status: 'PUBLISHED',
       },
       include: {
@@ -126,15 +126,20 @@ export async function POST(request: NextRequest) {
       }))
     )
 
-    // Filter out slots that have already passed (only include future and today's slots)
-    const now = new Date()
-    const futureSlots = allSlots.filter(slot => new Date(slot.startsAt) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()))
+    // Filter slots to only include those within the requested date range
+    const rangeStart = new Date(startDate)
+    const rangeEnd = new Date(endDate)
+    rangeEnd.setHours(23, 59, 59, 999)
+    const filteredSlots = allSlots.filter(slot => {
+      const slotStart = new Date(slot.startsAt)
+      return slotStart >= rangeStart && slotStart <= rangeEnd
+    })
 
     if (sendToAll) {
       // Group slots by coach
       const coachMap = new Map<string, SlotWithRoster[]>()
 
-      futureSlots.forEach((slot) => {
+      filteredSlots.forEach((slot) => {
         slot.session.coaches.forEach((sc) => {
           const coachId = sc.coach.id
           if (!coachMap.has(coachId)) {
@@ -229,8 +234,8 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Filter slots for this coach (using futureSlots instead of allSlots)
-      const coachSlots = futureSlots.filter((slot) =>
+      // Filter slots for this coach
+      const coachSlots = filteredSlots.filter((slot) =>
         slot.session.coaches.some((sc) => sc.coach.id === coachId)
       )
 
