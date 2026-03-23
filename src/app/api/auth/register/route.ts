@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, normalizeDomain } from '@/lib/validation'
 import { sendVerificationEmail } from '@/lib/email'
-import { randomBytes, createHash } from 'crypto'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
@@ -164,8 +164,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Create email verification token for ALL registrations (consumer and business)
-    verificationToken = randomBytes(32).toString('hex')
-    const tokenHash = createHash('sha256').update(verificationToken).digest('hex')
+    verificationToken = crypto.randomBytes(32).toString('hex')
+    const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex')
 
     const user = club.users[0]
 

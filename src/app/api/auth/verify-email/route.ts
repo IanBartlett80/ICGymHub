@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createHash } from 'crypto'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Hash the token to compare with stored hash
-    const tokenHash = createHash('sha256').update(token).digest('hex')
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
 
     // Find the verification record
     const verification = await prisma.emailVerification.findUnique({

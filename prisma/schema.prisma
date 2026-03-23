@@ -27,13 +27,9 @@ model Club {
   qrPinResetToken       String?              @unique
   qrPinResetTokenExpiry DateTime?
   qrPinUpdatedAt        DateTime?
-  deletedAt             DateTime?
-  deletionScheduledFor  DateTime?
-  deletedBy             String?
   auditLogs             AuditLog[]
   classSessions         ClassSession[]
   classTemplates        ClassTemplate[]
-  clubBackups           ClubBackup[]
   clubDomains           ClubDomain[]
   services              ClubService[]
   coaches               Coach[]
@@ -63,8 +59,6 @@ model Club {
 
   @@index([status])
   @@index([domain])
-  @@index([deletedAt])
-  @@index([deletionScheduledFor])
 }
 
 model ClubDomain {
@@ -607,26 +601,6 @@ model RosterExport {
 
   @@index([clubId])
   @@index([status])
-}
-
-model ClubBackup {
-  id             String    @id @default(cuid())
-  clubId         String
-  backupType     String    @default("MANUAL")
-  status         String    @default("PENDING")
-  fileUrl        String?
-  fileSize       Int?
-  recordCount    Int?
-  includesImages Boolean   @default(true)
-  createdBy      String?
-  errorMessage   String?
-  createdAt      DateTime  @default(now())
-  completedAt    DateTime?
-  club           Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
-  @@index([clubId])
-  @@index([status])
-  @@index([createdAt])
 }
 
 model InjuryFormTemplate {

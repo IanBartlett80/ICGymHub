@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendVerificationEmail } from '@/lib/email'
-import { randomBytes, createHash } from 'crypto'
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Create new verification token
-    const verificationToken = randomBytes(32).toString('hex')
-    const tokenHash = createHash('sha256').update(verificationToken).digest('hex')
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+    const tokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex')
 
     // Delete old verification if exists
     await prisma.emailVerification.deleteMany({
