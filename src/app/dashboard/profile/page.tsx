@@ -6,6 +6,41 @@ import DashboardLayout from '@/components/DashboardLayout'
 import axiosInstance from '@/lib/axios'
 import PasswordVerificationModal from '@/components/PasswordVerificationModal'
 
+const TIMEZONE_OPTIONS = [
+  { group: 'Australia', zones: [
+    { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+    { value: 'Australia/Melbourne', label: 'Melbourne (AEST/AEDT)' },
+    { value: 'Australia/Brisbane', label: 'Brisbane (AEST)' },
+    { value: 'Australia/Perth', label: 'Perth (AWST)' },
+    { value: 'Australia/Adelaide', label: 'Adelaide (ACST/ACDT)' },
+    { value: 'Australia/Hobart', label: 'Hobart (AEST/AEDT)' },
+    { value: 'Australia/Darwin', label: 'Darwin (ACST)' },
+    { value: 'Australia/Lord_Howe', label: 'Lord Howe Island' },
+  ]},
+  { group: 'New Zealand & Pacific', zones: [
+    { value: 'Pacific/Auckland', label: 'Auckland (NZST/NZDT)' },
+    { value: 'Pacific/Fiji', label: 'Fiji' },
+  ]},
+  { group: 'Asia', zones: [
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+    { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+    { value: 'Asia/Hong_Kong', label: 'Hong Kong (HKT)' },
+  ]},
+  { group: 'Europe', zones: [
+    { value: 'Europe/London', label: 'London (GMT/BST)' },
+    { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+    { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
+  ]},
+  { group: 'Americas', zones: [
+    { value: 'America/New_York', label: 'New York (EST/EDT)' },
+    { value: 'America/Chicago', label: 'Chicago (CST/CDT)' },
+    { value: 'America/Denver', label: 'Denver (MST/MDT)' },
+    { value: 'America/Los_Angeles', label: 'Los Angeles (PST/PDT)' },
+    { value: 'America/Toronto', label: 'Toronto (EST/EDT)' },
+    { value: 'America/Vancouver', label: 'Vancouver (PST/PDT)' },
+  ]},
+]
+
 interface UserData {
  id: string
  username: string
@@ -36,6 +71,9 @@ export default function ProfilePage() {
  const [confirmDeleteText, setConfirmDeleteText] = useState('')
  const [deletionStatus, setDeletionStatus] = useState<{ deletionScheduledFor: string | null; deletedBy: string | null } | null>(null)
  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+ const [clubTimezone, setClubTimezone] = useState('Australia/Sydney')
+ const [originalClubTimezone, setOriginalClubTimezone] = useState('Australia/Sydney')
+ const [timezoneSaving, setTimezoneSaving] = useState(false)
 
  useEffect(() => {
   const userData = localStorage.getItem('userData')
@@ -57,8 +95,48 @@ export default function ProfilePage() {
    axiosInstance.get('/api/clubs/delete').then(res => {
     setDeletionStatus(res.data)
    }).catch(() => {})
+
+   // Fetch club timezone
+   fetch('/api/clubs/settings').then(res => {
+    if (res.ok) return res.json()
+   }).then(data => {
+    if (data?.club?.timezone) {
+     setClubTimezone(data.club.timezone)
+     setOriginalClubTimezone(data.club.timezone)
+    }
+   }).catch(() => {})
   }
  }, [router])
+
+ const handleSaveTimezone = async () => {
+  setTimezoneSaving(true)
+  setMessage(null)
+  try {
+   const res = await fetch('/api/clubs/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ timezone: clubTimezone }),
+   })
+   if (res.ok) {
+    setOriginalClubTimezone(clubTimezone)
+    // Update localStorage
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+     const parsed = JSON.parse(userData)
+     parsed.clubTimezone = clubTimezone
+     localStorage.setItem('userData', JSON.stringify(parsed))
+    }
+    setMessage({ type: 'success', text: 'Club timezone updated successfully' })
+   } else {
+    const data = await res.json()
+    setMessage({ type: 'error', text: data.error || 'Failed to update timezone' })
+   }
+  } catch {
+   setMessage({ type: 'error', text: 'Failed to update timezone' })
+  } finally {
+   setTimezoneSaving(false)
+  }
+ }
 
  const handleUpdateProfile = async (e: React.FormEvent) => {
   e.preventDefault()
@@ -309,6 +387,49 @@ export default function ProfilePage() {
         disabled
        />
       </div>
+
+      {/* Club Timezone - Admin Only */}
+      {user?.role === 'ADMIN' && (
+       <div className="pt-6 border-t border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Club Timezone</h3>
+        <p className="text-sm text-gray-500 mb-4">This timezone is used for all roster scheduling, time displays, and email reports across the application.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+          <select
+           value={clubTimezone}
+           onChange={(e) => setClubTimezone(e.target.value)}
+           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+           {TIMEZONE_OPTIONS.map((group) => (
+            <optgroup key={group.group} label={group.group}>
+             {group.zones.map((tz) => (
+              <option key={tz.value} value={tz.value}>
+               {tz.label}
+              </option>
+             ))}
+            </optgroup>
+           ))}
+          </select>
+         </div>
+         <div>
+          {clubTimezone !== originalClubTimezone && (
+           <button
+            type="button"
+            onClick={handleSaveTimezone}
+            disabled={timezoneSaving}
+            className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+           >
+            {timezoneSaving ? 'Saving...' : 'Save Timezone'}
+           </button>
+          )}
+         </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+         Current time: {new Date().toLocaleString('en-US', { timeZone: clubTimezone, weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </p>
+       </div>
+      )}
 
       {/* Password Change Section */}
       <div className="pt-6 border-t border-gray-200">

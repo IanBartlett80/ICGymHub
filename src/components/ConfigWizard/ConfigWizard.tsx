@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import WizardProgress from './WizardProgress'
 import WizardNavigation from './WizardNavigation'
+import Step0ClubSettings from './steps/Step0ClubSettings'
 import Step1Venues from './steps/Step1Venues'
 import Step2Gymsports from './steps/Step2Gymsports'
 import Step3Zones from './steps/Step3Zones'
@@ -60,15 +61,15 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
   }, [])
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       if (!completedSteps.includes(currentStep)) {
         setCompletedSteps([...completedSteps, currentStep])
       }
       setCurrentStep(currentStep + 1)
     } else {
       // Final step completed
-      if (!completedSteps.includes(4)) {
-        setCompletedSteps([...completedSteps, 4])
+      if (!completedSteps.includes(5)) {
+        setCompletedSteps([...completedSteps, 5])
       }
       setIsCompleted(true)
       localStorage.setItem('gymhub_wizard_completed', 'true')
@@ -119,23 +120,28 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
   const steps = [
     {
       number: 1,
-      title: 'Venues',
-      component: <Step1Venues onComplete={(data: Partial<WizardData>) => handleStepComplete(1, data)} />,
+      title: 'Club Settings',
+      component: <Step0ClubSettings onComplete={(data: Partial<WizardData>) => handleStepComplete(1, data)} />,
     },
     {
       number: 2,
-      title: 'Gym Sports',
-      component: <Step2Gymsports onComplete={(data: Partial<WizardData>) => handleStepComplete(2, data)} />,
+      title: 'Venues',
+      component: <Step1Venues onComplete={(data: Partial<WizardData>) => handleStepComplete(2, data)} />,
     },
     {
       number: 3,
-      title: 'Gym Zones',
-      component: <Step3Zones onComplete={(data: Partial<WizardData>) => handleStepComplete(3, data)} />,
+      title: 'Gym Sports',
+      component: <Step2Gymsports onComplete={(data: Partial<WizardData>) => handleStepComplete(3, data)} />,
     },
     {
       number: 4,
+      title: 'Gym Zones',
+      component: <Step3Zones onComplete={(data: Partial<WizardData>) => handleStepComplete(4, data)} />,
+    },
+    {
+      number: 5,
       title: 'Coaches',
-      component: <Step4Coaches onComplete={(data: Partial<WizardData>) => handleStepComplete(4, data)} />,
+      component: <Step4Coaches onComplete={(data: Partial<WizardData>) => handleStepComplete(5, data)} />,
     },
   ]
 
@@ -156,7 +162,7 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
         {/* Progress bar */}
         <WizardProgress
           currentStep={currentStep}
-          totalSteps={4}
+          totalSteps={5}
           completedSteps={completedSteps}
           steps={steps.map(s => s.title)}
         />
@@ -181,12 +187,12 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
         {/* Navigation */}
         <WizardNavigation
           currentStep={currentStep}
-          totalSteps={4}
+          totalSteps={5}
           onBack={handleBack}
           onNext={handleNext}
           onSkip={handleSkip}
           isStepComplete={completedSteps.includes(currentStep)}
-          canSkipStep={currentStep === 4}
+          canSkipStep={currentStep === 5}
         />
       </div>
     </div>
