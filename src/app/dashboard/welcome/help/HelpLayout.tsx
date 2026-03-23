@@ -2,14 +2,14 @@
 
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowLeft, BookOpen } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { BookOpen } from 'lucide-react'
+import DashboardLayout from '@/components/DashboardLayout'
 
 interface HelpLayoutProps {
   children: ReactNode
   title: string
   description: string
-  backLabel?: string
 }
 
 const guides = [
@@ -20,37 +20,15 @@ const guides = [
   { label: 'Compliance', href: '/dashboard/welcome/help/compliance' },
 ]
 
-export default function HelpLayout({ children, title, description, backLabel = 'Back to Welcome' }: HelpLayoutProps) {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-        <div className="px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
-          <Link href="/dashboard" className="flex items-center">
-            <div className="relative w-40 h-14">
-              <Image
-                src="/imgs/GymHub_Logo.png"
-                alt="GymHub"
-                fill
-                className="object-contain object-left"
-                priority
-              />
-            </div>
-          </Link>
-          <Link
-            href="/dashboard/welcome"
-            className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors flex items-center gap-1"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {backLabel}
-          </Link>
-        </div>
-      </header>
+export default function HelpLayout({ children, title, description }: HelpLayoutProps) {
+  const pathname = usePathname()
 
-      <div className="max-w-7xl mx-auto px-6 py-8 flex gap-8">
+  return (
+    <DashboardLayout title="Admin Guides">
+      <div className="max-w-7xl mx-auto px-6 py-6 flex gap-8">
         {/* Sidebar navigation */}
         <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-24 bg-white rounded-xl border border-gray-200 p-4">
+          <div className="sticky top-36 bg-white rounded-xl border border-gray-200 p-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Admin Guides
@@ -60,7 +38,11 @@ export default function HelpLayout({ children, title, description, backLabel = '
                 <Link
                   key={guide.href}
                   href={guide.href}
-                  className="block px-3 py-2 text-sm rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                  className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    pathname === guide.href
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
                 >
                   {guide.label}
                 </Link>
@@ -77,7 +59,11 @@ export default function HelpLayout({ children, title, description, backLabel = '
               <Link
                 key={guide.href}
                 href={guide.href}
-                className="text-xs bg-white border border-gray-200 px-3 py-1.5 rounded-full text-gray-600 hover:bg-gray-100"
+                className={`text-xs border px-3 py-1.5 rounded-full transition-colors ${
+                  pathname === guide.href
+                    ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
               >
                 {guide.label}
               </Link>
@@ -98,6 +84,6 @@ export default function HelpLayout({ children, title, description, backLabel = '
           </div>
         </main>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

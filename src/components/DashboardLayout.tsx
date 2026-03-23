@@ -27,7 +27,7 @@ interface DashboardLayoutProps {
   showClubManagementNav?: boolean
 }
 
-type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance' | 'settings'
+type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance' | 'guides' | 'settings'
 
 export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const pathname = usePathname()
@@ -58,6 +58,8 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       setActiveService('equipment')
     } else if (pathname?.startsWith('/dashboard/compliance-manager')) {
       setActiveService('compliance')
+    } else if (pathname?.startsWith('/dashboard/welcome/help')) {
+      setActiveService('guides')
     } else if (pathname?.startsWith('/dashboard/admin-config') || pathname?.startsWith('/dashboard/profile')) {
       setActiveService('settings')
     } else if (pathname === '/dashboard') {
@@ -75,6 +77,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     { id: 'safety' as ServiceType, name: 'Injury & Incidents', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
     { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
+    { id: 'guides' as ServiceType, name: 'Admin Guides', basePath: '/dashboard/welcome/help/settings' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
   ]
 
