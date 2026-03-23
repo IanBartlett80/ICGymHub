@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword, generateTokens } from '@/lib/auth'
@@ -84,8 +84,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: user.id,
         clubId: user.clubId,
-        refreshToken: crypto
-          .createHash('sha256')
+        refreshToken: createHash('sha256')
           .update(tokens.refreshToken)
           .digest('hex'),
         expiresAt: new Date(Date.now() + parseInt(process.env.SESSION_MAX_AGE || '3600') * 1000),
