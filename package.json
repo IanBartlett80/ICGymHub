@@ -69,6 +69,6 @@
     "eslint-config-next": "^15.0.0"
   },
   "optionalDependencies": {
-    "@floating-ui/dom": "*"
+    "@floating-ui/dom": "1.7.6"
   }
 }
