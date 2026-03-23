@@ -14,7 +14,7 @@ export default function AdminConfigPage() {
    <div className="p-6 max-w-7xl mx-auto">
     <div className="mb-6 flex justify-between items-start">
      <div className="flex-1">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Currently Set Up</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">Current Setup</h2>
       <p className="text-gray-600">
        Manage club-wide settings and master data that are used across all features in the application. 
        Complete setup in numerical order for best results.
