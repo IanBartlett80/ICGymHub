@@ -40,6 +40,8 @@ interface Equipment {
  photoUrl?: string | null;
  lastCheckedDate?: string | null;
  lastCheckStatus?: string | null;
+ supplier?: string | null;
+ venue?: { id: string; name: string } | null;
  safetyIssues?: SafetyIssue[];
  maintenanceTasks?: MaintenanceTask[];
  _count?: {
@@ -650,6 +652,11 @@ export default function ZoneDetailPage() {
             <p className="text-xs text-gray-500">
              {item.category && <span>{item.category}</span>}
              {item.serialNumber && <span> • S/N: {item.serialNumber}</span>}
+            </p>
+            <p className="text-xs text-gray-400">
+             {item.venue?.name && <span>Venue: {item.venue.name}</span>}
+             {item.venue?.name && item.supplier && <span> • </span>}
+             {item.supplier && <span>Supplier: {item.supplier}</span>}
             </p>
            </div>
            <button
