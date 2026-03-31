@@ -149,7 +149,7 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 animate-fadeIn">
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-scaleIn">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-scaleIn">
         {/* Close button */}
         <button
           onClick={handleSkip}
@@ -160,15 +160,17 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
         </button>
 
         {/* Progress bar */}
-        <WizardProgress
-          currentStep={currentStep}
-          totalSteps={5}
-          completedSteps={completedSteps}
-          steps={steps.map(s => s.title)}
-        />
+        <div className="flex-shrink-0">
+          <WizardProgress
+            currentStep={currentStep}
+            totalSteps={5}
+            completedSteps={completedSteps}
+            steps={steps.map(s => s.title)}
+          />
+        </div>
 
         {/* Step content */}
-        <div className="p-8 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="p-8 overflow-y-auto flex-1 min-h-0">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-semibold">
@@ -185,15 +187,17 @@ export default function ConfigWizard({ isOpen, onClose, initialStep = 1 }: Confi
         </div>
 
         {/* Navigation */}
-        <WizardNavigation
-          currentStep={currentStep}
-          totalSteps={5}
-          onBack={handleBack}
-          onNext={handleNext}
-          onSkip={handleSkip}
-          isStepComplete={completedSteps.includes(currentStep)}
-          canSkipStep={currentStep === 5}
-        />
+        <div className="flex-shrink-0">
+          <WizardNavigation
+            currentStep={currentStep}
+            totalSteps={5}
+            onBack={handleBack}
+            onNext={handleNext}
+            onSkip={handleSkip}
+            isStepComplete={completedSteps.includes(currentStep)}
+            canSkipStep={currentStep === 5}
+          />
+        </div>
       </div>
     </div>
   )
