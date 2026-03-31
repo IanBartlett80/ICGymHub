@@ -16,7 +16,11 @@ import {
  QrCodeIcon,
  PrinterIcon,
  EyeIcon,
+ PlusIcon,
+ XMarkIcon,
+ CheckIcon,
 } from '@heroicons/react/24/outline';
+import { showToast } from '@/lib/toast';
 
 interface Zone {
  id: string;
@@ -87,6 +91,10 @@ export default function ZoneDetailPage() {
  const [generatingQR, setGeneratingQR] = useState(false);
  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
  const [reviewingIssueId, setReviewingIssueId] = useState<string | null>(null);
+ const [showLinkModal, setShowLinkModal] = useState(false);
+ const [unlinkedEquipment, setUnlinkedEquipment] = useState<Equipment[]>([]);
+ const [loadingUnlinked, setLoadingUnlinked] = useState(false);
+ const [linkingIds, setLinkingIds] = useState<Set<string>>(new Set());
 
  useEffect(() => {
   loadData();
@@ -263,6 +271,42 @@ export default function ZoneDetailPage() {
   setTimeout(() => {
    printWindow.print();
   }, 250);
+ };
+
+ const handleOpenLinkModal = async () => {
+  setShowLinkModal(true);
+  setLoadingUnlinked(true);
+  try {
+   const res = await axiosInstance.get('/api/equipment');
+   const allEquipment = res.data.equipment || res.data;
+   const unlinked = allEquipment.filter((e: any) => !e.zoneId);
+   setUnlinkedEquipment(unlinked);
+  } catch (error) {
+   console.error('Failed to load unlinked equipment:', error);
+  } finally {
+   setLoadingUnlinked(false);
+  }
+ };
+
+ const handleLinkEquipment = async (equipmentId: string) => {
+  setLinkingIds(prev => new Set(prev).add(equipmentId));
+  try {
+   await axiosInstance.put(`/api/equipment/${equipmentId}`, {
+    zoneId: zoneId,
+    venueId: zone?.id ? undefined : undefined,
+   });
+   setUnlinkedEquipment(prev => prev.filter(e => e.id !== equipmentId));
+   await loadData();
+   showToast.success('Equipment linked to zone');
+  } catch (error: any) {
+   showToast.error(error.response?.data?.error || 'Failed to link equipment');
+  } finally {
+   setLinkingIds(prev => {
+    const next = new Set(prev);
+    next.delete(equipmentId);
+    return next;
+   });
+  }
  };
 
  const formatDate = (dateString: string) => {
@@ -459,7 +503,8 @@ export default function ZoneDetailPage() {
     {/* Tabs */}
     <div className="bg-white shadow rounded-lg">
      <div className="border-b border-gray-200">
-      <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+      <div className="flex items-center justify-between px-6">
+      <nav className="-mb-px flex space-x-8" aria-label="Tabs">
        <button
         onClick={() => setActiveTab('equipment')}
         className={`${
@@ -481,6 +526,16 @@ export default function ZoneDetailPage() {
         Zone Safety Issues ({openIssues.length})
        </button>
       </nav>
+      {activeTab === 'equipment' && (
+       <button
+        onClick={handleOpenLinkModal}
+        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+        title="Link unlinked equipment to this zone"
+       >
+        <PlusIcon className="w-5 h-5" />
+       </button>
+      )}
+      </div>
      </div>
 
      <div className="p-6">
@@ -563,6 +618,66 @@ export default function ZoneDetailPage() {
      </div>
     </div>
    </div>
+
+   {/* Link Equipment Modal */}
+   {showLinkModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+       <h2 className="text-lg font-bold text-gray-900">Link Equipment to {zone?.name}</h2>
+       <button
+        onClick={() => setShowLinkModal(false)}
+        className="text-gray-400 hover:text-gray-600"
+       >
+        <XMarkIcon className="w-6 h-6" />
+       </button>
+      </div>
+      <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">
+       {loadingUnlinked ? (
+        <div className="flex justify-center py-8">
+         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+       ) : unlinkedEquipment.length === 0 ? (
+        <p className="text-gray-500 text-center py-8">All equipment is already linked to a zone.</p>
+       ) : (
+        <div className="space-y-2">
+         <p className="text-sm text-gray-500 mb-3">{unlinkedEquipment.length} item{unlinkedEquipment.length !== 1 ? 's' : ''} not linked to any zone</p>
+         {unlinkedEquipment.map(item => (
+          <div key={item.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+           <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+            <p className="text-xs text-gray-500">
+             {item.category && <span>{item.category}</span>}
+             {item.serialNumber && <span> • S/N: {item.serialNumber}</span>}
+            </p>
+           </div>
+           <button
+            onClick={() => handleLinkEquipment(item.id)}
+            disabled={linkingIds.has(item.id)}
+            className="ml-3 inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 rounded-lg transition-colors flex-shrink-0"
+           >
+            {linkingIds.has(item.id) ? (
+             <span>Linking...</span>
+            ) : (
+             <><CheckIcon className="w-4 h-4" /> Link</>
+            )}
+           </button>
+          </div>
+         ))}
+        </div>
+       )}
+      </div>
+      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+       <button
+        onClick={() => setShowLinkModal(false)}
+        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
+       >
+        Close
+       </button>
+      </div>
+     </div>
+    </div>
+   )}
 
    {/* Safety Issue Review Modal */}
    {reviewingIssueId && (
