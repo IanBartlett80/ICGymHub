@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Equipment, Zone, Venue } from '@prisma/client';
-import { PlusIcon, ArrowDownTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
 import EquipmentForm from '@/components/EquipmentForm';
+import EquipmentBulkUpload from '@/components/EquipmentBulkUpload';
 import VenueSelector from '@/components/VenueSelector';
 import IntelligenceFilter from '@/components/IntelligenceFilter';
 import { showToast, confirmAndDelete } from '@/lib/toast';
@@ -29,6 +30,7 @@ export default function AllEquipmentPage() {
  const [zones, setZones] = useState<Zone[]>([]);
  const [loading, setLoading] = useState(true);
  const [showForm, setShowForm] = useState(false);
+ const [showBulkUpload, setShowBulkUpload] = useState(false);
  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
  const [searchTerm, setSearchTerm] = useState('');
  const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -314,6 +316,15 @@ export default function AllEquipmentPage() {
         Compliance Report
        </button>
 
+       {/* Bulk Upload Button */}
+       <button
+        onClick={() => setShowBulkUpload(true)}
+        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+       >
+        <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+        Bulk Upload
+       </button>
+
        {/* Add Equipment Button */}
        <button
         onClick={() => {
@@ -421,6 +432,14 @@ export default function AllEquipmentPage() {
        setShowForm(false);
        setEditingEquipment(null);
       }}
+     />
+    )}
+
+    {/* Bulk Upload Modal */}
+    {showBulkUpload && (
+     <EquipmentBulkUpload
+      onClose={() => setShowBulkUpload(false)}
+      onImportComplete={() => loadData()}
      />
     )}
    </div>
