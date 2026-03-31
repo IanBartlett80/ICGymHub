@@ -325,6 +325,7 @@ export async function PUT(
 
     return NextResponse.json({
       ...updated,
+      photos: updated.photos ? JSON.parse(updated.photos) : [],
       statusHistory: updated.statusHistory ? JSON.parse(updated.statusHistory) : [],
     })
   } catch (error) {

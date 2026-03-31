@@ -333,7 +333,7 @@ export default function QuoteManagePage() {
             )}
 
             {/* Photos */}
-            {data.photos.length > 0 && (
+            {Array.isArray(data.photos) && data.photos.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   Photos ({data.photos.length})
