@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { showToast } from '@/lib/toast';
 
 interface StatusHistoryEntry {
   status: string;
@@ -138,8 +139,17 @@ export default function QuoteManagePage() {
       const updated = await res.json();
       setData(updated);
       setActiveAction(null);
+
+      const successMessages: Record<string, string> = {
+        acknowledge: 'Request acknowledged — club has been notified',
+        submit_quote: 'Quote submitted successfully — club has been notified',
+        update_quote: 'Revised quote submitted — club has been notified',
+        add_notes: 'Notes updated successfully',
+        mark_completed: 'Repair marked as completed — club has been notified',
+      };
+      showToast.success(successMessages[action] || 'Action completed successfully');
     } catch (err: any) {
-      alert(err.message);
+      showToast.error(err.message);
     } finally {
       setSubmitting(false);
     }

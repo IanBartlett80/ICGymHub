@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { showToast } from '@/lib/toast';
 
 interface SafetyIssue {
   id: string;
@@ -74,7 +75,7 @@ export default function RepairQuoteRequestForm({
     const availableSlots = maxPhotos - photos.length;
     
     if (files.length > availableSlots) {
-      alert(`You can upload up to ${maxPhotos} photos total. You have ${availableSlots} slot(s) remaining.`);
+      showToast.error(`You can upload up to ${maxPhotos} photos total. You have ${availableSlots} slot(s) remaining.`);
       return;
     }
 
@@ -83,12 +84,12 @@ export default function RepairQuoteRequestForm({
       const file = files[i];
       
       if (!file.type.startsWith('image/')) {
-        alert('Please select only image files');
+        showToast.error('Please select only image files');
         continue;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        alert(`Image ${file.name} is too large. Maximum size is 5MB.`);
+        showToast.error(`Image ${file.name} is too large. Maximum size is 5MB.`);
         continue;
       }
 
@@ -136,7 +137,7 @@ export default function RepairQuoteRequestForm({
       onSuccess();
     } catch (error) {
       console.error('Failed to submit repair quote request:', error);
-      alert(error instanceof Error ? error.message : 'Failed to submit request. Please try again.');
+      showToast.error(error instanceof Error ? error.message : 'Failed to submit request. Please try again.');
     } finally {
       setSubmitting(false);
     }

@@ -209,8 +209,11 @@ export default function RepairQuotesPage() {
  const [showDetailModal, setShowDetailModal] = useState(false);
  const [approvalNotes, setApprovalNotes] = useState('');
  const [rejectionReason, setRejectionReason] = useState('');
- const [modalAction, setModalAction] = useState<'view' | 'approve' | 'reject' | null>(null);
+ const [modalAction, setModalAction] = useState<'view' | 'approve' | 'reject' | 'complete' | null>(null);
  const [actionLoading, setActionLoading] = useState(false);
+ const [completionFinalCost, setCompletionFinalCost] = useState('');
+ const [completionNotes, setCompletionNotes] = useState('');
+ const [completionWarranty, setCompletionWarranty] = useState('');
 
  useEffect(() => {
   loadRequests();
@@ -323,26 +326,32 @@ export default function RepairQuotesPage() {
  };
 
  const handleComplete = async (requestId: string) => {
-  if (!confirm('Mark this repair as completed?')) return;
-
+  setActionLoading(true);
   try {
-   const finalCost = prompt('Enter final cost (optional):');
-   const completionNotes = prompt('Add completion notes (optional):');
-
    const res = await fetch(`/api/repair-quotes/${requestId}/complete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ finalCost, completionNotes }),
+    body: JSON.stringify({
+     finalCost: completionFinalCost || null,
+     completionNotes: completionNotes || null,
+     warrantyInfo: completionWarranty || null,
+    }),
    });
 
    if (!res.ok) throw new Error('Failed to mark as completed');
 
-   showToast.success('Repair marked as completed');
+   showToast.success('Repair marked as completed successfully');
    setShowDetailModal(false);
+   setModalAction(null);
+   setCompletionFinalCost('');
+   setCompletionNotes('');
+   setCompletionWarranty('');
    loadRequests();
   } catch (error: any) {
    showToast.error(error.message || 'Failed to mark as completed');
+  } finally {
+   setActionLoading(false);
   }
  };
 
@@ -1088,6 +1097,97 @@ export default function RepairQuotesPage() {
            You will be notified when a quote is ready for your review.
           </p>
          </div>
+        </div>
+       )}
+
+       {/* Mark as Complete section for APPROVED status */}
+       {selectedRequest.status === 'APPROVED' && (
+        <div className="border-t pt-6 space-y-4">
+         {modalAction === 'complete' ? (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-5 space-y-4">
+           <div className="flex items-center gap-2">
+            <CheckCircleIcon className="h-5 w-5 text-purple-600" />
+            <h4 className="font-semibold text-purple-900 text-lg">Mark Repair as Completed</h4>
+           </div>
+           <p className="text-sm text-purple-700">
+            Confirm the repair has been completed and provide final details.
+           </p>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Final Cost</label>
+            <div className="relative">
+             <span className="absolute left-3 top-2 text-gray-500">$</span>
+             <input
+              type="text"
+              value={completionFinalCost}
+              onChange={(e) => setCompletionFinalCost(e.target.value)}
+              className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="0.00"
+             />
+            </div>
+           </div>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Completion Notes</label>
+            <textarea
+             value={completionNotes}
+             onChange={(e) => setCompletionNotes(e.target.value)}
+             rows={3}
+             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+             placeholder="Describe the work completed, any follow-up required..."
+            />
+           </div>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Warranty Information</label>
+            <input
+             type="text"
+             value={completionWarranty}
+             onChange={(e) => setCompletionWarranty(e.target.value)}
+             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+             placeholder="e.g., 12-month parts warranty"
+            />
+           </div>
+           <div className="flex gap-3 pt-2">
+            <button
+             onClick={() => handleComplete(selectedRequest.id)}
+             disabled={actionLoading}
+             className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            >
+             {actionLoading ? (
+              <span className="flex items-center justify-center gap-2">
+               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+               Completing...
+              </span>
+             ) : '✓ Confirm Completion'}
+            </button>
+            <button
+             onClick={() => {
+              setModalAction('view');
+              setCompletionFinalCost('');
+              setCompletionNotes('');
+              setCompletionWarranty('');
+             }}
+             className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+             Cancel
+            </button>
+           </div>
+          </div>
+         ) : (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+           <CheckCircleIcon className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+           <p className="text-sm text-purple-800 font-medium">
+            This repair has been approved
+           </p>
+           <p className="text-xs text-purple-600 mt-1 mb-3">
+            Once the repair is completed, mark it as done to close this request.
+           </p>
+           <button
+            onClick={() => setModalAction('complete')}
+            className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+           >
+            Mark Repair as Completed
+           </button>
+          </div>
+         )}
         </div>
        )}
 
