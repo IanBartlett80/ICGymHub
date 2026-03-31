@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { ExclamationTriangleIcon, CubeIcon, PlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, CubeIcon, PlusIcon, CheckCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import MobileEquipmentForm from '@/components/MobileEquipmentForm';
 import PINVerificationModal, { useQRPINVerification } from '@/components/PINVerificationModal';
 
@@ -43,6 +43,7 @@ export default function PublicZoneReportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showAddEquipment, setShowAddEquipment] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [checkingEquipment, setCheckingEquipment] = useState<string | null>(null);
 
   // PIN Verification
@@ -90,6 +91,7 @@ export default function PublicZoneReportPage() {
 
   const handleAddEquipmentSuccess = () => {
     setShowAddEquipment(false);
+    setEditingEquipment(null);
     loadData(); // Reload equipment list
   };
 
@@ -540,6 +542,13 @@ export default function PublicZoneReportPage() {
                     {checkingEquipment === item.id ? 'Checking...' : 'No Issues'}
                   </button>
                   <button
+                    onClick={() => setEditingEquipment(item)}
+                    className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Edit equipment details"
+                  >
+                    <PencilSquareIcon className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => handleEquipmentSelect(item)}
                     className="flex-1 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
                   >
@@ -561,6 +570,20 @@ export default function PublicZoneReportPage() {
             zoneName={zone.name}
             onSubmit={handleAddEquipmentSuccess}
             onCancel={() => setShowAddEquipment(false)}
+          />
+        )}
+
+        {/* Equipment Edit Modal */}
+        {editingEquipment && zone && (
+          <MobileEquipmentForm
+            clubId={zone.club.id}
+            venueId={zone.venue.id}
+            venueName={zone.venue.name}
+            zoneId={zone.id}
+            zoneName={zone.name}
+            equipment={editingEquipment}
+            onSubmit={handleAddEquipmentSuccess}
+            onCancel={() => setEditingEquipment(null)}
           />
         )}
 

@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { XMarkIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import axiosInstance from '@/lib/axios';
+import { showToast } from '@/lib/toast';
 
 interface EquipmentBulkUploadProps {
   onClose: () => void;
@@ -58,6 +59,14 @@ export default function EquipmentBulkUpload({ onClose, onImportComplete }: Equip
 
       if (response.data.imported > 0) {
         onImportComplete();
+        const hasErrors = response.data.errors && response.data.errors.length > 0;
+        if (hasErrors) {
+          showToast.success(`${response.data.imported} of ${response.data.total} equipment items imported (some rows had errors)`);
+        } else {
+          showToast.success(`${response.data.imported} equipment item${response.data.imported !== 1 ? 's' : ''} imported successfully!`);
+          // Auto-close modal after full success
+          setTimeout(() => onClose(), 1500);
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to import equipment');

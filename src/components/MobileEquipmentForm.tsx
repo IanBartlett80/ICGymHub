@@ -3,12 +3,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { XMarkIcon, CameraIcon, PhotoIcon } from '@heroicons/react/24/outline';
 
+interface ExistingEquipment {
+  id: string;
+  name: string;
+  category: string | null;
+  serialNumber: string | null;
+  condition: string;
+  photoUrl: string | null;
+}
+
 interface MobileEquipmentFormProps {
   clubId: string;
   venueId?: string;
   venueName?: string;
   zoneId?: string;
   zoneName?: string;
+  equipment?: ExistingEquipment;
   onSubmit: () => void;
   onCancel: () => void;
 }
@@ -34,24 +44,26 @@ export default function MobileEquipmentForm({
   venueName,
   zoneId,
   zoneName,
+  equipment: existingEquipment,
   onSubmit,
   onCancel,
 }: MobileEquipmentFormProps) {
+  const isEditMode = !!existingEquipment;
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loadingZones, setLoadingZones] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState<string>(zoneId || '');
   const [formData, setFormData] = useState<EquipmentFormData>({
-    name: '',
-    category: '',
-    serialNumber: '',
-    condition: 'Good',
+    name: existingEquipment?.name || '',
+    category: existingEquipment?.category || '',
+    serialNumber: existingEquipment?.serialNumber || '',
+    condition: existingEquipment?.condition || 'Good',
     photoUrl: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [photoPreview, setPhotoPreview] = useState<string>(existingEquipment?.photoUrl || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -188,26 +200,45 @@ export default function MobileEquipmentForm({
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/public/equipment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let url: string;
+      let method: string;
+      let payload: any;
+
+      if (isEditMode && existingEquipment) {
+        url = `/api/public/equipment/${existingEquipment.id}/update`;
+        method = 'PUT';
+        payload = {
+          clubId,
+          ...formData,
+          // Only send photoUrl if it was changed (is a base64 string)
+          photoUrl: formData.photoUrl || undefined,
+        };
+      } else {
+        url = '/api/public/equipment/create';
+        method = 'POST';
+        payload = {
           clubId,
           venueId: venueId || null,
           zoneId: zoneId || selectedZoneId || null,
           ...formData,
-        }),
+        };
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to add equipment');
+        throw new Error(data.error || `Failed to ${isEditMode ? 'update' : 'add'} equipment`);
       }
 
       onSubmit();
     } catch (error) {
-      console.error('Failed to add equipment:', error);
-      alert(error instanceof Error ? error.message : 'Failed to add equipment. Please try again.');
+      console.error(`Failed to ${isEditMode ? 'update' : 'add'} equipment:`, error);
+      alert(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'add'} equipment. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -217,7 +248,7 @@ export default function MobileEquipmentForm({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg my-8">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center rounded-t-lg">
-          <h2 className="text-lg font-semibold text-gray-900">Add Equipment</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{isEditMode ? 'Edit Equipment' : 'Add Equipment'}</h2>
           <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600"
@@ -414,7 +445,7 @@ export default function MobileEquipmentForm({
               className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adding...' : 'Add Equipment'}
+              {isSubmitting ? (isEditMode ? 'Saving...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Equipment')}
             </button>
           </div>
         </form>

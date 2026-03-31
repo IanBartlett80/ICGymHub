@@ -529,10 +529,11 @@ export default function ZoneDetailPage() {
       {activeTab === 'equipment' && (
        <button
         onClick={handleOpenLinkModal}
-        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
         title="Link unlinked equipment to this zone"
        >
         <PlusIcon className="w-5 h-5" />
+        Link Equipment
        </button>
       )}
       </div>
