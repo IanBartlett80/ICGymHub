@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
 
+// Helper to append to status history
+function appendStatusHistory(existing: string | null, status: string, actor: string, notes?: string) {
+  const history = existing ? JSON.parse(existing) : []
+  history.push({
+    status,
+    timestamp: new Date().toISOString(),
+    actor,
+    notes: notes || '',
+  })
+  return JSON.stringify(history)
+}
+
 // POST /api/repair-quotes/[id]/complete - Mark repair as completed
 export async function POST(
   request: NextRequest,
@@ -39,6 +51,12 @@ export async function POST(
         completionNotes: completionNotes || null,
         invoiceDocuments: invoiceDocuments ? JSON.stringify(invoiceDocuments) : null,
         warrantyInfo: warrantyInfo || null,
+        statusHistory: appendStatusHistory(
+          existingQuote.statusHistory,
+          'COMPLETED',
+          `${user.fullName} (${club.name})`,
+          completionNotes || 'Repair marked as completed'
+        ),
       },
       include: {
         equipment: {

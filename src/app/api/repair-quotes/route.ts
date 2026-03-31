@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         { issueDescription: { contains: search, mode: 'insensitive' } },
         { contactPerson: { contains: search, mode: 'insensitive' } },
         { quoteReceivedFrom: { contains: search, mode: 'insensitive' } },
+        { requestReference: { contains: search, mode: 'insensitive' } },
         { equipment: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }

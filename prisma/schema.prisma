@@ -1047,6 +1047,13 @@ model RepairQuoteRequest {
   invoiceDocuments    String?
   warrantyInfo        String?
   venueId             String?
+  // ICB Solutions workflow fields
+  secureToken         String?      @unique
+  statusHistory       String?      // JSON array of {status, timestamp, actor, notes}
+  icbAcknowledgedAt   DateTime?
+  icbAcknowledgedBy   String?
+  icbNotes            String?      // Internal notes from ICB Solutions
+  requestReference    String?      // Human-readable reference e.g. RQ-2026-0001
   club                Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
   equipment           Equipment    @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   requestedBy         User         @relation(fields: [requestedById], references: [id], onDelete: Cascade)
@@ -1064,6 +1071,7 @@ model RepairQuoteRequest {
   @@index([approvedAt])
   @@index([approvedBy])
   @@index([scheduledRepairDate])
+  @@index([secureToken])
 }
 
 model ClubBackup {

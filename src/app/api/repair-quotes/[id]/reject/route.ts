@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/apiAuth';
 import { prisma } from '@/lib/prisma';
+import { sendEmail } from '@/lib/email';
+
+// Helper to append to status history
+function appendStatusHistory(existing: string | null, status: string, actor: string, notes?: string) {
+  const history = existing ? JSON.parse(existing) : []
+  history.push({
+    status,
+    timestamp: new Date().toISOString(),
+    actor,
+    notes: notes || '',
+  })
+  return JSON.stringify(history)
+}
 
 // POST /api/repair-quotes/[id]/reject - Reject a repair quote
 export async function POST(
@@ -49,6 +62,12 @@ export async function POST(
         approvedByName: null,
         approvedAt: null,
         approvalNotes: null,
+        statusHistory: appendStatusHistory(
+          existingQuote.statusHistory,
+          'REJECTED',
+          `${user.fullName} (${club.name})`,
+          `Rejected: ${rejectionReason}`
+        ),
       },
       include: {
         equipment: {
@@ -65,6 +84,32 @@ export async function POST(
         },
       },
     });
+
+    // Notify ICB Solutions about rejection so they can re-quote
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'https://gymhub.club'
+      const manageUrl = existingQuote.secureToken
+        ? `${appUrl}/quote-manage/${existingQuote.secureToken}`
+        : null
+
+      await sendEmail({
+        to: 'IanBartlett@icb.solutions',
+        subject: `[${existingQuote.requestReference || id}] Quote REJECTED - ${updated.equipment.name} at ${club.name}`,
+        htmlContent: `
+          <h2 style="color:#dc2626;">Quote Rejected</h2>
+          <p><strong>Reference:</strong> ${existingQuote.requestReference || id}</p>
+          <p><strong>Club:</strong> ${club.name}</p>
+          <p><strong>Equipment:</strong> ${updated.equipment.name}</p>
+          <p><strong>Rejected by:</strong> ${user.fullName}</p>
+          <p><strong>Previous Quote:</strong> $${existingQuote.quoteAmount || 'N/A'}</p>
+          <p><strong>Rejection Reason:</strong> ${rejectionReason}</p>
+          <p style="margin-top:20px;">Please review the feedback and consider submitting a revised quote.</p>
+          ${manageUrl ? `<p><a href="${manageUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;margin-top:10px;">Submit Revised Quote</a></p>` : ''}
+        `,
+      });
+    } catch (emailErr) {
+      console.error('Failed to send rejection notification to ICB:', emailErr);
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

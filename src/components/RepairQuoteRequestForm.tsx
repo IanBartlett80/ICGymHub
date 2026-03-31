@@ -50,16 +50,8 @@ export default function RepairQuoteRequestForm({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Load user data for contact fields
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      const user = JSON.parse(userData);
-      setFormData((prev) => ({
-        ...prev,
-        contactPerson: user.fullName || '',
-        contactEmail: user.email || '',
-      }));
-    }
+    // Contact info starts blank - the club fills in who the repair contact should be
+    // Do NOT pre-fill with the logged-in user's info as the contact person may differ
 
     // Load photos from safety issue if available
     if (safetyIssue?.photos) {
