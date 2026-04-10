@@ -61,8 +61,10 @@ export function getXeroAuthUrl(stateToken: string): string {
     'openid',
     'profile',
     'email',
-    'accounting.contacts',
-    'accounting.transactions',
+    'accounting.contacts.read',
+    'accounting.contacts.write',
+    'accounting.transactions.read',
+    'accounting.transactions.write',
     'offline_access',
   ].join(' ')
 
