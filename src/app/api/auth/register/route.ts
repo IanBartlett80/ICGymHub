@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, normalizeDomain } from '@/lib/validation'
 import { sendVerificationEmail } from '@/lib/email'
+import { isXeroConnected, createXeroContact, createXeroRecurringInvoice } from '@/lib/xero'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -50,6 +51,10 @@ export async function POST(req: NextRequest) {
       adminUsername,
       adminPassword,
     } = result.data
+
+    // Payment fields come from the request body (not Zod-validated, optional)
+    const agreeToPayment = body.agreeToPayment === true
+    const paymentSkipped = body.paymentSkipped === true
 
     const normalizedClubDomain = normalizeDomain(clubDomain) || clubDomain
     const domainForUse = normalizedClubDomain
@@ -122,6 +127,17 @@ export async function POST(req: NextRequest) {
     const clubSlug = clubName.toLowerCase().replace(/\s+/g, '-')
     let verificationToken: string | null = null
 
+    // Calculate trial end date (30 days from now)
+    const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+    // Determine payment status
+    let paymentStatus = 'NONE'
+    if (agreeToPayment) {
+      paymentStatus = 'AGREED'
+    } else if (paymentSkipped) {
+      paymentStatus = 'SKIPPED'
+    }
+
     const clubData: Parameters<typeof prisma.club.create>[0]['data'] = {
       name: clubName,
       slug: clubSlug,
@@ -134,6 +150,10 @@ export async function POST(req: NextRequest) {
       phone,
       status: 'PENDING_VERIFICATION',
       timezone: 'Australia/Sydney',
+      paymentStatus,
+      paymentAgreedAt: agreeToPayment ? new Date() : null,
+      trialEndsAt: agreeToPayment ? trialEndsAt : null,
+      monthlyRateAud: 100,
       users: {
         create: {
           email: adminEmail,
@@ -214,6 +234,55 @@ export async function POST(req: NextRequest) {
           enabled: true,
         },
       })
+    }
+
+    // Create Xero contact + recurring invoice if payment was agreed
+    if (agreeToPayment) {
+      try {
+        const xeroConnected = await isXeroConnected()
+        if (xeroConnected) {
+          // Split admin name into first/last for Xero
+          const nameParts = adminFullName.trim().split(/\s+/)
+          const firstName = nameParts[0] || adminFullName
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+
+          const xeroContactId = await createXeroContact({
+            clubName,
+            firstName,
+            lastName,
+            email: adminEmail,
+            phone,
+            abn: abn || null,
+            address,
+            city,
+            state,
+            postalCode,
+          })
+
+          const xeroRepeatingInvoiceId = await createXeroRecurringInvoice({
+            xeroContactId,
+            clubName,
+            monthlyRateAud: 100,
+            trialEndsAt,
+          })
+
+          // Store Xero IDs on the club
+          await prisma.club.update({
+            where: { id: club.id },
+            data: {
+              xeroContactId,
+              xeroRepeatingInvoiceId,
+            },
+          })
+
+          console.log(`✅ Xero contact (${xeroContactId}) and recurring invoice (${xeroRepeatingInvoiceId}) created for ${clubName}`)
+        } else {
+          console.warn(`⚠️ Xero not connected — skipping billing setup for ${clubName}`)
+        }
+      } catch (xeroError) {
+        // Don't fail registration if Xero fails — billing can be set up manually
+        console.error('Xero integration error (non-fatal):', xeroError)
+      }
     }
 
     return NextResponse.json(

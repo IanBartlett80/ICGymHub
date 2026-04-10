@@ -20,6 +20,8 @@ type FormData = {
   adminUsername: string
   adminPassword: string
   agreeToTerms: boolean
+  agreeToPayment: boolean
+  paymentSkipped: boolean
 }
 
 const australianStates = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
@@ -67,6 +69,8 @@ export default function RegisterPage() {
     adminUsername: '',
     adminPassword: '',
     agreeToTerms: false,
+    agreeToPayment: false,
+    paymentSkipped: false,
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -128,6 +132,7 @@ export default function RegisterPage() {
         return false
       }
     }
+    // Step 5 (payment) always passes — user can agree or skip
     return true
   }
 
@@ -142,10 +147,30 @@ export default function RegisterPage() {
     setError('')
   }
 
+  const handleSkipPayment = () => {
+    setFormData(prev => ({ ...prev, paymentSkipped: true, agreeToPayment: false }))
+    submitRegistration(true)
+  }
+
+  const handleAgreeToPayment = () => {
+    setFormData(prev => ({ ...prev, agreeToPayment: true, paymentSkipped: false }))
+    submitRegistration(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateStep(4)) return
+    if (step === 5) {
+      // Handled by handleAgreeToPayment / handleSkipPayment buttons
+      return
+    }
+    // Step 4 "Next" advances to step 5
+    if (step === 4 && validateStep(4)) {
+      setStep(5)
+      return
+    }
+  }
 
+  const submitRegistration = async (skipped: boolean) => {
     setLoading(true)
     setError('')
 
@@ -155,9 +180,10 @@ export default function RegisterPage() {
       await axios.post('/api/auth/register', {
         ...formData,
         clubDomain: normalizedDomain,
+        agreeToPayment: !skipped,
+        paymentSkipped: skipped,
       })
       setSuccess(true)
-      // Redirect after 2 seconds
       setTimeout(() => {
         router.push('/sign-in?registered=true')
       }, 2000)
@@ -241,12 +267,12 @@ export default function RegisterPage() {
             />
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mt-4">Register Your Club</h1>
-          <p className="text-gray-600 mt-2">Step {step} of 4</p>
+          <p className="text-gray-600 mt-2">Step {step} of 5</p>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-8 flex gap-2">
-          {[1, 2, 3, 4].map(i => (
+          {[1, 2, 3, 4, 5].map(i => (
             <div
               key={i}
               className={`flex-1 h-2 rounded-full ${i <= step ? 'bg-blue-600' : 'bg-gray-200'}`}
@@ -475,13 +501,67 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Step 5: Payment Account Setup */}
+          {step === 5 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900">Payment Account Setup</h2>
+              <p className="text-gray-600">GymHub is billed at a flat rate to keep things simple.</p>
+
+              {/* Plan Summary */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">GymHub Monthly Plan</h3>
+                    <p className="text-sm text-gray-600">Full access to all GymHub features</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-blue-600">$100</p>
+                    <p className="text-sm text-gray-500">AUD / month (inc. GST)</p>
+                  </div>
+                </div>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Class Rostering &amp; Scheduling</li>
+                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Injury &amp; Incident Management</li>
+                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Equipment &amp; Maintenance Tracking</li>
+                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Compliance Manager</li>
+                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Multi-Venue Support</li>
+                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Email Notifications &amp; Reports</li>
+                </ul>
+              </div>
+
+              {/* Free Trial Notice */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800 font-semibold">🎉 30-Day Free Trial</p>
+                <p className="text-sm text-green-700 mt-1">
+                  Your first invoice won&apos;t be generated until 30 days after registration. Cancel anytime during your trial at no cost.
+                </p>
+              </div>
+
+              {/* Agreement */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-sm text-gray-700">
+                  By clicking <strong>&quot;Agree &amp; Complete Registration&quot;</strong> below, you agree to pay $100 AUD per calendar month after your 30-day free trial ends. Invoices are issued monthly via Xero. You can review the full{' '}
+                  <Link href="#" className="text-blue-600 hover:text-blue-700 underline">Payment Terms and Conditions</Link>{' '}
+                  at any time from your Billing profile.
+                </p>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  {error}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Navigation Buttons */}
           <div className="flex gap-4 mt-8">
             {step > 1 && (
               <button
                 type="button"
                 onClick={handlePreviousStep}
-                className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-semibold transition"
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-900 rounded-lg font-semibold transition"
               >
                 Previous
               </button>
@@ -494,14 +574,33 @@ export default function RegisterPage() {
               >
                 Next
               </button>
-            ) : (
+            ) : step === 4 ? (
               <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
+                type="button"
+                onClick={() => { if (validateStep(4)) setStep(5) }}
+                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
               >
-                {loading ? 'Registering...' : 'Complete Registration'}
+                Next
               </button>
+            ) : (
+              <div className="flex flex-1 gap-3">
+                <button
+                  type="button"
+                  onClick={handleSkipPayment}
+                  disabled={loading}
+                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-gray-700 rounded-lg font-semibold transition text-sm"
+                >
+                  Skip for Now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAgreeToPayment}
+                  disabled={loading}
+                  className="flex-[2] px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
+                >
+                  {loading ? 'Registering...' : 'Agree & Complete Registration'}
+                </button>
+              </div>
             )}
           </div>
         </form>

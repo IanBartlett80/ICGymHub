@@ -30,6 +30,13 @@ model Club {
   deletedAt             DateTime?
   deletionScheduledFor  DateTime?
   deletedBy             String?
+  xeroContactId         String?
+  xeroRepeatingInvoiceId String?
+  paymentStatus         String               @default("NONE")
+  paymentAgreedAt       DateTime?
+  paymentCancelledAt    DateTime?
+  trialEndsAt           DateTime?
+  monthlyRateAud        Int                  @default(100)
   auditLogs             AuditLog[]
   classSessions         ClassSession[]
   classTemplates        ClassTemplate[]
@@ -1090,4 +1097,13 @@ model ClubBackup {
   @@index([clubId])
   @@index([status])
   @@index([createdAt])
+}
+
+model XeroToken {
+  id           String   @id @default(cuid())
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

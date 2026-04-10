@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import axiosInstance from '@/lib/axios'
 import PasswordVerificationModal from '@/components/PasswordVerificationModal'
@@ -492,6 +493,24 @@ export default function ProfilePage() {
       </div>
      </form>
     </div>
+
+    {/* Billing & Subscription - Admin Only */}
+    {user?.role === 'ADMIN' && (
+     <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="p-6 border-b border-gray-200">
+       <h2 className="text-lg font-semibold text-gray-900 mb-1">💳 Billing &amp; Subscription</h2>
+       <p className="text-sm text-gray-500">Manage your subscription, review payment terms, or cancel</p>
+      </div>
+      <div className="p-6">
+       <Link
+        href="/dashboard/profile/billing"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
+       >
+        View Billing Profile →
+       </Link>
+      </div>
+     </div>
+    )}
 
     {/* Danger Zone - Admin Only */}
     {user?.role === 'ADMIN' && (
