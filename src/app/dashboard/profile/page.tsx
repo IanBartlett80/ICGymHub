@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
@@ -75,6 +75,14 @@ export default function ProfilePage() {
  const [clubTimezone, setClubTimezone] = useState('Australia/Sydney')
  const [originalClubTimezone, setOriginalClubTimezone] = useState('Australia/Sydney')
  const [timezoneSaving, setTimezoneSaving] = useState(false)
+ const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
+ const [activeSection, setActiveSection] = useState('account')
+
+ const sectionRefs = {
+  account: useRef<HTMLDivElement>(null),
+  billing: useRef<HTMLDivElement>(null),
+  danger: useRef<HTMLDivElement>(null),
+ }
 
  useEffect(() => {
   const userData = localStorage.getItem('userData')
@@ -96,7 +104,16 @@ export default function ProfilePage() {
    axiosInstance.get('/api/clubs/delete').then(res => {
     setDeletionStatus(res.data)
    }).catch(() => {})
-
+   // Fetch last backup date
+   axiosInstance.get('/api/clubs/backup').then(res => {
+    const backups = res.data?.backups
+    if (backups?.length > 0) {
+     const lastCompleted = backups.find((b: any) => b.status === 'COMPLETED')
+     if (lastCompleted) {
+      setLastBackupDate(lastCompleted.completedAt || lastCompleted.createdAt)
+     }
+    }
+   }).catch(() => {})
    // Fetch club timezone
    fetch('/api/clubs/settings').then(res => {
     if (res.ok) return res.json()
@@ -108,6 +125,29 @@ export default function ProfilePage() {
    }).catch(() => {})
   }
  }, [router])
+
+ useEffect(() => {
+  const observers: IntersectionObserver[] = []
+  const entries = Object.entries(sectionRefs) as [string, React.RefObject<HTMLDivElement | null>][]
+  entries.forEach(([key, ref]) => {
+   if (ref.current) {
+    const observer = new IntersectionObserver(
+     ([entry]) => {
+      if (entry.isIntersecting) setActiveSection(key)
+     },
+     { rootMargin: '-20% 0px -60% 0px' }
+    )
+    observer.observe(ref.current)
+    observers.push(observer)
+   }
+  })
+  return () => observers.forEach(o => o.disconnect())
+ })
+
+ const scrollToSection = (key: string) => {
+  const ref = sectionRefs[key as keyof typeof sectionRefs]
+  ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+ }
 
  const handleSaveTimezone = async () => {
   setTimezoneSaving(true)
@@ -225,6 +265,7 @@ export default function ProfilePage() {
    a.click()
    window.URL.revokeObjectURL(url)
    a.remove()
+   setLastBackupDate(new Date().toISOString())
    setMessage({ type: 'success', text: 'Backup downloaded successfully' })
   } catch (error: any) {
    setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to create backup' })
@@ -287,7 +328,7 @@ export default function ProfilePage() {
 
  return (
   <DashboardLayout title="Profile Settings" backTo={{ label: 'Back to Home', href: '/dashboard' }}>
-   <div className="p-6 max-w-4xl mx-auto">
+   <div className="p-6 max-w-6xl mx-auto">
     {message && (
      <div
       className={`mb-6 p-4 rounded-lg ${
@@ -300,7 +341,51 @@ export default function ProfilePage() {
      </div>
     )}
 
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="flex gap-8">
+     {/* Left Sidebar Navigation */}
+     <nav className="w-56 shrink-0 hidden md:block">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+       <button
+        onClick={() => scrollToSection('account')}
+        className={`w-full text-left px-4 py-3 text-sm font-medium transition border-l-2 ${
+         activeSection === 'account'
+          ? 'bg-blue-50 text-blue-700 border-blue-600'
+          : 'text-gray-700 hover:bg-gray-50 border-transparent'
+        }`}
+       >
+        Account Information
+       </button>
+       {user?.role === 'ADMIN' && (
+        <>
+         <button
+          onClick={() => scrollToSection('billing')}
+          className={`w-full text-left px-4 py-3 text-sm font-medium transition border-l-2 ${
+           activeSection === 'billing'
+            ? 'bg-blue-50 text-blue-700 border-blue-600'
+            : 'text-gray-700 hover:bg-gray-50 border-transparent'
+          }`}
+         >
+          Billing &amp; Subscription
+         </button>
+         <button
+          onClick={() => scrollToSection('danger')}
+          className={`w-full text-left px-4 py-3 text-sm font-medium transition border-l-2 ${
+           activeSection === 'danger'
+            ? 'bg-red-50 text-red-700 border-red-600'
+            : 'text-gray-700 hover:bg-gray-50 border-transparent'
+          }`}
+         >
+          Danger Zone
+         </button>
+        </>
+       )}
+      </div>
+     </nav>
+
+     {/* Main Content */}
+     <div className="flex-1 min-w-0">
+
+    <div ref={sectionRefs.account} className="bg-white rounded-lg shadow-sm border border-gray-200 scroll-mt-6">
      {/* Account Information Section */}
      <div className="p-6 border-b border-gray-200">
       <h2 className="text-lg font-semibold text-gray-900 mb-1">Account Information</h2>
@@ -496,7 +581,7 @@ export default function ProfilePage() {
 
     {/* Billing & Subscription - Admin Only */}
     {user?.role === 'ADMIN' && (
-     <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
+     <div ref={sectionRefs.billing} className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 scroll-mt-6">
       <div className="p-6 border-b border-gray-200">
        <h2 className="text-lg font-semibold text-gray-900 mb-1">💳 Billing &amp; Subscription</h2>
        <p className="text-sm text-gray-500">Manage your subscription, review payment terms, or cancel</p>
@@ -514,7 +599,7 @@ export default function ProfilePage() {
 
     {/* Danger Zone - Admin Only */}
     {user?.role === 'ADMIN' && (
-     <div className="mt-8 bg-white rounded-lg shadow-sm border-2 border-red-200">
+     <div ref={sectionRefs.danger} className="mt-8 bg-white rounded-lg shadow-sm border-2 border-red-200 scroll-mt-6">
       <div className="p-6 border-b border-red-200 bg-red-50 rounded-t-lg">
        <h2 className="text-lg font-semibold text-red-800 mb-1">⚠️ Danger Zone</h2>
        <p className="text-sm text-red-600">These actions are irreversible. Please proceed with caution.</p>
@@ -526,6 +611,11 @@ export default function ProfilePage() {
         <div>
          <h3 className="font-medium text-gray-900">Download Backup</h3>
          <p className="text-sm text-gray-500">Export all club data as a JSON file</p>
+         {lastBackupDate && (
+          <p className="text-xs text-gray-400 mt-1">
+           Last backup: {new Date(lastBackupDate).toLocaleString()}
+          </p>
+         )}
         </div>
         <button
          onClick={handleBackup}
@@ -631,6 +721,9 @@ export default function ProfilePage() {
      description="Enter your password to validate this backup file."
      confirmLabel="Validate"
     />
+
+     </div>{/* end Main Content */}
+    </div>{/* end flex container */}
    </div>
   </DashboardLayout>
  )
