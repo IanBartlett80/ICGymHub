@@ -13,15 +13,21 @@ export async function POST(request: NextRequest) {
 
     const clubId = user.clubId;
 
-    // Create backup record
-    const backup = await prisma.clubBackup.create({
-      data: {
-        clubId,
-        backupType: 'MANUAL',
-        status: 'IN_PROGRESS',
-        createdBy: user.fullName,
-      },
-    });
+    // Create backup record (non-blocking - don't fail the export if tracking fails)
+    let backupId: string | null = null;
+    try {
+      const backup = await prisma.clubBackup.create({
+        data: {
+          clubId,
+          backupType: 'MANUAL',
+          status: 'IN_PROGRESS',
+          createdBy: user.fullName,
+        },
+      });
+      backupId = backup.id;
+    } catch (e) {
+      console.warn('Could not create backup record:', e);
+    }
 
     // Gather all club data
     const [
@@ -95,28 +101,33 @@ export async function POST(request: NextRequest) {
     const jsonString = JSON.stringify(backupData, null, 2);
     const recordCount = Object.values(backupData.data).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
 
-    // Update backup record
-    await prisma.clubBackup.update({
-      where: { id: backup.id },
-      data: {
-        status: 'COMPLETED',
-        fileSize: Buffer.byteLength(jsonString, 'utf8'),
-        recordCount,
-        completedAt: new Date(),
-      },
-    });
+    // Update backup record and create audit log (non-blocking)
+    try {
+      if (backupId) {
+        await prisma.clubBackup.update({
+          where: { id: backupId },
+          data: {
+            status: 'COMPLETED',
+            fileSize: Buffer.byteLength(jsonString, 'utf8'),
+            recordCount,
+            completedAt: new Date(),
+          },
+        });
+      }
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        clubId,
-        userId: user.id,
-        action: 'CLUB_BACKUP_CREATED',
-        entityType: 'Club',
-        entityId: clubId,
-        changes: JSON.stringify({ recordCount, backupId: backup.id }),
-      },
-    });
+      await prisma.auditLog.create({
+        data: {
+          clubId,
+          userId: user.id,
+          action: 'CLUB_BACKUP_CREATED',
+          entityType: 'Club',
+          entityId: clubId,
+          changes: JSON.stringify({ recordCount, backupId }),
+        },
+      });
+    } catch (e) {
+      console.warn('Could not update backup record or create audit log:', e);
+    }
 
     // Return JSON file as download
     return new NextResponse(jsonString, {
