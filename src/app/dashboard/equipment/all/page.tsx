@@ -58,7 +58,7 @@ export default function AllEquipmentPage() {
    setZones(zonesRes.data.zones || zonesRes.data);
   } catch (error) {
    console.error('Failed to load data:', error);
-   alert('Failed to load equipment data');
+   showToast.error('Failed to load equipment data');
   } finally {
    setLoading(false);
   }

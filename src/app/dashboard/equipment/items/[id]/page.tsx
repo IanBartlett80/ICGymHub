@@ -8,6 +8,7 @@ import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import axiosInstance from '@/lib/axios';
+import { showToast } from '@/lib/toast';
 import { 
  ArrowLeftIcon, 
  WrenchScrewdriverIcon,
@@ -119,7 +120,7 @@ export default function EquipmentDetailPage() {
    setMaintenanceLogs(logsRes.data.logs || logsRes.data);
   } catch (error) {
    console.error('Failed to load equipment details:', error);
-   alert('Failed to load equipment details');
+   showToast.error('Failed to load equipment details');
   } finally {
    setLoading(false);
   }
@@ -177,7 +178,7 @@ export default function EquipmentDetailPage() {
  const handleQuoteFormSuccess = () => {
   setShowRepairQuoteForm(false);
   setSelectedSafetyIssue(null);
-  alert('Repair quote request submitted successfully! An email has been sent to IanBartlett@icb.solutions');
+  showToast.success('Repair quote request submitted successfully!');
  };
 
  const handleScheduleMaintenance = () => {

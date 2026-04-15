@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { formatDateTime } from '@/lib/timezone';
+import { showToast } from '@/lib/toast';
 import { 
   ShieldCheckIcon, 
   KeyIcon,
@@ -78,7 +79,7 @@ export default function AccessControlPage() {
         setShowSetPinForm(false);
         setNewPin('');
         setConfirmPin('');
-        alert('QR Access PIN set successfully!');
+        showToast.success('QR Access PIN set successfully');
       } else {
         const data = await response.json();
         setPinError(data.error || 'Failed to set PIN');
@@ -140,7 +141,7 @@ export default function AccessControlPage() {
           setLastUpdated(new Date().toISOString());
           setShowChangePinForm(false);
           resetChangePinForm();
-          alert('QR Access PIN updated successfully!');
+          showToast.success('QR Access PIN updated successfully');
         } else {
           const data = await response.json();
           setPinError(data.error || 'Failed to update PIN');
@@ -191,7 +192,7 @@ export default function AccessControlPage() {
           setLastUpdated(new Date().toISOString());
           setShowChangePinForm(false);
           resetChangePinForm();
-          alert('QR Access PIN changed successfully!');
+          showToast.success('QR Access PIN changed successfully');
         } else {
           const data = await response.json();
           setPinError(data.error || 'Failed to change PIN');
@@ -224,13 +225,13 @@ export default function AccessControlPage() {
         setHasPin(false);
         setLastUpdated(null);
         setShowRemovePinConfirm(false);
-        alert('QR Access PIN removed successfully!');
+        showToast.success('QR Access PIN removed successfully');
       } else {
-        alert('Failed to remove PIN');
+        showToast.error('Failed to remove PIN');
       }
     } catch (error) {
       console.error('Failed to remove PIN:', error);
-      alert('Failed to remove PIN. Please try again.');
+      showToast.error('Failed to remove PIN. Please try again.');
     }
   };
 

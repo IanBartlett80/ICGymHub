@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { formatTimeShort } from '@/lib/timezone'
+import { showToast } from '@/lib/toast'
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfDay, endOfDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
 
 type Coach = {
@@ -69,7 +70,6 @@ export default function RosterReportsPage() {
  const [classTemplates, setClassTemplates] = useState<ClassTemplate[]>([])
  const [loading, setLoading] = useState(true)
  const [error, setError] = useState('')
- const [success, setSuccess] = useState('')
  
  // Report type toggle
  const [reportType, setReportType] = useState<'allocations' | 'schedule'>('allocations')
@@ -197,9 +197,10 @@ export default function RosterReportsPage() {
  }
 
  const handleEmailAll = async () => {
-  if (!confirm('Send roster report to all coaches via email?')) return
+  if (!window.confirm('Send roster report to all coaches via email?')) return
 
   setEmailingAll(true)
+  setError('')
   try {
    let startDate: Date
    let endDate: Date
@@ -226,13 +227,12 @@ export default function RosterReportsPage() {
    })
 
    if (res.ok) {
-    setSuccess('Emails sent successfully to all coaches')
-    setTimeout(() => setSuccess(''), 3000)
+    showToast.success('Emails sent successfully to all coaches')
    } else {
-    setError('Failed to send emails')
+    showToast.error('Failed to send emails')
    }
   } catch (err) {
-   setError('Failed to send emails')
+   showToast.error('Failed to send emails')
   } finally {
    setEmailingAll(false)
   }
@@ -241,13 +241,14 @@ export default function RosterReportsPage() {
  const handleEmailCoach = async (coachId: string) => {
   const coach = coaches.find(c => c.id === coachId)
   if (!coach?.email) {
-   setError('Coach does not have an email address')
+   showToast.error('Coach does not have an email address')
    return
   }
 
-  if (!confirm(`Send individual roster report to ${coach.name}?`)) return
+  if (!window.confirm(`Send individual roster report to ${coach.name}?`)) return
 
   setEmailingCoach(coachId)
+  setError('')
   try {
    let startDate: Date
    let endDate: Date
@@ -274,13 +275,12 @@ export default function RosterReportsPage() {
    })
 
    if (res.ok) {
-    setSuccess(`Email sent successfully to ${coach.name}`)
-    setTimeout(() => setSuccess(''), 3000)
+    showToast.success(`Email sent successfully to ${coach.name}`)
    } else {
-    setError(`Failed to send email to ${coach.name}`)
+    showToast.error(`Failed to send email to ${coach.name}`)
    }
   } catch (err) {
-   setError('Failed to send email')
+   showToast.error('Failed to send email')
   } finally {
    setEmailingCoach(null)
   }
@@ -473,12 +473,6 @@ export default function RosterReportsPage() {
      {error && (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 print:hidden">
        {error}
-      </div>
-     )}
-
-     {success && (
-      <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 print:hidden">
-       {success}
       </div>
      )}
 

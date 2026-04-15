@@ -236,7 +236,7 @@ export default function AutomationBuilderPage() {
 
  const saveAutomation = async () => {
   if (!name.trim()) {
-   alert('Please enter an automation name');
+   showToast.error('Please enter an automation name');
    return;
   }
 
@@ -274,15 +274,15 @@ export default function AutomationBuilderPage() {
    if (res.ok) {
     setShowBuilder(false);
     loadAutomations();
-    alert('Automation saved successfully!');
+    showToast.success('Automation saved successfully');
    } else {
     const error = await res.json();
     console.error('Failed to save automation:', error);
-    alert(`Failed to save automation: ${error.error || 'Unknown error'}`);
+    showToast.error(`Failed to save automation: ${error.error || 'Unknown error'}`);
    }
   } catch (error) {
    console.error('Error saving automation:', error);
-   alert('Error saving automation. Please try again.');
+   showToast.error('Error saving automation. Please try again.');
   }
  };
 

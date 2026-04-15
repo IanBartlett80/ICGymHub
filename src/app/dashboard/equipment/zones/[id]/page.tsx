@@ -127,7 +127,7 @@ export default function ZoneDetailPage() {
    }
   } catch (error) {
    console.error('Failed to load zone details:', error);
-   alert('Failed to load zone details');
+   showToast.error('Failed to load zone details');
   } finally {
    setLoading(false);
   }
@@ -187,7 +187,7 @@ export default function ZoneDetailPage() {
    await loadData();
   } catch (error) {
    console.error('Failed to generate QR code:', error);
-   alert('Failed to generate QR code');
+   showToast.error('Failed to generate QR code');
   } finally {
    setGeneratingQR(false);
   }

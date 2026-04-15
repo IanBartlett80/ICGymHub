@@ -10,6 +10,7 @@ import IntelligenceFilter from '@/components/IntelligenceFilter';
 import QRCodeProtectionStatus from '@/components/QRCodeProtectionStatus';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axiosInstance from '@/lib/axios';
+import { showToast } from '@/lib/toast';
 
 interface ZoneStatus {
  zoneId: string;
@@ -240,7 +241,7 @@ export default function EquipmentPage() {
    }));
   } catch (error) {
    console.error('Failed to generate QR code:', error);
-   alert('Failed to generate QR code');
+   showToast.error('Failed to generate QR code');
   } finally {
    setGeneratingQRForZone(null);
   }
@@ -268,7 +269,7 @@ export default function EquipmentPage() {
    setShowVenueQRs(true);
   } catch (error) {
    console.error('Failed to generate venue QR codes:', error);
-   alert('Failed to generate venue QR codes');
+   showToast.error('Failed to generate venue QR codes');
   } finally {
    setGeneratingVenueQRs(false);
   }

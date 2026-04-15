@@ -8,6 +8,7 @@ import VenueSelector from '@/components/VenueSelector';
 import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import IntelligenceFilter, { FilterConfig } from '@/components/IntelligenceFilter';
 import axiosInstance from '@/lib/axios';
+import { showToast } from '@/lib/toast';
 import { 
  PlusIcon,
  XMarkIcon,
@@ -97,7 +98,7 @@ export default function SafetyIssuesPage() {
    setEquipment(equipmentRes.data.equipment || []);
   } catch (error) {
    console.error('Failed to load data:', error);
-   alert('Failed to load safety issues');
+   showToast.error('Failed to load safety issues');
   } finally {
    setLoading(false);
   }
@@ -113,14 +114,14 @@ export default function SafetyIssuesPage() {
     await axiosInstance.post('/api/safety-issues', formData);
    }
 
-   alert(`Safety issue ${editingIssue ? 'updated' : 'created'} successfully!`);
+   showToast.success(`Safety issue ${editingIssue ? 'updated' : 'created'} successfully`);
    setShowForm(false);
    setEditingIssue(null);
    resetForm();
    loadData();
   } catch (error) {
    console.error('Failed to save safety issue:', error);
-   alert('Failed to save safety issue');
+   showToast.error('Failed to save safety issue');
   }
  };
 
@@ -146,11 +147,11 @@ export default function SafetyIssuesPage() {
 
   try {
    await axiosInstance.delete(`/api/safety-issues/${id}`);
-   alert('Safety issue deleted successfully!');
+   showToast.success('Safety issue deleted successfully');
    loadData();
   } catch (error) {
    console.error('Failed to delete safety issue:', error);
-   alert('Failed to delete safety issue');
+   showToast.error('Failed to delete safety issue');
   }
  };
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
+import { showToast } from '@/lib/toast';
 
 interface FormField {
  id: string;
@@ -70,7 +71,7 @@ export default function FormBuilderPage() {
 
  const deleteSection = (sectionId: string) => {
   if (sections.length === 1) {
-   alert('You must have at least one section');
+   showToast.error('You must have at least one section');
    return;
   }
   setSections(sections.filter(s => s.id !== sectionId));
@@ -151,7 +152,7 @@ export default function FormBuilderPage() {
 
  const saveForm = async () => {
   if (!formName.trim()) {
-   alert('Please enter a form name');
+   showToast.error('Please enter a form name');
    return;
   }
 
@@ -159,7 +160,7 @@ export default function FormBuilderPage() {
   for (const section of sections) {
    for (const field of section.fields) {
     if (!field.label.trim()) {
-     alert(`Please add a label to all fields in "${section.title}"`);
+     showToast.error(`Please add a label to all fields in "${section.title}"`);
      return;
     }
    }
@@ -203,11 +204,11 @@ export default function FormBuilderPage() {
    } else {
     const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
     console.error('Failed to save form:', errorData);
-    alert(`Failed to save form: ${errorData.error || 'Unknown error'}`);
+    showToast.error(`Failed to save form: ${errorData.error || 'Unknown error'}`);
    }
   } catch (error) {
    console.error('Error saving form:', error);
-   alert(`Failed to save form: ${error instanceof Error ? error.message : 'Unknown error'}`);
+   showToast.error(`Failed to save form: ${error instanceof Error ? error.message : 'Unknown error'}`);
   } finally {
    setSaving(false);
   }
