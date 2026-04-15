@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import VenueSelector from '@/components/VenueSelector';
 import IntelligenceFilter from '@/components/IntelligenceFilter';
+import RepairQuoteRequestForm from '@/components/RepairQuoteRequestForm';
 import { showToast } from '@/lib/toast';
 import axiosInstance from '@/lib/axios';
 import {
@@ -18,6 +19,7 @@ import {
  FlagIcon,
  HandThumbUpIcon,
  ArrowPathIcon,
+ PlusIcon,
 } from '@heroicons/react/24/outline';
 
 interface StatusHistoryEntry {
@@ -214,10 +216,42 @@ export default function RepairQuotesPage() {
  const [completionFinalCost, setCompletionFinalCost] = useState('');
  const [completionNotes, setCompletionNotes] = useState('');
  const [completionWarranty, setCompletionWarranty] = useState('');
+ const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+ const [showEquipmentPicker, setShowEquipmentPicker] = useState(false);
+ const [equipmentList, setEquipmentList] = useState<any[]>([]);
+ const [equipmentSearch, setEquipmentSearch] = useState('');
+ const [selectedEquipment, setSelectedEquipment] = useState<any>(null);
+ const [loadingEquipment, setLoadingEquipment] = useState(false);
 
  useEffect(() => {
   loadRequests();
  }, [statusFilter, urgencyFilter, venueId]);
+
+ const openNewRequest = async () => {
+  setShowEquipmentPicker(true);
+  setEquipmentSearch('');
+  if (equipmentList.length === 0) {
+   setLoadingEquipment(true);
+   try {
+    const res = await axiosInstance.get('/api/equipment');
+    setEquipmentList(res.data.equipment || res.data || []);
+   } catch {
+    showToast.error('Failed to load equipment');
+   } finally {
+    setLoadingEquipment(false);
+   }
+  }
+ };
+
+ const filteredEquipment = useMemo(() => {
+  if (!equipmentSearch.trim()) return equipmentList;
+  const term = equipmentSearch.toLowerCase();
+  return equipmentList.filter((e: any) =>
+   e.name?.toLowerCase().includes(term) ||
+   e.serialNumber?.toLowerCase().includes(term) ||
+   e.zone?.name?.toLowerCase().includes(term)
+  );
+ }, [equipmentList, equipmentSearch]);
 
  const loadRequests = async () => {
   try {
@@ -403,11 +437,20 @@ export default function RepairQuotesPage() {
    <EquipmentManagementSubNav />
    <div className="p-6 space-y-6">
     {/* Header */}
-    <div className="mb-6">
-     <h1 className="text-2xl font-bold text-gray-900">Repair Quote Requests</h1>
-     <p className="mt-1 text-sm text-gray-600">
-      Track repair quotes managed by ICB Solutions. Submit requests, review quotes, and approve repairs.
-     </p>
+    <div className="mb-6 flex items-start justify-between">
+     <div>
+      <h1 className="text-2xl font-bold text-gray-900">Repair Quote Requests</h1>
+      <p className="mt-1 text-sm text-gray-600">
+       Track repair quotes managed by ICB Solutions. Submit requests, review quotes, and approve repairs.
+      </p>
+     </div>
+     <button
+      onClick={openNewRequest}
+      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium shrink-0"
+     >
+      <PlusIcon className="h-5 w-5" />
+      Request Repair Quote
+     </button>
     </div>
 
     {/* Stats */}
@@ -1203,6 +1246,80 @@ export default function RepairQuotesPage() {
       </div>
      </div>
     </div>
+   )}
+
+   {/* Equipment Picker Modal */}
+   {showEquipmentPicker && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+     <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col">
+      <div className="px-6 py-4 border-b border-gray-200">
+       <h2 className="text-lg font-bold text-gray-900">Select Equipment</h2>
+       <p className="text-sm text-gray-600 mt-1">Choose the equipment that needs repair</p>
+       <div className="mt-3 relative">
+        <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
+        <input
+         type="text"
+         placeholder="Search equipment..."
+         value={equipmentSearch}
+         onChange={(e) => setEquipmentSearch(e.target.value)}
+         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+         autoFocus
+        />
+       </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-2">
+       {loadingEquipment ? (
+        <div className="flex items-center justify-center py-8">
+         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+       ) : filteredEquipment.length === 0 ? (
+        <p className="text-center text-gray-500 py-8 text-sm">No equipment found</p>
+       ) : (
+        filteredEquipment.map((eq: any) => (
+         <button
+          key={eq.id}
+          onClick={() => {
+           setSelectedEquipment(eq);
+           setShowEquipmentPicker(false);
+           setShowNewRequestForm(true);
+          }}
+          className="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 transition flex items-center justify-between group"
+         >
+          <div>
+           <p className="font-medium text-gray-900 group-hover:text-blue-700">{eq.name}</p>
+           <p className="text-xs text-gray-500">
+            {eq.zone?.name || 'No zone'}{eq.serialNumber ? ` · SN: ${eq.serialNumber}` : ''}
+           </p>
+          </div>
+          <span className="text-xs text-gray-400 group-hover:text-blue-600">Select →</span>
+         </button>
+        ))
+       )}
+      </div>
+      <div className="px-6 py-3 border-t border-gray-200">
+       <button
+        onClick={() => setShowEquipmentPicker(false)}
+        className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+       >
+        Cancel
+       </button>
+      </div>
+     </div>
+    </div>
+   )}
+
+   {/* New Request Form */}
+   {showNewRequestForm && selectedEquipment && (
+    <RepairQuoteRequestForm
+     equipment={selectedEquipment}
+     onClose={() => { setShowNewRequestForm(false); setSelectedEquipment(null); }}
+     onSuccess={() => {
+      setShowNewRequestForm(false);
+      setSelectedEquipment(null);
+      showToast.success('Repair quote request submitted successfully');
+      loadRequests();
+     }}
+    />
    )}
   </DashboardLayout>
  );
