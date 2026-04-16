@@ -72,6 +72,10 @@ export default function ProfilePage() {
  const [confirmDeleteText, setConfirmDeleteText] = useState('')
  const [deletionStatus, setDeletionStatus] = useState<{ deletionScheduledFor: string | null; deletedBy: string | null } | null>(null)
  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+ const [restoreValidation, setRestoreValidation] = useState<any>(null)
+ const [restoreLoading, setRestoreLoading] = useState(false)
+ const [showRestoreConfirmModal, setShowRestoreConfirmModal] = useState(false)
+ const [restoreResults, setRestoreResults] = useState<any>(null)
  const [clubTimezone, setClubTimezone] = useState('Australia/Sydney')
  const [originalClubTimezone, setOriginalClubTimezone] = useState('Australia/Sydney')
  const [timezoneSaving, setTimezoneSaving] = useState(false)
@@ -278,6 +282,8 @@ export default function ProfilePage() {
   if (!restoreFile) return
   setShowRestoreModal(false)
   setMessage(null)
+  setRestoreLoading(true)
+  setRestoreResults(null)
   try {
    const formData = new FormData()
    formData.append('file', restoreFile)
@@ -285,10 +291,36 @@ export default function ProfilePage() {
    const response = await axiosInstance.post('/api/clubs/restore', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
    })
+   setRestoreValidation(response.data.summary)
    setMessage({ type: 'success', text: `Backup validated: ${response.data.summary.recordCount} records from ${new Date(response.data.summary.exportedAt).toLocaleDateString()}` })
+  } catch (error: any) {
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to validate backup' })
    setRestoreFile(null)
+  } finally {
+   setRestoreLoading(false)
+  }
+ }
+
+ const handleExecuteRestore = async (password: string) => {
+  if (!restoreFile) return
+  setShowRestoreConfirmModal(false)
+  setMessage(null)
+  setRestoreLoading(true)
+  try {
+   const formData = new FormData()
+   formData.append('file', restoreFile)
+   formData.append('password', password)
+   const response = await axiosInstance.put('/api/clubs/restore', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+   })
+   setRestoreResults(response.data)
+   setMessage({ type: 'success', text: response.data.message })
+   setRestoreFile(null)
+   setRestoreValidation(null)
   } catch (error: any) {
    setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to restore backup' })
+  } finally {
+   setRestoreLoading(false)
   }
  }
 
@@ -631,25 +663,105 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
          <div>
           <h3 className="font-medium text-gray-900">Restore from Backup</h3>
-          <p className="text-sm text-gray-500">Validate a backup file (requires password)</p>
+          <p className="text-sm text-gray-500">Restore missing data from a backup file (requires password)</p>
          </div>
         </div>
         <div className="mt-3 flex items-center gap-3">
          <input
           type="file"
           accept=".json"
-          onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+          onChange={(e) => {
+           setRestoreFile(e.target.files?.[0] || null)
+           setRestoreValidation(null)
+           setRestoreResults(null)
+          }}
           className="text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-gray-300 file:text-sm file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50"
          />
-         {restoreFile && (
+         {restoreFile && !restoreValidation && (
           <button
            onClick={() => setShowRestoreModal(true)}
-           className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition"
+           disabled={restoreLoading}
+           className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition disabled:opacity-50"
           >
-           Validate Backup
+           {restoreLoading ? 'Validating...' : 'Validate Backup'}
           </button>
          )}
         </div>
+
+        {/* Validation Results */}
+        {restoreValidation && (
+         <div className="mt-4 border border-blue-200 bg-blue-50 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">Backup Contents — {restoreValidation.clubName}</h4>
+          <p className="text-sm text-blue-700 mb-3">
+           Exported: {new Date(restoreValidation.exportedAt).toLocaleString()} &bull; {restoreValidation.recordCount} total records
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+           {restoreValidation.tables.filter((t: any) => t.count > 0).map((table: any) => (
+            <div key={table.name} className="flex justify-between text-sm bg-white px-3 py-1.5 rounded border border-blue-100">
+             <span className="text-gray-700 capitalize">{table.name.replace(/([A-Z])/g, ' $1').trim()}</span>
+             <span className="font-medium text-blue-700">{table.count}</span>
+            </div>
+           ))}
+          </div>
+          <div className="flex gap-3">
+           <button
+            onClick={() => setShowRestoreConfirmModal(true)}
+            disabled={restoreLoading}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+           >
+            {restoreLoading ? 'Restoring...' : 'Restore Missing Items'}
+           </button>
+           <button
+            onClick={() => {
+             setRestoreFile(null)
+             setRestoreValidation(null)
+            }}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+           >
+            Cancel
+           </button>
+          </div>
+         </div>
+        )}
+
+        {/* Restore Results */}
+        {restoreResults && (
+         <div className={`mt-4 border rounded-lg p-4 ${restoreResults.totalRestored > 0 ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}`}>
+          <h4 className={`font-medium mb-2 ${restoreResults.totalRestored > 0 ? 'text-green-900' : 'text-blue-900'}`}>Restore Complete</h4>
+          <p className={`text-sm mb-3 ${restoreResults.totalRestored > 0 ? 'text-green-700' : 'text-blue-700'}`}>{restoreResults.message}</p>
+          {restoreResults.totalRestored > 0 && (
+           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+            {Object.entries(restoreResults.restored)
+             .filter(([, count]: [string, unknown]) => (count as number) > 0)
+             .map(([name, count]: [string, unknown]) => (
+              <div key={name} className="flex justify-between text-sm bg-white px-3 py-1.5 rounded border border-green-100">
+               <span className="text-gray-700 capitalize">{name.replace(/([A-Z])/g, ' $1').trim()}</span>
+               <span className="font-medium text-green-700">{count as number} restored</span>
+              </div>
+             ))}
+           </div>
+          )}
+          {restoreResults.errors?.length > 0 && (
+           <div className="mt-2">
+            <p className="text-sm font-medium text-amber-700 mb-1">Some items could not be restored:</p>
+            <ul className="text-xs text-amber-600 space-y-1">
+             {restoreResults.errors.slice(0, 10).map((err: string, i: number) => (
+              <li key={i}>&bull; {err}</li>
+             ))}
+             {restoreResults.errors.length > 10 && (
+              <li>...and {restoreResults.errors.length - 10} more</li>
+             )}
+            </ul>
+           </div>
+          )}
+          <button
+           onClick={() => setRestoreResults(null)}
+           className="mt-3 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition"
+          >
+           Dismiss
+          </button>
+         </div>
+        )}
        </div>
 
        {/* Delete Club */}
@@ -717,9 +829,17 @@ export default function ProfilePage() {
      isOpen={showRestoreModal}
      onClose={() => setShowRestoreModal(false)}
      onVerified={handleRestore}
-     title="Confirm Restore"
+     title="Validate Backup"
      description="Enter your password to validate this backup file."
      confirmLabel="Validate"
+    />
+    <PasswordVerificationModal
+     isOpen={showRestoreConfirmModal}
+     onClose={() => setShowRestoreConfirmModal(false)}
+     onVerified={handleExecuteRestore}
+     title="Confirm Restore"
+     description="Enter your password to restore missing items from the backup. Only items missing from the database will be recreated."
+     confirmLabel="Restore Missing Items"
     />
 
      </div>{/* end Main Content */}
