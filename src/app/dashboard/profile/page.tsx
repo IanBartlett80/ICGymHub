@@ -70,7 +70,6 @@ export default function ProfilePage() {
  const [showDeleteModal, setShowDeleteModal] = useState(false)
  const [showRestoreModal, setShowRestoreModal] = useState(false)
  const [confirmDeleteText, setConfirmDeleteText] = useState('')
- const [deletionStatus, setDeletionStatus] = useState<{ deletionScheduledFor: string | null; deletedBy: string | null } | null>(null)
  const [restoreFile, setRestoreFile] = useState<File | null>(null)
  const [restoreValidation, setRestoreValidation] = useState<any>(null)
  const [restoreLoading, setRestoreLoading] = useState(false)
@@ -103,12 +102,8 @@ export default function ProfilePage() {
    username: parsed.username
   }))
 
-  // Fetch deletion status if admin
+  // Fetch last backup date if admin
   if (parsed.role === 'ADMIN') {
-   axiosInstance.get('/api/clubs/delete').then(res => {
-    setDeletionStatus(res.data)
-   }).catch(() => {})
-   // Fetch last backup date
    axiosInstance.get('/api/clubs/backup').then(res => {
     const backups = res.data?.backups
     if (backups?.length > 0) {
@@ -324,33 +319,25 @@ export default function ProfilePage() {
   }
  }
 
- const handleScheduleDelete = async (password: string) => {
+ const handleDeleteClub = async (password: string) => {
   setShowDeleteModal(false)
   setDeleteLoading(true)
   setMessage(null)
   try {
-   const response = await axiosInstance.post('/api/clubs/delete', {
+   await axiosInstance.post('/api/clubs/delete', {
     password,
     confirmationText: confirmDeleteText,
    })
-   setDeletionStatus({ deletionScheduledFor: response.data.deletionScheduledFor, deletedBy: user?.fullName || null })
-   setMessage({ type: 'success', text: `Club deletion scheduled for ${new Date(response.data.deletionScheduledFor).toLocaleDateString()}` })
-   setConfirmDeleteText('')
+   // Clear local auth data
+   localStorage.removeItem('accessToken')
+   localStorage.removeItem('refreshToken')
+   localStorage.removeItem('userData')
+   // Redirect to goodbye page
+   router.push('/account-deleted')
   } catch (error: any) {
-   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to schedule deletion' })
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to delete club' })
   } finally {
    setDeleteLoading(false)
-  }
- }
-
- const handleCancelDelete = async () => {
-  setMessage(null)
-  try {
-   await axiosInstance.delete('/api/clubs/delete')
-   setDeletionStatus({ deletionScheduledFor: null, deletedBy: null })
-   setMessage({ type: 'success', text: 'Scheduled deletion has been cancelled' })
-  } catch (error: any) {
-   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to cancel deletion' })
   }
  }
 
@@ -766,26 +753,10 @@ export default function ProfilePage() {
 
        {/* Delete Club */}
        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-        {deletionStatus?.deletionScheduledFor ? (
-         <div>
-          <h3 className="font-medium text-red-800">Deletion Scheduled</h3>
-          <p className="text-sm text-red-600 mt-1">
-           This club is scheduled for permanent deletion on{' '}
-           <strong>{new Date(deletionStatus.deletionScheduledFor).toLocaleDateString()}</strong>.
-           Scheduled by: {deletionStatus.deletedBy}
-          </p>
-          <button
-           onClick={handleCancelDelete}
-           className="mt-3 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition"
-          >
-           Cancel Deletion
-          </button>
-         </div>
-        ) : (
          <div>
           <h3 className="font-medium text-red-800">Delete Club</h3>
           <p className="text-sm text-red-600 mt-1">
-           Once deleted, all data will be permanently removed after a 30-day cooling-off period.
+           This action is permanent and cannot be undone. All club data including rosters, equipment, injuries, compliance items, and user accounts will be permanently deleted.
            Australian WHS regulations require 7-year data retention — please download a backup first.
           </p>
           <div className="mt-3 space-y-3">
@@ -806,11 +777,10 @@ export default function ProfilePage() {
             disabled={confirmDeleteText !== user?.clubName || deleteLoading}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
            >
-            {deleteLoading ? 'Processing...' : 'Schedule Deletion'}
+            {deleteLoading ? 'Deleting...' : 'Delete Club Permanently'}
            </button>
           </div>
          </div>
-        )}
        </div>
       </div>
      </div>
@@ -820,10 +790,10 @@ export default function ProfilePage() {
     <PasswordVerificationModal
      isOpen={showDeleteModal}
      onClose={() => setShowDeleteModal(false)}
-     onVerified={handleScheduleDelete}
+     onVerified={handleDeleteClub}
      title="Confirm Club Deletion"
-     description="Enter your password to schedule this club for deletion."
-     confirmLabel="Schedule Deletion"
+     description="This action is permanent and cannot be undone. Enter your password to permanently delete this club and all its data."
+     confirmLabel="Delete Permanently"
     />
     <PasswordVerificationModal
      isOpen={showRestoreModal}
