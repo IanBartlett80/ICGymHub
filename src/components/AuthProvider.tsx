@@ -20,6 +20,8 @@ interface UserData {
   clubId: string
   clubName: string
   clubTimezone: string
+  paymentStatus?: string
+  paymentCancelledAt?: string | null
 }
 
 const AuthContext = createContext<AuthContextType>({

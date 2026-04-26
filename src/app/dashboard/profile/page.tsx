@@ -50,6 +50,8 @@ interface UserData {
  role: string
  clubId: string
  clubName: string
+ paymentStatus?: string
+ paymentCancelledAt?: string | null
 }
 
 export default function ProfilePage() {
@@ -76,6 +78,7 @@ export default function ProfilePage() {
  const [showRestoreConfirmModal, setShowRestoreConfirmModal] = useState(false)
  const [restoreResults, setRestoreResults] = useState<any>(null)
  const [clubTimezone, setClubTimezone] = useState('Australia/Sydney')
+ const [reEnableLoading, setReEnableLoading] = useState(false)
  const [originalClubTimezone, setOriginalClubTimezone] = useState('Australia/Sydney')
  const [timezoneSaving, setTimezoneSaving] = useState(false)
  const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
@@ -316,6 +319,28 @@ export default function ProfilePage() {
    setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to restore backup' })
   } finally {
    setRestoreLoading(false)
+  }
+ }
+
+ const handleReEnableSubscription = async () => {
+  setReEnableLoading(true)
+  setMessage(null)
+  try {
+   const res = await axiosInstance.post('/api/billing', { action: 'reactivate' })
+   setMessage({ type: 'success', text: res.data.message })
+   // Update localStorage with new payment status
+   const storedData = localStorage.getItem('userData')
+   if (storedData) {
+    const parsed = JSON.parse(storedData)
+    parsed.paymentStatus = 'AGREED'
+    parsed.paymentCancelledAt = null
+    localStorage.setItem('userData', JSON.stringify(parsed))
+   }
+   setUser(prev => prev ? { ...prev, paymentStatus: 'AGREED', paymentCancelledAt: null } : prev)
+  } catch (error: any) {
+   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to re-enable subscription' })
+  } finally {
+   setReEnableLoading(false)
   }
  }
 
@@ -750,6 +775,35 @@ export default function ProfilePage() {
          </div>
         )}
        </div>
+
+       {/* Re-Enable Subscription */}
+       {user?.paymentStatus === 'CANCELLED' && (
+        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+         <div className="flex items-center justify-between">
+          <div>
+           <h3 className="font-medium text-green-800">Re-Enable Subscription</h3>
+           <p className="text-sm text-green-700 mt-1">
+            Your subscription is currently inactive.
+            {user.paymentCancelledAt && (() => {
+             const cancelDate = new Date(user.paymentCancelledAt!)
+             const expiryDate = new Date(cancelDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+             const days = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+             return days > 0
+              ? ` Your data will be deleted in ${days} day${days !== 1 ? 's' : ''}.`
+              : ' Your grace period has expired. Re-enable now to keep your data.'
+            })()}
+           </p>
+          </div>
+          <button
+           onClick={handleReEnableSubscription}
+           disabled={reEnableLoading}
+           className="ml-4 px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+           {reEnableLoading ? 'Processing...' : 'Re-Enable Subscription'}
+          </button>
+         </div>
+        </div>
+       )}
 
        {/* Delete Club */}
        <div className="p-4 bg-red-50 rounded-lg border border-red-200">

@@ -219,7 +219,118 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({
-        message: 'Subscription cancelled successfully. Your access will continue until the end of your current billing period.',
+        message: 'Subscription cancelled successfully. Your data will be retained for 30 days. You can re-enable your subscription at any time during this period.',
+      })
+    }
+
+    if (action === 'reactivate') {
+      const club = await prisma.club.findUnique({
+        where: { id: auth.user.clubId },
+        select: {
+          id: true,
+          name: true,
+          domain: true,
+          abn: true,
+          address: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          phone: true,
+          paymentStatus: true,
+          monthlyRateAud: true,
+          xeroContactId: true,
+          xeroRepeatingInvoiceId: true,
+          createdAt: true,
+          users: {
+            where: { role: 'ADMIN' },
+            select: { fullName: true, email: true, username: true },
+            take: 1,
+          },
+        },
+      })
+
+      if (!club) {
+        return NextResponse.json({ error: 'Club not found' }, { status: 404 })
+      }
+
+      if (club.paymentStatus !== 'CANCELLED') {
+        return NextResponse.json({ error: 'Subscription is not cancelled' }, { status: 400 })
+      }
+
+      await prisma.club.update({
+        where: { id: auth.user.clubId },
+        data: {
+          paymentStatus: 'AGREED',
+          paymentCancelledAt: null,
+        },
+      })
+
+      // Send reactivation notification email
+      try {
+        const reactivationDate = new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+        const admin = club.users[0]
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"></head>
+          <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
+            <table role="presentation" style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="padding:40px 0;text-align:center;">
+                  <table role="presentation" style="width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                    <tr>
+                      <td style="padding:30px;text-align:center;background-color:#16a34a;border-radius:8px 8px 0 0;">
+                        <h1 style="margin:0;color:#ffffff;font-size:24px;">Subscription Re-Enabled</h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:30px;">
+                        <p style="margin:0 0 20px;font-size:14px;color:#666;">Re-enabled: ${reactivationDate} (AEST)</p>
+
+                        <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Club Details</h2>
+                        <table style="width:100%;margin-bottom:20px;font-size:14px;">
+                          <tr><td style="padding:4px 8px;color:#666;width:40%;">Club Name</td><td style="padding:4px 8px;color:#333;font-weight:600;">${club.name}</td></tr>
+                          <tr><td style="padding:4px 8px;color:#666;">Domain</td><td style="padding:4px 8px;color:#333;">${club.domain}</td></tr>
+                          <tr><td style="padding:4px 8px;color:#666;">ABN</td><td style="padding:4px 8px;color:#333;">${club.abn || 'Not provided'}</td></tr>
+                          <tr><td style="padding:4px 8px;color:#666;">Club ID</td><td style="padding:4px 8px;color:#333;font-family:monospace;font-size:12px;">${club.id}</td></tr>
+                        </table>
+
+                        <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Admin</h2>
+                        <table style="width:100%;margin-bottom:20px;font-size:14px;">
+                          <tr><td style="padding:4px 8px;color:#666;width:40%;">Full Name</td><td style="padding:4px 8px;color:#333;">${admin?.fullName || 'N/A'}</td></tr>
+                          <tr><td style="padding:4px 8px;color:#666;">Email</td><td style="padding:4px 8px;color:#333;">${admin?.email || 'N/A'}</td></tr>
+                        </table>
+
+                        <div style="margin-top:20px;padding:12px;background-color:#f0fdf4;border:1px solid #22c55e;border-radius:6px;">
+                          <p style="margin:0;font-size:13px;color:#166534;"><strong>Action Required:</strong> Please re-enable the recurring invoice in Xero for this club.</p>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:20px;background-color:#f9fafb;border-radius:0 0 8px 8px;text-align:center;">
+                        <p style="margin:0;font-size:12px;color:#666;">© ${new Date().getFullYear()} GymHub. Automated reactivation notification.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+
+        await sendEmail({
+          to: 'GymHub@icb.solutions',
+          subject: 'GYMHUB Subscription RENABLE Request',
+          htmlContent,
+        })
+        console.log(`✅ Reactivation notification email sent for ${club.name}`)
+      } catch (emailError) {
+        console.error('Failed to send reactivation notification email:', emailError)
+      }
+
+      return NextResponse.json({
+        message: 'Subscription re-enabled successfully. Welcome back!',
       })
     }
 

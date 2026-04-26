@@ -2,7 +2,7 @@
 
 import { useState, useEffect, ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from './AuthProvider'
 import ClassRosteringSubNav from './ClassRosteringSubNav'
@@ -18,6 +18,8 @@ interface UserData {
   clubId: string
   clubName: string
   clubTimezone: string
+  paymentStatus?: string
+  paymentCancelledAt?: string | null
 }
 
 interface DashboardLayoutProps {
@@ -32,6 +34,7 @@ type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'complianc
 
 export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { user: authUser, logout } = useAuth()
   const [user, setUser] = useState<UserData | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -71,6 +74,23 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   const handleLogout = () => {
     logout()
   }
+
+  // Subscription cancellation state
+  const isCancelled = user?.paymentStatus === 'CANCELLED'
+  const cancelledAt = user?.paymentCancelledAt ? new Date(user.paymentCancelledAt) : null
+  const now = new Date()
+  const gracePeriodMs = 30 * 24 * 60 * 60 * 1000 // 30 days
+  const gracePeriodExpiry = cancelledAt ? new Date(cancelledAt.getTime() + gracePeriodMs) : null
+  const daysRemaining = gracePeriodExpiry ? Math.max(0, Math.ceil((gracePeriodExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null
+  const isGracePeriodExpired = isCancelled && daysRemaining !== null && daysRemaining <= 0
+  const isOnProfilePage = pathname?.startsWith('/dashboard/profile')
+
+  // After 30-day grace period, redirect non-profile pages to profile (Danger Zone)
+  useEffect(() => {
+    if (isGracePeriodExpired && !isOnProfilePage) {
+      router.push('/dashboard/profile')
+    }
+  }, [isGracePeriodExpired, isOnProfilePage, router])
 
   const mainServices = [
     { id: 'dashboard' as ServiceType, name: 'Home', basePath: '/dashboard' },
@@ -251,6 +271,56 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
         {showClubManagementNav && (
           <div className="print:hidden">
             <ClubManagementSubNav />
+          </div>
+        )}
+
+        {/* Subscription Cancellation Banner */}
+        {isCancelled && !isGracePeriodExpired && daysRemaining !== null && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 print:hidden">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">
+                    Your subscription has been cancelled
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    Your data will be permanently deleted in <strong>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</strong>. Re-enable your subscription to continue using GymHub.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/profile/billing"
+                className="ml-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition whitespace-nowrap"
+              >
+                Re-Enable Subscription
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Grace Period Expired Banner */}
+        {isGracePeriodExpired && (
+          <div className="bg-red-50 border-b border-red-200 px-4 py-3 print:hidden">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🚫</span>
+                <div>
+                  <p className="text-sm font-semibold text-red-800">
+                    Your subscription has expired
+                  </p>
+                  <p className="text-sm text-red-700">
+                    Your 30-day grace period has ended. Re-enable your subscription to restore full access, or delete your club.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/profile/billing"
+                className="ml-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition whitespace-nowrap"
+              >
+                Re-Enable Subscription
+              </Link>
+            </div>
           </div>
         )}
 

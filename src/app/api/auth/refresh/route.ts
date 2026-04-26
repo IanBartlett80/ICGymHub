@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
           clubId: session.user.clubId,
           clubName: session.user.club.name,
           clubTimezone: session.user.club.timezone,
+          paymentStatus: session.user.club.paymentStatus,
+          paymentCancelledAt: session.user.club.paymentCancelledAt,
         },
         tokens: newTokens,
       },

@@ -26,6 +26,7 @@ export default function BillingPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
+  const [reEnableLoading, setReEnableLoading] = useState(false)
   const [user, setUser] = useState<{ role: string } | null>(null)
 
   useEffect(() => {
@@ -61,6 +62,14 @@ export default function BillingPage() {
       // Refresh billing data
       const billingRes = await axiosInstance.get('/api/billing')
       setBilling(billingRes.data.billing)
+      // Update localStorage so DashboardLayout banner appears
+      const storedData = localStorage.getItem('userData')
+      if (storedData) {
+        const parsed = JSON.parse(storedData)
+        parsed.paymentStatus = 'CANCELLED'
+        parsed.paymentCancelledAt = new Date().toISOString()
+        localStorage.setItem('userData', JSON.stringify(parsed))
+      }
     } catch (error: any) {
       setMessage({
         type: 'error',
@@ -68,6 +77,33 @@ export default function BillingPage() {
       })
     } finally {
       setCancelLoading(false)
+    }
+  }
+
+  const handleReEnableSubscription = async () => {
+    setReEnableLoading(true)
+    setMessage(null)
+    try {
+      const res = await axiosInstance.post('/api/billing', { action: 'reactivate' })
+      setMessage({ type: 'success', text: res.data.message })
+      // Refresh billing data
+      const billingRes = await axiosInstance.get('/api/billing')
+      setBilling(billingRes.data.billing)
+      // Update localStorage so DashboardLayout banner disappears
+      const storedData = localStorage.getItem('userData')
+      if (storedData) {
+        const parsed = JSON.parse(storedData)
+        parsed.paymentStatus = 'AGREED'
+        parsed.paymentCancelledAt = null
+        localStorage.setItem('userData', JSON.stringify(parsed))
+      }
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to re-enable subscription',
+      })
+    } finally {
+      setReEnableLoading(false)
     }
   }
 
@@ -277,8 +313,8 @@ export default function BillingPage() {
             <div className="p-6 border-b border-red-200 bg-red-50 rounded-t-lg">
               <h2 className="text-lg font-semibold text-red-800">Cancel Subscription</h2>
               <p className="text-sm text-red-600 mt-1">
-                This will cancel your monthly subscription. Your access will continue until the end
-                of the current billing period.
+                This will cancel your monthly subscription. Your data will be retained for 30 days.
+                You can re-enable your subscription at any time during this period.
               </p>
             </div>
             <div className="p-6">
@@ -288,6 +324,35 @@ export default function BillingPage() {
                 className="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cancelLoading ? 'Processing...' : 'Cancel Subscription'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Re-Enable Subscription - Admin Only, when cancelled */}
+        {user?.role === 'ADMIN' && billing?.paymentStatus === 'CANCELLED' && (
+          <div className="bg-white rounded-lg shadow-sm border-2 border-green-200">
+            <div className="p-6 border-b border-green-200 bg-green-50 rounded-t-lg">
+              <h2 className="text-lg font-semibold text-green-800">Re-Enable Subscription</h2>
+              <p className="text-sm text-green-700 mt-1">
+                Your subscription is currently inactive.
+                {billing.paymentCancelledAt && (() => {
+                  const cancelDate = new Date(billing.paymentCancelledAt)
+                  const expiryDate = new Date(cancelDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+                  const days = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                  return days > 0
+                    ? ` Your data will be deleted in ${days} day${days !== 1 ? 's' : ''} if you don't re-enable.`
+                    : ' Your grace period has expired. Re-enable now to keep your data.'
+                })()}
+              </p>
+            </div>
+            <div className="p-6">
+              <button
+                onClick={handleReEnableSubscription}
+                disabled={reEnableLoading}
+                className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {reEnableLoading ? 'Processing...' : 'Re-Enable Subscription'}
               </button>
             </div>
           </div>
