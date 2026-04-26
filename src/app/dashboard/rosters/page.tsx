@@ -3,13 +3,68 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
 import { format } from 'date-fns'
 import { showToast, confirmAndDelete, confirmDelete } from '@/lib/toast'
 import axiosInstance from '@/lib/axios'
 
+const DAYS_OF_WEEK = [
+ { value: 'MON', label: 'Monday' },
+ { value: 'TUE', label: 'Tuesday' },
+ { value: 'WED', label: 'Wednesday' },
+ { value: 'THU', label: 'Thursday' },
+ { value: 'FRI', label: 'Friday' },
+ { value: 'SAT', label: 'Saturday' },
+ { value: 'SUN', label: 'Sunday' },
+]
+
+type ClassTemplate = {
+ id: string
+ name: string
+ level: string
+ lengthMinutes: number
+ defaultRotationMinutes: number
+ startTimeLocal: string
+ endTimeLocal: string
+ activeDays: string
+ venueId: string | null
+ allowedZones: Array<{ zone: { id: string; name: string } }>
+ defaultCoaches: Array<{ coach: { id: string; name: string } }>
+}
+
+type Coach = {
+ id: string
+ name: string
+}
+
+type Zone = {
+ id: string
+ name: string
+ venueId?: string | null
+}
+
+type ClassConfig = {
+ templateId: string
+ rotationMinutes: number
+ allowedZoneIds: string[]
+ coachIds: string[]
+ allowOverlap: boolean
+ startTimeLocal: string
+ endTimeLocal: string
+}
+
+type TemplateData = {
+ id: string
+ name: string
+ startDate: string
+ endDate: string
+ activeDays: string
+ classConfig: string
+ venueId: string | null
+}
+
 type Roster = {
  id: string
- scope: string
  startDate: string
  endDate: string
  status: string
@@ -43,6 +98,22 @@ export default function RostersPage() {
  const [showDeleteModal, setShowDeleteModal] = useState(false)
  const [templateToDelete, setTemplateToDelete] = useState<{ id: string; name: string; rosterCount: number } | null>(null)
  const [publishingTemplate, setPublishingTemplate] = useState<string | null>(null)
+
+ // Regenerate modal state
+ const [showRegenerateModal, setShowRegenerateModal] = useState(false)
+ const [regenerateLoading, setRegenerateLoading] = useState(false)
+ const [regenerateDataLoading, setRegenerateDataLoading] = useState(false)
+ const [regenTemplateName, setRegenTemplateName] = useState('')
+ const [regenStartDate, setRegenStartDate] = useState('')
+ const [regenEndDate, setRegenEndDate] = useState('')
+ const [regenActiveDays, setRegenActiveDays] = useState<Set<string>>(new Set())
+ const [regenVenueId, setRegenVenueId] = useState<string | null>(null)
+ const [regenTemplateId, setRegenTemplateId] = useState<string | null>(null)
+ const [regenClasses, setRegenClasses] = useState<ClassTemplate[]>([])
+ const [regenCoaches, setRegenCoaches] = useState<Coach[]>([])
+ const [regenZones, setRegenZones] = useState<Zone[]>([])
+ const [regenSelectedClasses, setRegenSelectedClasses] = useState<Set<string>>(new Set())
+ const [regenCustomizations, setRegenCustomizations] = useState<Map<string, Partial<ClassConfig>>>(new Map())
 
  useEffect(() => {
   fetchRosters()
@@ -140,23 +211,161 @@ export default function RostersPage() {
  }
 
  const handleRegenerateTemplate = async (templateId: string) => {
-  confirmDelete(
-   'This will delete all existing rosters and regenerate them from the template.',
-   async () => {
-    try {
-     const res = await fetch(`/api/roster-templates/${templateId}/regenerate`, { method: 'POST' })
-     if (res.ok) {
-      await fetchRosters()
-      showToast.success('Template regenerated successfully!')
-     } else {
-      showToast.error('Failed to regenerate template')
-     }
-    } catch (err) {
-     showToast.error('Failed to regenerate template')
+  setRegenTemplateId(templateId)
+  setRegenerateDataLoading(true)
+  setShowRegenerateModal(true)
+
+  try {
+   // Fetch template data + classes/coaches/zones in parallel
+   const [templateRes, classesRes, coachesRes, zonesRes] = await Promise.all([
+    axiosInstance.get(`/api/roster-templates/${templateId}`),
+    axiosInstance.get('/api/classes'),
+    axiosInstance.get('/api/coaches'),
+    axiosInstance.get('/api/zones'),
+   ])
+
+   const tmpl: TemplateData = templateRes.data
+   setRegenTemplateName(tmpl.name)
+   setRegenStartDate(new Date(tmpl.startDate).toISOString().split('T')[0])
+   setRegenEndDate(new Date(tmpl.endDate).toISOString().split('T')[0])
+   setRegenActiveDays(new Set(tmpl.activeDays.split(',')))
+   setRegenVenueId(tmpl.venueId)
+   setRegenClasses(classesRes.data.classes)
+   setRegenCoaches(coachesRes.data.coaches)
+   setRegenZones(zonesRes.data.zones)
+
+   // Parse existing class config and populate selections
+   const existingConfigs: ClassConfig[] = JSON.parse(tmpl.classConfig)
+   const selectedIds = new Set(existingConfigs.map((c: ClassConfig) => c.templateId))
+   setRegenSelectedClasses(selectedIds)
+
+   const customs = new Map<string, Partial<ClassConfig>>()
+   existingConfigs.forEach((cfg: ClassConfig) => {
+    customs.set(cfg.templateId, {
+     rotationMinutes: cfg.rotationMinutes,
+     allowedZoneIds: cfg.allowedZoneIds,
+     coachIds: cfg.coachIds,
+     allowOverlap: cfg.allowOverlap,
+     startTimeLocal: cfg.startTimeLocal,
+     endTimeLocal: cfg.endTimeLocal,
+    })
+   })
+   setRegenCustomizations(customs)
+  } catch (err) {
+   showToast.error('Failed to load template data')
+   setShowRegenerateModal(false)
+  } finally {
+   setRegenerateDataLoading(false)
+  }
+ }
+
+ const closeRegenerateModal = () => {
+  setShowRegenerateModal(false)
+  setRegenTemplateId(null)
+ }
+
+ const toggleRegenDay = (day: string) => {
+  const newDays = new Set(regenActiveDays)
+  if (newDays.has(day)) {
+   newDays.delete(day)
+  } else {
+   newDays.add(day)
+  }
+  setRegenActiveDays(newDays)
+ }
+
+ const toggleRegenClass = (templateId: string) => {
+  const newSelected = new Set(regenSelectedClasses)
+  if (newSelected.has(templateId)) {
+   newSelected.delete(templateId)
+   const newCustoms = new Map(regenCustomizations)
+   newCustoms.delete(templateId)
+   setRegenCustomizations(newCustoms)
+  } else {
+   newSelected.add(templateId)
+  }
+  setRegenSelectedClasses(newSelected)
+ }
+
+ const updateRegenCustomization = (templateId: string, field: keyof ClassConfig, value: unknown) => {
+  const newCustoms = new Map(regenCustomizations)
+  const current = newCustoms.get(templateId) || {}
+  newCustoms.set(templateId, { ...current, [field]: value })
+  setRegenCustomizations(newCustoms)
+ }
+
+ const toggleRegenCoach = (templateId: string, coachId: string) => {
+  const current = regenCustomizations.get(templateId)?.coachIds || []
+  const newCoachIds = current.includes(coachId)
+   ? current.filter((id) => id !== coachId)
+   : [...current, coachId]
+  updateRegenCustomization(templateId, 'coachIds', newCoachIds)
+ }
+
+ const toggleRegenZone = (templateId: string, zoneId: string) => {
+  const current = regenCustomizations.get(templateId)?.allowedZoneIds || []
+  const newZoneIds = current.includes(zoneId)
+   ? current.filter((id) => id !== zoneId)
+   : [...current, zoneId]
+  updateRegenCustomization(templateId, 'allowedZoneIds', newZoneIds)
+ }
+
+ const submitRegenerate = async () => {
+  if (!regenTemplateId) return
+  if (!regenTemplateName.trim()) {
+   showToast.error('Please enter a template name')
+   return
+  }
+  if (regenActiveDays.size === 0) {
+   showToast.error('Please select at least one active day')
+   return
+  }
+  if (regenSelectedClasses.size === 0) {
+   showToast.error('Please select at least one class')
+   return
+  }
+  if (new Date(regenEndDate) < new Date(regenStartDate)) {
+   showToast.error('End date must be after start date')
+   return
+  }
+
+  setRegenerateLoading(true)
+  try {
+   const classTemplateConfigs = Array.from(regenSelectedClasses).map((templateId) => {
+    const classTemplate = regenClasses.find((c) => c.id === templateId)
+    const custom = regenCustomizations.get(templateId) || {}
+    return {
+     templateId,
+     rotationMinutes: custom.rotationMinutes ?? classTemplate?.defaultRotationMinutes,
+     allowedZoneIds: custom.allowedZoneIds?.length
+      ? custom.allowedZoneIds
+      : classTemplate?.allowedZones.map((z) => z.zone.id),
+     coachIds: custom.coachIds?.length
+      ? custom.coachIds
+      : classTemplate?.defaultCoaches.map((c) => c.coach.id),
+     allowOverlap: custom.allowOverlap ?? false,
+     startTimeLocal: custom.startTimeLocal ?? classTemplate?.startTimeLocal,
+     endTimeLocal: custom.endTimeLocal ?? classTemplate?.endTimeLocal,
     }
-   },
-   { title: 'Regenerate Template', confirmText: 'Regenerate' }
-  )
+   })
+
+   await axiosInstance.post(`/api/roster-templates/${regenTemplateId}/regenerate`, {
+    name: regenTemplateName,
+    startDate: regenStartDate,
+    endDate: regenEndDate,
+    activeDays: Array.from(regenActiveDays),
+    venueId: regenVenueId,
+    classTemplates: classTemplateConfigs,
+   })
+
+   await fetchRosters()
+   showToast.success('Template updated and regenerated successfully!')
+   closeRegenerateModal()
+  } catch (err) {
+   showToast.error('Failed to regenerate template')
+  } finally {
+   setRegenerateLoading(false)
+  }
  }
 
  const handlePublishTemplate = async (templateId: string, unpublish = false) => {
@@ -352,7 +561,6 @@ export default function RostersPage() {
               <tr>
                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th>
                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -366,7 +574,6 @@ export default function RostersPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                  {roster.dayOfWeek || format(new Date(roster.startDate), 'EEE').toUpperCase()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{roster.scope}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                  <span
                   className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -463,6 +670,264 @@ export default function RostersPage() {
         Delete Template
        </button>
       </div>
+     </div>
+    </div>
+   )}
+
+   {/* Regenerate Template Modal */}
+   {showRegenerateModal && (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+     <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
+       <h2 className="text-xl font-bold text-gray-900">Edit & Regenerate Template</h2>
+       <button
+        onClick={closeRegenerateModal}
+        className="text-gray-400 hover:text-gray-600"
+       >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+       </button>
+      </div>
+
+      {regenerateDataLoading ? (
+       <div className="p-8 text-center text-gray-500">Loading template data...</div>
+      ) : (
+       <div className="p-6 space-y-6">
+        {/* Warning */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+         <div className="flex items-start gap-3">
+          <span className="text-xl">⚠️</span>
+          <div>
+           <p className="text-sm font-medium text-amber-800">This will delete all existing rosters and regenerate them</p>
+           <p className="text-sm text-amber-700 mt-1">
+            Any manual changes made to individual roster days will be lost.
+           </p>
+          </div>
+         </div>
+        </div>
+
+        {/* Template Settings */}
+        <div className="space-y-4">
+         <h3 className="text-lg font-semibold text-gray-900">Template Settings</h3>
+
+         <div>
+          <label className="block text-sm font-medium mb-1">Template Name</label>
+          <input
+           type="text"
+           value={regenTemplateName}
+           onChange={(e) => setRegenTemplateName(e.target.value)}
+           className="w-full border rounded px-3 py-2"
+          />
+         </div>
+
+         <div>
+          <label className="block text-sm font-medium mb-1">Venue</label>
+          <VenueSelector
+           value={regenVenueId}
+           onChange={setRegenVenueId}
+           showAllOption={false}
+           showLabel={false}
+          />
+         </div>
+
+         <div className="grid grid-cols-2 gap-4">
+          <div>
+           <label className="block text-sm font-medium mb-1">Start Date</label>
+           <input
+            type="date"
+            value={regenStartDate}
+            onChange={(e) => setRegenStartDate(e.target.value)}
+            className="w-full border rounded px-3 py-2"
+           />
+          </div>
+          <div>
+           <label className="block text-sm font-medium mb-1">End Date</label>
+           <input
+            type="date"
+            value={regenEndDate}
+            onChange={(e) => setRegenEndDate(e.target.value)}
+            className="w-full border rounded px-3 py-2"
+           />
+          </div>
+         </div>
+
+         <div>
+          <label className="block text-sm font-medium mb-2">Active Days</label>
+          <div className="grid grid-cols-7 gap-2">
+           {DAYS_OF_WEEK.map((day) => (
+            <button
+             key={day.value}
+             type="button"
+             onClick={() => toggleRegenDay(day.value)}
+             className={`px-3 py-2 text-sm rounded transition-colors ${
+              regenActiveDays.has(day.value)
+               ? 'bg-blue-600 text-white'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+             }`}
+            >
+             {day.label}
+            </button>
+           ))}
+          </div>
+         </div>
+        </div>
+
+        {/* Class Selection */}
+        <div className="space-y-4">
+         <h3 className="text-lg font-semibold text-gray-900">Classes</h3>
+         {regenClasses.filter(c => !regenVenueId || c.venueId === regenVenueId).length === 0 ? (
+          <p className="text-gray-500">No classes available for the selected venue.</p>
+         ) : (
+          <div className="space-y-3">
+           {regenClasses.filter(c => !regenVenueId || c.venueId === regenVenueId).map((classTemplate) => {
+            const isSelected = regenSelectedClasses.has(classTemplate.id)
+            const custom = regenCustomizations.get(classTemplate.id) || {}
+
+            return (
+             <div key={classTemplate.id} className="border rounded p-4">
+              <div className="flex items-start gap-3">
+               <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleRegenClass(classTemplate.id)}
+                className="mt-1"
+               />
+               <div className="flex-1">
+                <div className="flex justify-between items-start">
+                 <div>
+                  <h4 className="font-semibold">{classTemplate.name}</h4>
+                  <p className="text-sm text-gray-600">
+                   {classTemplate.level} • {classTemplate.lengthMinutes} min • {classTemplate.startTimeLocal} - {classTemplate.endTimeLocal}
+                  </p>
+                 </div>
+                </div>
+
+                {isSelected && (
+                 <div className="mt-3 space-y-3 border-t pt-3">
+                  <div className="grid grid-cols-3 gap-4">
+                   <div>
+                    <label className="block text-sm font-medium mb-1">Rotation (min)</label>
+                    <input
+                     type="number"
+                     value={custom.rotationMinutes ?? classTemplate.defaultRotationMinutes}
+                     onChange={(e) =>
+                      updateRegenCustomization(classTemplate.id, 'rotationMinutes', parseInt(e.target.value))
+                     }
+                     className="w-full border rounded px-2 py-1 text-sm"
+                     min="1"
+                    />
+                   </div>
+                   <div>
+                    <label className="block text-sm font-medium mb-1">Start Time</label>
+                    <input
+                     type="time"
+                     value={custom.startTimeLocal ?? classTemplate.startTimeLocal}
+                     onChange={(e) =>
+                      updateRegenCustomization(classTemplate.id, 'startTimeLocal', e.target.value)
+                     }
+                     className="w-full border rounded px-2 py-1 text-sm"
+                    />
+                   </div>
+                   <div>
+                    <label className="block text-sm font-medium mb-1">End Time</label>
+                    <input
+                     type="time"
+                     value={custom.endTimeLocal ?? classTemplate.endTimeLocal}
+                     onChange={(e) =>
+                      updateRegenCustomization(classTemplate.id, 'endTimeLocal', e.target.value)
+                     }
+                     className="w-full border rounded px-2 py-1 text-sm"
+                    />
+                   </div>
+                  </div>
+
+                  <div>
+                   <label className="block text-sm font-medium mb-2">Coaches</label>
+                   <div className="flex gap-2 flex-wrap">
+                    {regenCoaches.map((coach) => {
+                     const selectedCoaches = custom.coachIds || classTemplate.defaultCoaches.map((c) => c.coach.id)
+                     const isCoachSelected = selectedCoaches.includes(coach.id)
+                     return (
+                      <button
+                       key={coach.id}
+                       type="button"
+                       onClick={() => toggleRegenCoach(classTemplate.id, coach.id)}
+                       className={`px-2 py-1 text-sm rounded ${
+                        isCoachSelected ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700'
+                       }`}
+                      >
+                       {coach.name}
+                      </button>
+                     )
+                    })}
+                   </div>
+                  </div>
+
+                  <div>
+                   <label className="block text-sm font-medium mb-2">Allowed Zones</label>
+                   <div className="flex gap-2 flex-wrap">
+                    {regenZones
+                     .filter(zone => !regenVenueId || zone.venueId === regenVenueId)
+                     .map((zone) => {
+                     const selectedZones = custom.allowedZoneIds || classTemplate.allowedZones.map((z) => z.zone.id)
+                     const isZoneSelected = selectedZones.includes(zone.id)
+                     return (
+                      <button
+                       key={zone.id}
+                       type="button"
+                       onClick={() => toggleRegenZone(classTemplate.id, zone.id)}
+                       className={`px-2 py-1 text-sm rounded ${
+                        isZoneSelected ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'
+                       }`}
+                      >
+                       {zone.name}
+                      </button>
+                     )
+                    })}
+                   </div>
+                  </div>
+
+                  <label className="flex items-center gap-2">
+                   <input
+                    type="checkbox"
+                    checked={custom.allowOverlap ?? false}
+                    onChange={(e) =>
+                     updateRegenCustomization(classTemplate.id, 'allowOverlap', e.target.checked)
+                    }
+                    className="rounded"
+                   />
+                   <span className="text-sm">Allow zone overlap</span>
+                  </label>
+                 </div>
+                )}
+               </div>
+              </div>
+             </div>
+            )
+           })}
+          </div>
+         )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t">
+         <button
+          onClick={closeRegenerateModal}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+         >
+          Cancel
+         </button>
+         <button
+          onClick={submitRegenerate}
+          disabled={regenerateLoading || regenSelectedClasses.size === 0 || regenActiveDays.size === 0}
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+         >
+          {regenerateLoading ? 'Regenerating...' : 'Save & Regenerate'}
+         </button>
+        </div>
+       </div>
+      )}
      </div>
     </div>
    )}

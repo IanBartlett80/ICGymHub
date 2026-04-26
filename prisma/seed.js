@@ -332,7 +332,6 @@ async function main() {
     const roster = await prisma.roster.create({
       data: {
         clubId: testClub.id,
-        scope: 'WEEK',
         dayOfWeek: null,
         startDate: rosterStart,
         endDate: rosterEnd,

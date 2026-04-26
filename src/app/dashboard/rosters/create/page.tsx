@@ -74,7 +74,6 @@ export default function RosterBuilderPage() {
   return nextMonth.toISOString().split('T')[0]
  })
  const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set())
- const [scope, setScope] = useState('WEEK')
  
  // Class selection and customization
  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
@@ -231,7 +230,6 @@ export default function RosterBuilderPage() {
     startDate,
     endDate,
     activeDays: Array.from(selectedDays),
-    scope,
     classTemplates: classTemplateConfigs,
    })
 
@@ -354,19 +352,6 @@ export default function RosterBuilderPage() {
         Select the days of the week for which rosters will be generated
        </p>
       </div>
-
-      <div>
-       <label className="block text-sm font-medium mb-1">Scope</label>
-       <select
-        value={scope}
-        onChange={(e) => setScope(e.target.value)}
-        className="w-full border rounded px-3 py-2"
->
-        <option value="WEEK">Week</option>
-        <option value="DAY">Day</option>
-        <option value="MONTH">Month</option>
-       </select>
-      </div>
      </div>
     </div>
 
@@ -377,7 +362,7 @@ export default function RosterBuilderPage() {
       <li>Customize times, coaches, and zones for each class</li>
       <li>The template will generate individual rosters for each matching day in the date range</li>
       <li>Each roster day can be edited independently after creation</li>
-      <li>You can regenerate the entire template if needed</li>
+      <li>You can edit template settings and regenerate the entire template from the Roster Templates &amp; Schedules page</li>
      </ul>
     </div>
 

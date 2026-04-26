@@ -5,6 +5,7 @@ import { addDays, format } from 'date-fns';
 import { generateDailyRoster } from '@/lib/rosterGenerator';
 
 // POST /api/roster-templates/[id]/regenerate - Regenerate all rosters from template
+// Optionally accepts updated settings in the body to apply before regenerating
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +19,31 @@ export async function POST(
 
     const { id } = await params;
 
-    // Fetch the template
+    // Parse optional settings updates from body
+    let body: Record<string, unknown> = {};
+    try {
+      body = await request.json();
+    } catch {
+      // No body provided — regenerate with existing settings
+    }
+
+    // Update template settings if provided
+    const updateData: Record<string, unknown> = {};
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.startDate !== undefined) updateData.startDate = new Date(body.startDate as string);
+    if (body.endDate !== undefined) updateData.endDate = new Date(body.endDate as string);
+    if (body.activeDays !== undefined) updateData.activeDays = (body.activeDays as string[]).join(',');
+    if (body.venueId !== undefined) updateData.venueId = body.venueId || null;
+    if (body.classTemplates !== undefined) updateData.classConfig = JSON.stringify(body.classTemplates);
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.rosterTemplate.update({
+        where: { id, clubId: payload.clubId },
+        data: updateData,
+      });
+    }
+
+    // Fetch the (possibly updated) template
     const template = await prisma.rosterTemplate.findUnique({
       where: {
         id,

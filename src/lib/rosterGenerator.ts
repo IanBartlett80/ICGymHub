@@ -154,7 +154,6 @@ export async function generateDailyRoster(
     data: {
       clubId,
       venueId: venueId || null,
-      scope: 'DAY',
       startDate: dayStart,
       endDate: dayEnd,
       status: 'DRAFT',

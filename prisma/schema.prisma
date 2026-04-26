@@ -538,7 +538,6 @@ model Roster {
   id            String          @id @default(cuid())
   clubId        String
   templateId    String?
-  scope         String
   dayOfWeek     String?
   startDate     DateTime
   endDate       DateTime
@@ -556,7 +555,6 @@ model Roster {
 
   @@index([clubId])
   @@index([venueId])
-  @@index([scope])
   @@index([startDate])
   @@index([clubId, startDate, endDate])
 }

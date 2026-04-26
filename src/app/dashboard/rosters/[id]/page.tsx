@@ -406,7 +406,6 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
 >
          {roster.status}
         </span>
-        <span className="text-gray-600">{roster.scope}</span>
         {conflictCount> 0 && (
          <span className="text-red-600 font-medium">
           ⚠️ {conflictCount} conflict{conflictCount !== 1 ? 's' : ''} detected
