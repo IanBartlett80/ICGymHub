@@ -10,6 +10,8 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { format, startOfWeek, endOfWeek } from 'date-fns'
 import { formatTimeShort } from '@/lib/timezone'
 
+// Set Monday as the first day of the week to match date-fns weekStartsOn: 1
+moment.updateLocale('en', { week: { dow: 1 } })
 const localizer = momentLocalizer(moment)
 
 interface UserData {
