@@ -88,6 +88,7 @@ export async function POST(
         // Use the roster generator to create a proper roster with sessions
         const result = await generateDailyRoster(prisma, {
           clubId: payload.clubId,
+          venueId: template.venueId || null,
           date: format(currentDate, 'yyyy-MM-dd'),
           selections: classTemplates,
           generatedById: payload.userId,
