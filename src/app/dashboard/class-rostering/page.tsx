@@ -101,7 +101,6 @@ export default function ClassRosteringPage() {
  const [isEditingCoaches, setIsEditingCoaches] = useState(false)
  const [showNotification, setShowNotification] = useState(false)
  const [notificationMessage, setNotificationMessage] = useState('')
- const [calendarKey, setCalendarKey] = useState(0)
 
  useEffect(() => {
   const userData = localStorage.getItem('userData')
@@ -165,7 +164,6 @@ export default function ClassRosteringPage() {
     const data = await response.json()
     console.log('Received slots:', data.slots?.length || 0, data)
     setRosterSlots(data.slots || [])
-    setCalendarKey(prev => prev + 1) // Force calendar remount
    } else {
     console.error('Failed to fetch slots:', response.status, response.statusText)
    }
@@ -462,7 +460,7 @@ export default function ClassRosteringPage() {
         <div className="h-[600px]">
          {rosterSlots.length> 0 ? (
           <Calendar
-           key={`${calendarView}-${calendarKey}`}
+           key={calendarView}
            localizer={localizer}
            events={calendarEvents}
            startAccessor="start"
