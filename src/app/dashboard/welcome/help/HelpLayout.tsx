@@ -18,6 +18,7 @@ const guides = [
   { label: 'Equipment', href: '/dashboard/welcome/help/equipment' },
   { label: 'Injuries & Incidents', href: '/dashboard/welcome/help/injuries' },
   { label: 'Compliance', href: '/dashboard/welcome/help/compliance' },
+  { label: 'Club Profile Management', href: '/dashboard/welcome/help/profile' },
 ]
 
 export default function HelpLayout({ children, title, description }: HelpLayoutProps) {
