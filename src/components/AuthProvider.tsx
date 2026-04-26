@@ -22,6 +22,7 @@ interface UserData {
   clubTimezone: string
   paymentStatus?: string
   paymentCancelledAt?: string | null
+  clubCreatedAt?: string | null
 }
 
 const AuthContext = createContext<AuthContextType>({

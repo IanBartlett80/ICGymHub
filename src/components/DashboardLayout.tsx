@@ -20,6 +20,7 @@ interface UserData {
   clubTimezone: string
   paymentStatus?: string
   paymentCancelledAt?: string | null
+  clubCreatedAt?: string | null
 }
 
 interface DashboardLayoutProps {
@@ -85,12 +86,20 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
   const isGracePeriodExpired = isCancelled && daysRemaining !== null && daysRemaining <= 0
   const isOnProfilePage = pathname?.startsWith('/dashboard/profile')
 
-  // After 30-day grace period, redirect non-profile pages to profile (Danger Zone)
+  // Trial period state (SKIPPED payment - 30 days from club creation)
+  const isSkipped = user?.paymentStatus === 'SKIPPED'
+  const clubCreatedAt = user?.clubCreatedAt ? new Date(user.clubCreatedAt) : null
+  const trialPeriodMs = 30 * 24 * 60 * 60 * 1000 // 30 days
+  const trialExpiry = clubCreatedAt ? new Date(clubCreatedAt.getTime() + trialPeriodMs) : null
+  const trialDaysRemaining = trialExpiry ? Math.max(0, Math.ceil((trialExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null
+  const isTrialExpired = isSkipped && trialDaysRemaining !== null && trialDaysRemaining <= 0
+
+  // After 30-day grace/trial period, redirect non-profile pages to profile
   useEffect(() => {
-    if (isGracePeriodExpired && !isOnProfilePage) {
+    if ((isGracePeriodExpired || isTrialExpired) && !isOnProfilePage) {
       router.push('/dashboard/profile')
     }
-  }, [isGracePeriodExpired, isOnProfilePage, router])
+  }, [isGracePeriodExpired, isTrialExpired, isOnProfilePage, router])
 
   const mainServices = [
     { id: 'dashboard' as ServiceType, name: 'Home', basePath: '/dashboard' },
@@ -271,6 +280,56 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
         {showClubManagementNav && (
           <div className="print:hidden">
             <ClubManagementSubNav />
+          </div>
+        )}
+
+        {/* Trial Period Banner (SKIPPED payment) */}
+        {isSkipped && !isTrialExpired && trialDaysRemaining !== null && (
+          <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 print:hidden">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">ℹ️</span>
+                <div>
+                  <p className="text-sm font-semibold text-blue-800">
+                    Trial Period — {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} remaining
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Your free trial ends in <strong>{trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}</strong>. Enable your subscription to continue using GymHub.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/profile/billing"
+                className="ml-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap"
+              >
+                Enable Subscription
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Trial Expired Banner */}
+        {isTrialExpired && (
+          <div className="bg-red-50 border-b border-red-200 px-4 py-3 print:hidden">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🚫</span>
+                <div>
+                  <p className="text-sm font-semibold text-red-800">
+                    Your free trial has expired
+                  </p>
+                  <p className="text-sm text-red-700">
+                    Your 30-day trial period has ended. Enable your subscription to restore full access, or delete your club.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/profile/billing"
+                className="ml-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition whitespace-nowrap"
+              >
+                Enable Subscription
+              </Link>
+            </div>
           </div>
         )}
 
