@@ -540,7 +540,7 @@ export default function RegisterPage() {
               {/* Agreement */}
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <p className="text-sm text-gray-700">
-                  By clicking <strong>&quot;Agree &amp; Complete Registration&quot;</strong> below, you agree to pay $100 AUD per calendar month after your 30-day free trial ends. Invoices are issued monthly via Xero. You can review the full{' '}
+                  By clicking <strong>&quot;Agree &amp; Complete Registration&quot;</strong> below, you agree to pay $100 AUD per calendar month after your 30-day free trial ends. Invoices are issued monthly. You can review the full{' '}
                   <Link href="#" className="text-blue-600 hover:text-blue-700 underline">Payment Terms and Conditions</Link>{' '}
                   at any time from your Billing profile.
                 </p>

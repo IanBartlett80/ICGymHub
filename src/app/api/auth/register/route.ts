@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, normalizeDomain } from '@/lib/validation'
-import { sendVerificationEmail } from '@/lib/email'
-import { isXeroConnected, createXeroContact, createXeroRecurringInvoice } from '@/lib/xero'
+import { sendVerificationEmail, sendEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -236,53 +235,84 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Create Xero contact + recurring invoice if payment was agreed
-    if (agreeToPayment) {
-      try {
-        const xeroConnected = await isXeroConnected()
-        if (xeroConnected) {
-          // Split admin name into first/last for Xero
-          const nameParts = adminFullName.trim().split(/\s+/)
-          const firstName = nameParts[0] || adminFullName
-          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''
+    // Send new registration notification email to GymHub admin
+    try {
+      const registrationDate = new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"></head>
+        <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
+          <table role="presentation" style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:40px 0;text-align:center;">
+                <table role="presentation" style="width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                  <tr>
+                    <td style="padding:30px;text-align:center;background-color:#2563eb;border-radius:8px 8px 0 0;">
+                      <h1 style="margin:0;color:#ffffff;font-size:24px;">New Club Registration</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:30px;">
+                      <p style="margin:0 0 20px;font-size:14px;color:#666;">Registered: ${registrationDate} (AEST)</p>
 
-          const xeroContactId = await createXeroContact({
-            clubName,
-            firstName,
-            lastName,
-            email: adminEmail,
-            phone,
-            abn: abn || null,
-            address,
-            city,
-            state,
-            postalCode,
-          })
+                      <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Club Details</h2>
+                      <table style="width:100%;margin-bottom:20px;font-size:14px;">
+                        <tr><td style="padding:4px 8px;color:#666;width:40%;">Club Name</td><td style="padding:4px 8px;color:#333;font-weight:600;">${clubName}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Domain</td><td style="padding:4px 8px;color:#333;">${domainForUse}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">ABN</td><td style="padding:4px 8px;color:#333;">${abn || 'Not provided'}</td></tr>
+                      </table>
 
-          const xeroRepeatingInvoiceId = await createXeroRecurringInvoice({
-            xeroContactId,
-            clubName,
-            monthlyRateAud: 100,
-            trialEndsAt,
-          })
+                      <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Location</h2>
+                      <table style="width:100%;margin-bottom:20px;font-size:14px;">
+                        <tr><td style="padding:4px 8px;color:#666;width:40%;">Address</td><td style="padding:4px 8px;color:#333;">${address}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">City</td><td style="padding:4px 8px;color:#333;">${city}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">State</td><td style="padding:4px 8px;color:#333;">${state}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Postal Code</td><td style="padding:4px 8px;color:#333;">${postalCode}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Phone</td><td style="padding:4px 8px;color:#333;">${phone}</td></tr>
+                      </table>
 
-          // Store Xero IDs on the club
-          await prisma.club.update({
-            where: { id: club.id },
-            data: {
-              xeroContactId,
-              xeroRepeatingInvoiceId,
-            },
-          })
+                      <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Admin Account</h2>
+                      <table style="width:100%;margin-bottom:20px;font-size:14px;">
+                        <tr><td style="padding:4px 8px;color:#666;width:40%;">Full Name</td><td style="padding:4px 8px;color:#333;">${adminFullName}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Email</td><td style="padding:4px 8px;color:#333;">${adminEmail}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Username</td><td style="padding:4px 8px;color:#333;">${fullUsername}</td></tr>
+                      </table>
 
-          console.log(`✅ Xero contact (${xeroContactId}) and recurring invoice (${xeroRepeatingInvoiceId}) created for ${clubName}`)
-        } else {
-          console.warn(`⚠️ Xero not connected — skipping billing setup for ${clubName}`)
-        }
-      } catch (xeroError) {
-        // Don't fail registration if Xero fails — billing can be set up manually
-        console.error('Xero integration error (non-fatal):', xeroError)
-      }
+                      <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Payment</h2>
+                      <table style="width:100%;margin-bottom:20px;font-size:14px;">
+                        <tr><td style="padding:4px 8px;color:#666;width:40%;">Payment Status</td><td style="padding:4px 8px;color:#333;font-weight:600;">${agreeToPayment ? 'Agreed to $100/month' : 'Skipped'}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Trial Ends</td><td style="padding:4px 8px;color:#333;">${agreeToPayment ? trialEndsAt.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : 'N/A'}</td></tr>
+                        <tr><td style="padding:4px 8px;color:#666;">Club ID</td><td style="padding:4px 8px;color:#333;font-family:monospace;font-size:12px;">${club.id}</td></tr>
+                      </table>
+
+                      <div style="margin-top:20px;padding:12px;background-color:#fef3c7;border:1px solid #f59e0b;border-radius:6px;">
+                        <p style="margin:0;font-size:13px;color:#92400e;"><strong>Action Required:</strong> Please set up the Xero account for this club manually.</p>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:20px;background-color:#f9fafb;border-radius:0 0 8px 8px;text-align:center;">
+                      <p style="margin:0;font-size:12px;color:#666;">© ${new Date().getFullYear()} GymHub. Automated registration notification.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      await sendEmail({
+        to: 'GymHub@icb.solutions',
+        subject: 'NEW CLUB REGISTRATION',
+        htmlContent,
+      })
+      console.log(`✅ Registration notification email sent for ${clubName}`)
+    } catch (emailNotifyError) {
+      // Don't fail registration if notification email fails
+      console.error('Failed to send registration notification email:', emailNotifyError)
     }
 
     return NextResponse.json(

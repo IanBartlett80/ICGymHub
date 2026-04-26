@@ -74,15 +74,15 @@ export default function BillingPage() {
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       AGREED: 'bg-green-100 text-green-800',
-      SKIPPED: 'bg-yellow-100 text-yellow-800',
+      SKIPPED: 'bg-green-100 text-green-800',
       CANCELLED: 'bg-red-100 text-red-800',
-      NONE: 'bg-gray-100 text-gray-800',
+      NONE: 'bg-green-100 text-green-800',
     }
     const labels: Record<string, string> = {
       AGREED: 'Active',
-      SKIPPED: 'Not Set Up',
-      CANCELLED: 'Cancelled',
-      NONE: 'No Subscription',
+      SKIPPED: 'Active',
+      CANCELLED: 'Inactive',
+      NONE: 'Active',
     }
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${styles[status] || styles.NONE}`}>
@@ -272,7 +272,7 @@ export default function BillingPage() {
         </div>
 
         {/* Cancel Subscription - Admin Only */}
-        {user?.role === 'ADMIN' && billing?.paymentStatus === 'AGREED' && (
+        {user?.role === 'ADMIN' && billing?.paymentStatus !== 'CANCELLED' && (
           <div className="bg-white rounded-lg shadow-sm border-2 border-red-200">
             <div className="p-6 border-b border-red-200 bg-red-50 rounded-t-lg">
               <h2 className="text-lg font-semibold text-red-800">Cancel Subscription</h2>
