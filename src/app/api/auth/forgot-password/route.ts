@@ -64,15 +64,20 @@ export async function POST(req: NextRequest) {
 
     // Send password reset email
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gymhub.club'
+    console.log(`[forgot-password] Sending reset email to ${user.email} for user ${user.username} (id: ${user.id})`)
     try {
-      await sendPasswordResetEmail({
+      const result = await sendPasswordResetEmail({
         to: user.email,
         resetToken: rawToken,
         appUrl,
       })
+      console.log(`[forgot-password] Email sent successfully:`, result)
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError)
-      // Don't expose email failure to the user
+      console.error('[forgot-password] Failed to send password reset email:', emailError)
+      return NextResponse.json(
+        { error: 'Unable to send reset email. Please try again or contact support.' },
+        { status: 500 }
+      )
     }
 
     return successResponse
