@@ -372,11 +372,6 @@ function buildInjuryReportEmailHtml({
               <p style="margin: 0 0 4px; font-size: 16px; color: #bfdbfe;">${submission.template.name}</p>
               ${sportInfo ? `<p style="margin: 0 0 4px; font-size: 14px; color: #bfdbfe;">${sportInfo}</p>` : ''}
               <p style="margin: 12px 0 0; font-size: 13px; color: rgba(255,255,255,0.9);">&#x1F4C5; Submitted on ${new Date(submission.submittedAt).toLocaleString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 13px;">
-                <strong>${club.name}</strong><br/>
-                ${club.address || ''} ${club.city || ''} ${club.state || ''}<br/>
-                ${club.phone ? `Phone: ${club.phone}` : ''}
-              </div>
             </td>
           </tr>
 
