@@ -149,7 +149,7 @@ function SignInForm() {
         {/* Links */}
         <div className="mt-6 space-y-3">
           <div className="text-center">
-            <Link href="#" className="text-blue-600 hover:text-blue-700 text-sm">
+            <Link href="/forgot-password" className="text-blue-600 hover:text-blue-700 text-sm">
               Forgot your password?
             </Link>
           </div>
@@ -165,7 +165,7 @@ function SignInForm() {
         <div className="mt-8 p-4 bg-gray-100 border border-gray-200 rounded-lg text-center">
           <p className="text-gray-600 text-sm">
             Need help?{' '}
-            <Link href="mailto:support@icgymhub.com" className="text-blue-600 hover:text-blue-700">
+            <Link href="mailto:GymHub@icb.solutions" className="text-blue-600 hover:text-blue-700">
               Contact support
             </Link>
           </p>

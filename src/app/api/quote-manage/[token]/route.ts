@@ -16,7 +16,7 @@ function appendStatusHistory(existing: string | null, status: string, actor: str
 
 // GET - Fetch repair quote request by secure token (no auth required - token IS the auth)
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
@@ -337,7 +337,7 @@ export async function PUT(
 // Build a professional HTML email for club notifications
 function buildClubNotificationEmail(
   reference: string,
-  clubName: string,
+  _clubName: string,
   equipmentName: string,
   statusLabel: string,
   bodyHtml: string,

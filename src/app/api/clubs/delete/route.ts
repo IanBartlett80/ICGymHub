@@ -51,8 +51,6 @@ export async function POST(request: NextRequest) {
       state: club.state,
       postalCode: club.postalCode,
       phone: club.phone,
-      xeroContactId: club.xeroContactId,
-      xeroRepeatingInvoiceId: club.xeroRepeatingInvoiceId,
       createdAt: club.createdAt,
     };
     const adminDetails = {
@@ -113,13 +111,11 @@ export async function POST(request: NextRequest) {
 
                       <h2 style="margin:0 0 10px;font-size:18px;color:#333;border-bottom:1px solid #eee;padding-bottom:8px;">Billing</h2>
                       <table style="width:100%;margin-bottom:20px;font-size:14px;">
-                        <tr><td style="padding:4px 8px;color:#666;width:40%;">Xero Contact ID</td><td style="padding:4px 8px;color:#333;font-family:monospace;font-size:12px;">${clubDetails.xeroContactId || 'Not set'}</td></tr>
-                        <tr><td style="padding:4px 8px;color:#666;">Xero Invoice ID</td><td style="padding:4px 8px;color:#333;font-family:monospace;font-size:12px;">${clubDetails.xeroRepeatingInvoiceId || 'Not set'}</td></tr>
                         <tr><td style="padding:4px 8px;color:#666;">Registered</td><td style="padding:4px 8px;color:#333;">${new Date(clubDetails.createdAt).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' })}</td></tr>
                       </table>
 
                       <div style="margin-top:20px;padding:12px;background-color:#fef2f2;border:1px solid #ef4444;border-radius:6px;">
-                        <p style="margin:0;font-size:13px;color:#991b1b;"><strong>Action Required:</strong> Please cancel the recurring invoice in Xero and remove the contact if applicable.</p>
+                        <p style="margin:0;font-size:13px;color:#991b1b;"><strong>Action Required:</strong> Please cancel the recurring invoice and remove the contact if applicable.</p>
                       </div>
                     </td>
                   </tr>

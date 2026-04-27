@@ -32,8 +32,6 @@ export async function GET(req: NextRequest) {
         paymentCancelledAt: true,
         trialEndsAt: true,
         monthlyRateAud: true,
-        xeroContactId: true,
-        xeroRepeatingInvoiceId: true,
         createdAt: true,
       },
     })
@@ -59,8 +57,6 @@ export async function GET(req: NextRequest) {
         monthlyRateAud: club.monthlyRateAud,
         isInTrial,
         trialDaysRemaining,
-        hasXeroContact: !!club.xeroContactId,
-        hasRecurringInvoice: !!club.xeroRepeatingInvoiceId,
         clubCreatedAt: club.createdAt,
       },
     })
@@ -110,8 +106,6 @@ export async function POST(req: NextRequest) {
           paymentAgreedAt: true,
           trialEndsAt: true,
           monthlyRateAud: true,
-          xeroContactId: true,
-          xeroRepeatingInvoiceId: true,
           createdAt: true,
           users: {
             where: { role: 'ADMIN' },
@@ -184,13 +178,11 @@ export async function POST(req: NextRequest) {
                           <tr><td style="padding:4px 8px;color:#666;width:40%;">Monthly Rate</td><td style="padding:4px 8px;color:#333;">$${club.monthlyRateAud} AUD</td></tr>
                           <tr><td style="padding:4px 8px;color:#666;">Agreement Date</td><td style="padding:4px 8px;color:#333;">${club.paymentAgreedAt ? new Date(club.paymentAgreedAt).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : 'N/A'}</td></tr>
                           <tr><td style="padding:4px 8px;color:#666;">Trial End Date</td><td style="padding:4px 8px;color:#333;">${club.trialEndsAt ? new Date(club.trialEndsAt).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }) : 'N/A'}</td></tr>
-                          <tr><td style="padding:4px 8px;color:#666;">Xero Contact ID</td><td style="padding:4px 8px;color:#333;font-family:monospace;font-size:12px;">${club.xeroContactId || 'Not set'}</td></tr>
-                          <tr><td style="padding:4px 8px;color:#666;">Xero Invoice ID</td><td style="padding:4px 8px;color:#333;font-family:monospace;font-size:12px;">${club.xeroRepeatingInvoiceId || 'Not set'}</td></tr>
                           <tr><td style="padding:4px 8px;color:#666;">Registered</td><td style="padding:4px 8px;color:#333;">${new Date(club.createdAt).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' })}</td></tr>
                         </table>
 
                         <div style="margin-top:20px;padding:12px;background-color:#fef2f2;border:1px solid #ef4444;border-radius:6px;">
-                          <p style="margin:0;font-size:13px;color:#991b1b;"><strong>Action Required:</strong> Please cancel the recurring invoice in Xero for this club.</p>
+                          <p style="margin:0;font-size:13px;color:#991b1b;"><strong>Action Required:</strong> Please cancel the recurring invoice for this club.</p>
                         </div>
                       </td>
                     </tr>
@@ -238,8 +230,6 @@ export async function POST(req: NextRequest) {
           phone: true,
           paymentStatus: true,
           monthlyRateAud: true,
-          xeroContactId: true,
-          xeroRepeatingInvoiceId: true,
           createdAt: true,
           users: {
             where: { role: 'ADMIN' },
@@ -302,7 +292,7 @@ export async function POST(req: NextRequest) {
                         </table>
 
                         <div style="margin-top:20px;padding:12px;background-color:#f0fdf4;border:1px solid #22c55e;border-radius:6px;">
-                          <p style="margin:0;font-size:13px;color:#166534;"><strong>Action Required:</strong> Please re-enable the recurring invoice in Xero for this club.</p>
+                          <p style="margin:0;font-size:13px;color:#166534;"><strong>Action Required:</strong> Please re-enable the recurring invoice for this club.</p>
                         </div>
                       </td>
                     </tr>

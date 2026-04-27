@@ -14,8 +14,6 @@ interface BillingData {
   monthlyRateAud: number
   isInTrial: boolean
   trialDaysRemaining: number | null
-  hasXeroContact: boolean
-  hasRecurringInvoice: boolean
   clubCreatedAt: string
 }
 
@@ -223,9 +221,7 @@ export default function BillingPage() {
                 )}
                 <div>
                   <p className="text-sm text-gray-500">Billing Provider</p>
-                  <p className="text-gray-900">
-                    {billing.hasRecurringInvoice ? 'Xero (Automated)' : 'Not configured'}
-                  </p>
+                  <p className="text-gray-900">Email Invoice</p>
                 </div>
               </div>
             )}
@@ -280,7 +276,7 @@ export default function BillingPage() {
 
               <h3 className="text-base font-semibold text-gray-900">3. Billing &amp; Invoicing</h3>
               <p>
-                Invoices are generated monthly via Xero and sent to the email address associated with
+                Invoices are generated monthly and sent to the email address associated with
                 your admin account. Payment is due within 20 days of the invoice date. All amounts
                 are in Australian Dollars (AUD) and include GST where applicable.
               </p>

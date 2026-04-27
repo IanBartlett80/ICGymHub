@@ -394,11 +394,6 @@ export default function RepairQuotesPage() {
   return new Date(dateString).toLocaleDateString();
  };
 
- const formatDateTime = (dateString: string | null) => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleString();
- };
-
  const formatCurrency = (amount: string | null) => {
   if (!amount) return 'N/A';
   return `$${parseFloat(amount).toLocaleString()}`;
@@ -1025,7 +1020,7 @@ export default function RepairQuotesPage() {
        </div>
 
        {/* Action Section */}
-       {(modalAction === 'approve' || (modalAction === 'view' && selectedRequest.status === 'QUOTE_RECEIVED')) && selectedRequest.status === 'QUOTE_RECEIVED' && (
+       {(modalAction === 'approve' || modalAction === 'reject' || (modalAction === 'view' && selectedRequest.status === 'QUOTE_RECEIVED')) && selectedRequest.status === 'QUOTE_RECEIVED' && (
         <div className="border-t pt-6 space-y-4">
          <h3 className="text-lg font-semibold text-gray-900">Quote Decision</h3>
          <p className="text-sm text-gray-600">

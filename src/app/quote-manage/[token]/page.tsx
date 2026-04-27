@@ -27,6 +27,7 @@ interface QuoteRequest {
   quoteAmount: string | null;
   quoteNotes: string | null;
   quoteReceivedFrom: string | null;
+  quoteReceivedAt: string | null;
   repairCompanyName: string | null;
   icbNotes: string | null;
   icbAcknowledgedAt: string | null;

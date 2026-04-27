@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
                       </table>
 
                       <div style="margin-top:20px;padding:12px;background-color:#fef3c7;border:1px solid #f59e0b;border-radius:6px;">
-                        <p style="margin:0;font-size:13px;color:#92400e;"><strong>Action Required:</strong> Please set up the Xero account for this club manually.</p>
+                        <p style="margin:0;font-size:13px;color:#92400e;"><strong>Action Required:</strong> Please set up the billing account for this club.</p>
                       </div>
                     </td>
                   </tr>

@@ -361,6 +361,112 @@ async function sendGenericEmailViaGraph({
   }
 }
 
+// Password Reset Email
+interface SendPasswordResetEmailParams {
+  to: string
+  resetToken: string
+  appUrl: string
+}
+
+export async function sendPasswordResetEmail({
+  to,
+  resetToken,
+  appUrl,
+}: SendPasswordResetEmailParams) {
+  const resetLink = `${appUrl}/reset-password?token=${resetToken}`
+  const htmlContent = getPasswordResetHtmlContent(resetLink)
+  const textContent = getPasswordResetTextContent(resetLink)
+
+  return sendEmail({
+    to,
+    subject: 'Reset Your Password - ICGymHub',
+    htmlContent,
+    textContent,
+  })
+}
+
+function getPasswordResetHtmlContent(resetLink: string): string {
+  return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Your Password</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 40px 0; text-align: center;">
+              <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <tr>
+                  <td style="padding: 40px 30px; text-align: center; background-color: #2563eb; border-radius: 8px 8px 0 0;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px;">Reset Your Password</h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="margin: 0 0 20px; font-size: 16px; color: #333333; line-height: 1.5;">
+                      Hi there,
+                    </p>
+                    <p style="margin: 0 0 20px; font-size: 16px; color: #333333; line-height: 1.5;">
+                      We received a request to reset your ICGymHub password. Click the button below to choose a new password.
+                    </p>
+                    <table role="presentation" style="margin: 30px 0;">
+                      <tr>
+                        <td style="text-align: center;">
+                          <a href="${resetLink}" style="display: inline-block; padding: 14px 40px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600;">
+                            Reset Password
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin: 20px 0; font-size: 14px; color: #666666; line-height: 1.5;">
+                      Or copy and paste this link into your browser:
+                    </p>
+                    <p style="margin: 0 0 20px; font-size: 14px; color: #2563eb; word-break: break-all;">
+                      ${resetLink}
+                    </p>
+                    <p style="margin: 20px 0 0; font-size: 14px; color: #666666; line-height: 1.5;">
+                      This link will expire in <strong>1 hour</strong>. If you didn't request a password reset, you can safely ignore this email — your password will remain unchanged.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 30px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; color: #666666;">
+                      If you didn't request this password reset, you can safely ignore this email.
+                    </p>
+                    <p style="margin: 10px 0 0; font-size: 12px; color: #666666;">
+                      © ${new Date().getFullYear()} ICGymHub. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+}
+
+function getPasswordResetTextContent(resetLink: string): string {
+  return `
+Reset Your Password
+
+Hi there,
+
+We received a request to reset your ICGymHub password. Click the link below to choose a new password:
+
+${resetLink}
+
+This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email — your password will remain unchanged.
+
+© ${new Date().getFullYear()} ICGymHub. All rights reserved.
+    `.trim()
+}
+
 async function sendGenericEmailViaSMTP({
   to,
   subject,
