@@ -116,6 +116,11 @@ export default function SubmissionDetailPage() {
  const [newComment, setNewComment] = useState('');
  const [addingComment, setAddingComment] = useState(false);
  const [assignedName, setAssignedName] = useState('');
+ const [showEmailModal, setShowEmailModal] = useState(false);
+ const [emailTo, setEmailTo] = useState('');
+ const [emailName, setEmailName] = useState('');
+ const [sendingEmail, setSendingEmail] = useState(false);
+ const [emailResult, setEmailResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
  useEffect(() => {
   loadSubmission();
@@ -208,6 +213,35 @@ export default function SubmissionDetailPage() {
 
  const exportPDF = () => {
   window.open(`/api/injury-submissions/${submissionId}/export-pdf`, '_blank');
+ };
+
+ const handleSendEmail = async () => {
+  if (!emailTo.trim()) return;
+  setSendingEmail(true);
+  setEmailResult(null);
+  try {
+   const res = await fetch(`/api/injury-submissions/${submissionId}/send-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipientEmail: emailTo.trim(), recipientName: emailName.trim() || undefined }),
+   });
+   const data = await res.json();
+   if (res.ok) {
+    setEmailResult({ type: 'success', message: 'Report sent successfully!' });
+    setTimeout(() => {
+     setShowEmailModal(false);
+     setEmailTo('');
+     setEmailName('');
+     setEmailResult(null);
+    }, 2000);
+   } else {
+    setEmailResult({ type: 'error', message: data.error || 'Failed to send email.' });
+   }
+  } catch {
+   setEmailResult({ type: 'error', message: 'Network error. Please try again.' });
+  } finally {
+   setSendingEmail(false);
+  }
  };
 
  if (loading) {
@@ -903,6 +937,7 @@ export default function SubmissionDetailPage() {
          Export as PDF
         </button>
         <button
+         onClick={() => { setShowEmailModal(true); setEmailResult(null); }}
          className="w-full px-3 py-2.5 text-sm border-2 border-gray-300 rounded-lg hover:bg-gray-50 text-left font-medium flex items-center gap-3 transition-all hover:border-gray-400"
         >
          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -916,6 +951,80 @@ export default function SubmissionDetailPage() {
     </div>
    </div>
   </div>
+
+  {/* Send via Email Modal */}
+  {showEmailModal && (
+   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowEmailModal(false)}>
+    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+     <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 rounded-t-xl">
+      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+       </svg>
+       Send Injury Report via Email
+      </h3>
+      <p className="text-green-100 text-sm mt-1">The full report will be sent as a formatted email.</p>
+     </div>
+     <div className="p-6 space-y-4">
+      {emailResult && (
+       <div className={`p-3 rounded-lg text-sm font-medium ${
+        emailResult.type === 'success'
+         ? 'bg-green-50 border border-green-200 text-green-700'
+         : 'bg-red-50 border border-red-200 text-red-700'
+       }`}>
+        {emailResult.message}
+       </div>
+      )}
+      <div>
+       <label htmlFor="emailTo" className="block text-sm font-medium text-gray-700 mb-1">Recipient Email <span className="text-red-500">*</span></label>
+       <input
+        id="emailTo"
+        type="email"
+        value={emailTo}
+        onChange={(e) => setEmailTo(e.target.value)}
+        placeholder="recipient@example.com"
+        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
+        required
+       />
+      </div>
+      <div>
+       <label htmlFor="emailName" className="block text-sm font-medium text-gray-700 mb-1">Recipient Name <span className="text-gray-400">(optional)</span></label>
+       <input
+        id="emailName"
+        type="text"
+        value={emailName}
+        onChange={(e) => setEmailName(e.target.value)}
+        placeholder="e.g. John Smith"
+        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
+       />
+      </div>
+      <div className="flex gap-3 pt-2">
+       <button
+        onClick={() => { setShowEmailModal(false); setEmailTo(''); setEmailName(''); setEmailResult(null); }}
+        className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+       >
+        Cancel
+       </button>
+       <button
+        onClick={handleSendEmail}
+        disabled={sendingEmail || !emailTo.trim()}
+        className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2"
+       >
+        {sendingEmail ? (
+         <>
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          Sending...
+         </>
+        ) : (
+         'Send Report'
+        )}
+       </button>
+      </div>
+     </div>
+    </div>
+   </div>
+  )}
+
   </DashboardLayout>
  );
 }
