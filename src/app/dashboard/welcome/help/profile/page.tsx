@@ -115,7 +115,7 @@ export default function ProfileManagementHelpPage() {
         {/* Billing & Subscriptions */}
         <Section icon={CreditCard} title="Billing & Subscriptions" color="green">
           <p>
-            GymHub operates on a simple flat-rate subscription of <strong>$100 AUD per month</strong> (inclusive of GST). All new clubs receive a <strong>30-day free trial</strong>.
+            GymHub operates on a simple flat-rate subscription of <strong>$25 AUD per week</strong> (+GST) — that’s less than the cost of a coffee a day. All new clubs receive a <strong>30-day free trial</strong>.
           </p>
 
           <h4 className="font-semibold text-gray-900 mt-4 mb-2">Viewing your subscription:</h4>
@@ -260,7 +260,7 @@ export default function ProfileManagementHelpPage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">Active Subscription</p>
-                  <p className="text-sm text-gray-600">After trial, monthly billing of $100 AUD begins. Full access continues.</p>
+                  <p className="text-sm text-gray-600">After trial, monthly invoicing of $100 AUD + GST begins. Full access continues.</p>
                 </div>
               </div>
               <div className="flex gap-3">

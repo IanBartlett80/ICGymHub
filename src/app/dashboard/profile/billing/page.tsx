@@ -170,13 +170,14 @@ export default function BillingPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm text-gray-500">Plan</p>
-                  <p className="text-lg font-semibold text-gray-900">GymHub Monthly</p>
+                  <p className="text-lg font-semibold text-gray-900">GymHub All-Access</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Monthly Rate</p>
+                  <p className="text-sm text-gray-500">Weekly Rate</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    ${billing.monthlyRateAud} AUD / month
+                    $25 AUD / week <span className="text-sm font-normal text-gray-500">(+GST)</span>
                   </p>
+                  <p className="text-xs text-gray-400 mt-0.5">☕ Less than a coffee a day</p>
                 </div>
                 {billing.paymentAgreedAt && (
                   <div>
@@ -261,10 +262,10 @@ export default function BillingPage() {
             <div className="prose prose-sm max-w-none text-gray-700 space-y-4">
               <h3 className="text-base font-semibold text-gray-900">1. Subscription Agreement</h3>
               <p>
-                By subscribing to GymHub, you agree to pay a monthly subscription fee of $100 AUD
-                (inclusive of GST) per calendar month. This fee covers full access to all GymHub
-                features including Class Rostering, Injury &amp; Incident Management, Equipment
-                Tracking, Compliance Manager, and Multi-Venue Support.
+                By subscribing to GymHub, you agree to be invoiced $100 AUD + GST per calendar month.
+                This fee covers full access to all GymHub features including Class Rostering,
+                Injury &amp; Incident Management, Equipment Tracking, Compliance Manager, and
+                Multi-Venue Support.
               </p>
 
               <h3 className="text-base font-semibold text-gray-900">2. Free Trial</h3>

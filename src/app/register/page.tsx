@@ -505,42 +505,46 @@ export default function RegisterPage() {
           {step === 5 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">Payment Account Setup</h2>
-              <p className="text-gray-600">GymHub is billed at a flat rate to keep things simple.</p>
+              <p className="text-gray-600">Everything your club needs — for less than the cost of a coffee a day.</p>
 
               {/* Plan Summary */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">GymHub Monthly Plan</h3>
-                    <p className="text-sm text-gray-600">Full access to all GymHub features</p>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">GymHub All-Access Plan</h3>
+                  <div className="mt-3">
+                    <p className="text-5xl font-extrabold text-blue-600">$25</p>
+                    <p className="text-sm text-gray-500 mt-1">AUD per week (+GST)</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-bold text-blue-600">$100</p>
-                    <p className="text-sm text-gray-500">AUD / month (inc. GST)</p>
+                  <div className="mt-3 inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-medium">
+                    <span>☕</span> Less than the cost of a coffee a day
                   </div>
                 </div>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Class Rostering &amp; Scheduling</li>
-                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Injury &amp; Incident Management</li>
-                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Equipment &amp; Maintenance Tracking</li>
-                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Compliance Manager</li>
-                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Multi-Venue Support</li>
-                  <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Email Notifications &amp; Reports</li>
-                </ul>
+                <div className="border-t border-blue-200 pt-4 mt-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Everything included</p>
+                  <ul className="text-sm text-gray-700 space-y-2">
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Class Rostering &amp; Scheduling</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Injury &amp; Incident Management</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Equipment &amp; Maintenance Tracking</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Compliance Manager</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Multi-Venue Support</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Email Notifications &amp; Reports</li>
+                    <li className="flex items-center gap-2"><span className="text-green-500 font-bold">✓</span> Unlimited Users &amp; Coaches</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Free Trial Notice */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 font-semibold">🎉 30-Day Free Trial</p>
+                <p className="text-green-800 font-semibold">🎉 30-Day Free Trial — No Payment Required</p>
                 <p className="text-sm text-green-700 mt-1">
-                  Your first invoice won&apos;t be generated until 30 days after registration. Cancel anytime during your trial at no cost.
+                  Try every feature for 30 days, completely free. Your first invoice won&apos;t be generated until after your trial ends. Cancel anytime — no questions asked.
                 </p>
               </div>
 
               {/* Agreement */}
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <p className="text-sm text-gray-700">
-                  By clicking <strong>&quot;Agree &amp; Complete Registration&quot;</strong> below, you agree to pay $100 AUD per calendar month after your 30-day free trial ends. Invoices are issued monthly. You can review the full{' '}
+                  By clicking <strong>&quot;Agree &amp; Complete Registration&quot;</strong> below, you agree to be invoiced $100 AUD + GST per calendar month after your 30-day free trial ends. Invoices are issued monthly. You can review the full{' '}
                   <Link href="#" className="text-blue-600 hover:text-blue-700 underline">Payment Terms and Conditions</Link>{' '}
                   at any time from your Billing profile.
                 </p>
