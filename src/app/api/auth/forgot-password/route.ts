@@ -6,11 +6,14 @@ import { sendPasswordResetEmail } from '@/lib/email'
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
 
 export async function POST(req: NextRequest) {
+  console.log('[forgot-password] Route handler invoked')
   try {
     const body = await req.json()
     const { email, username } = body
+    console.log(`[forgot-password] Request received for username="${username}", email="${email}"`)
 
     if (!email || !username) {
+      console.log('[forgot-password] Missing email or username')
       return NextResponse.json(
         { error: 'Email and username are required' },
         { status: 400 }
@@ -22,20 +25,28 @@ export async function POST(req: NextRequest) {
       message: 'If an account exists with that email and username, a password reset link has been sent.',
     })
 
-    // Find user by both email and username
+    // Find user by both email and username (case-insensitive)
     const user = await prisma.user.findFirst({
       where: {
-        email: email.toLowerCase().trim(),
-        username: username.trim(),
+        email: { equals: email.trim(), mode: 'insensitive' },
+        username: { equals: username.trim(), mode: 'insensitive' },
         isActive: true,
       },
       include: { club: true },
     })
 
-    if (!user || user.club.status !== 'ACTIVE') {
-      // Return same response to prevent enumeration
+    if (!user) {
+      console.log(`[forgot-password] No active user found for username="${username.trim()}", email="${email.trim()}"`)
       return successResponse
     }
+
+    if (user.club.status !== 'ACTIVE') {
+      console.log(`[forgot-password] User found but club status is "${user.club.status}" (not ACTIVE)`)
+      return successResponse
+    }
+
+    console.log(`[forgot-password] User matched: id=${user.id}, club="${user.club.name}", clubStatus="${user.club.status}"`)
+
 
     // Invalidate any existing unused reset tokens for this user
     await prisma.passwordReset.updateMany({
