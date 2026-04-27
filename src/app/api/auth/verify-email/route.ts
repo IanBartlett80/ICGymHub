@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { sendWelcomeEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -60,6 +61,27 @@ export async function POST(req: NextRequest) {
         data: { consumedAt: new Date() },
       }),
     ])
+
+    // Send welcome email to the admin
+    try {
+      await sendWelcomeEmail({
+        to: verification.user.email,
+        clubName: verification.club.name,
+        domain: verification.club.domain,
+        abn: verification.club.abn,
+        address: verification.club.address || '',
+        city: verification.club.city || '',
+        state: verification.club.state || '',
+        postalCode: verification.club.postalCode || '',
+        phone: verification.club.phone || '',
+        adminFullName: verification.user.fullName,
+        username: verification.user.username,
+      })
+      console.log(`✅ Welcome email sent to ${verification.user.email}`)
+    } catch (welcomeError) {
+      console.error('Failed to send welcome email:', welcomeError)
+      // Don't fail verification if the welcome email fails
+    }
 
     return NextResponse.json(
       {

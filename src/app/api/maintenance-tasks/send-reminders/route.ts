@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, getLogoHeaderHtml } from '@/lib/email';
 
 // GET /api/maintenance-tasks/send-reminders - Check and send maintenance reminders
 // This endpoint should be called by a cron job or scheduled task
@@ -92,64 +92,79 @@ export async function GET(request: NextRequest) {
         const subject = `Maintenance Reminder: ${task.title} - Due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`;
         
         const htmlContent = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #f59e0b; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-              <h1 style="margin: 0; font-size: 24px;">Maintenance Reminder</h1>
-            </div>
-            
-            <div style="background-color: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 20px;">
-                <p style="margin: 0; font-size: 16px; font-weight: bold;">
-                  ⚠️ This task is due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}
-                </p>
-              </div>
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
+            <table role="presentation" style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="padding:40px 0;text-align:center;">
+                  <table role="presentation" style="width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                    ${getLogoHeaderHtml()}
+                    <tr>
+                      <td style="padding:30px;text-align:center;background-color:#f59e0b;">
+                        <h1 style="margin:0;color:#ffffff;font-size:24px;">Maintenance Reminder</h1>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:30px;">
+                        <div style="background-color:#fef3c7;border-left:4px solid #f59e0b;padding:15px;margin-bottom:20px;">
+                          <p style="margin:0;font-size:16px;font-weight:bold;color:#92400e;">
+                            ⚠️ This task is due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}
+                          </p>
+                        </div>
 
-              <h2 style="color: #1f2937; margin-top: 0;">${task.title}</h2>
-              
-              <div style="margin: 20px 0;">
-                <p style="color: #6b7280; margin: 5px 0;"><strong>Equipment:</strong> ${task.equipment.name}</p>
-                ${task.equipment.zone ? `<p style="color: #6b7280; margin: 5px 0;"><strong>Zone:</strong> ${task.equipment.zone.name}</p>` : ''}
-                <p style="color: #6b7280; margin: 5px 0;"><strong>Task Type:</strong> ${task.taskType}</p>
-                <p style="color: #6b7280; margin: 5px 0;"><strong>Priority:</strong> <span style="color: ${
-                  task.priority === 'HIGH' ? '#dc2626' : 
-                  task.priority === 'MEDIUM' ? '#f59e0b' : '#10b981'
-                }; font-weight: bold;">${task.priority}</span></p>
-                <p style="color: #6b7280; margin: 5px 0;"><strong>Due Date:</strong> ${new Date(task.dueDate!).toLocaleDateString('en-AU', { 
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</p>
-              </div>
+                        <h2 style="color:#1f2937;margin-top:0;">${task.title}</h2>
+                        
+                        <table style="width:100%;margin:20px 0;font-size:14px;">
+                          <tr><td style="padding:6px 8px;color:#6b7280;width:35%;"><strong>Equipment</strong></td><td style="padding:6px 8px;color:#333;">${task.equipment.name}</td></tr>
+                          ${task.equipment.zone ? `<tr><td style="padding:6px 8px;color:#6b7280;"><strong>Zone</strong></td><td style="padding:6px 8px;color:#333;">${task.equipment.zone.name}</td></tr>` : ''}
+                          <tr><td style="padding:6px 8px;color:#6b7280;"><strong>Task Type</strong></td><td style="padding:6px 8px;color:#333;">${task.taskType}</td></tr>
+                          <tr><td style="padding:6px 8px;color:#6b7280;"><strong>Priority</strong></td><td style="padding:6px 8px;color:${
+                            task.priority === 'HIGH' ? '#dc2626' : 
+                            task.priority === 'MEDIUM' ? '#f59e0b' : '#10b981'
+                          };font-weight:bold;">${task.priority}</td></tr>
+                          <tr><td style="padding:6px 8px;color:#6b7280;"><strong>Due Date</strong></td><td style="padding:6px 8px;color:#333;">${new Date(task.dueDate!).toLocaleDateString('en-AU', { 
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}</td></tr>
+                        </table>
 
-              <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                <h3 style="margin-top: 0; color: #1f2937;">Description:</h3>
-                <p style="color: #4b5563; white-space: pre-wrap;">${task.description}</p>
-              </div>
+                        <div style="background-color:#f9fafb;padding:15px;border-radius:6px;margin:20px 0;">
+                          <h3 style="margin-top:0;color:#1f2937;">Description</h3>
+                          <p style="color:#4b5563;white-space:pre-wrap;margin:0;">${task.description}</p>
+                        </div>
 
-              ${task.notes ? `
-                <div style="background-color: #eff6ff; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                  <h3 style="margin-top: 0; color: #1e40af;">Additional Notes:</h3>
-                  <p style="color: #1e40af; white-space: pre-wrap;">${task.notes}</p>
-                </div>
-              ` : ''}
+                        ${task.notes ? `
+                          <div style="background-color:#eff6ff;padding:15px;border-radius:6px;margin:20px 0;">
+                            <h3 style="margin-top:0;color:#1e40af;">Additional Notes</h3>
+                            <p style="color:#1e40af;white-space:pre-wrap;margin:0;">${task.notes}</p>
+                          </div>
+                        ` : ''}
 
-              ${task.isRecurring ? `
-                <div style="background-color: #f0fdf4; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                  <p style="color: #166534; margin: 0;">
-                    🔄 This is a recurring task (${task.recurrencePattern}${task.recurrenceInterval && task.recurrenceInterval > 1 ? ` - every ${task.recurrenceInterval}` : ''})
-                  </p>
-                </div>
-              ` : ''}
-
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                <p style="color: #6b7280; font-size: 14px; margin: 5px 0;"><strong>Club:</strong> ${task.club.name}</p>
-                <p style="color: #9ca3af; font-size: 12px; margin-top: 20px;">
-                  This is an automated reminder. Please complete this maintenance task before the due date.
-                </p>
-              </div>
-            </div>
-          </div>
+                        ${task.isRecurring ? `
+                          <div style="background-color:#f0fdf4;padding:15px;border-radius:6px;margin:20px 0;">
+                            <p style="color:#166534;margin:0;">
+                              🔄 This is a recurring task (${task.recurrencePattern}${task.recurrenceInterval && task.recurrenceInterval > 1 ? ` - every ${task.recurrenceInterval}` : ''})
+                            </p>
+                          </div>
+                        ` : ''}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:20px 30px;background-color:#f9fafb;border-radius:0 0 8px 8px;text-align:center;">
+                        <p style="margin:0 0 4px;font-size:13px;color:#6b7280;"><strong>Club:</strong> ${task.club.name}</p>
+                        <p style="margin:0;font-size:12px;color:#9ca3af;">This is an automated reminder from GymHub. Please complete this task before the due date.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `;
 
         await sendEmail({

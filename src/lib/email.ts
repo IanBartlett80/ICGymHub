@@ -5,6 +5,19 @@ import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-grap
 
 type EmailProvider = 'smtp' | 'graph'
 
+const GYMHUB_LOGO_URL = 'https://longhornfloorplans.blob.core.windows.net/client-resources/GymHub_Logo.png'
+
+/**
+ * Generates the standard GymHub email logo header row for use in all branded emails.
+ */
+export function getLogoHeaderHtml(): string {
+  return `<tr>
+  <td style="padding: 20px 30px; text-align: center; background-color: #ffffff;">
+    <img src="${GYMHUB_LOGO_URL}" alt="GymHub" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
+  </td>
+</tr>`
+}
+
 function getEmailProvider(): EmailProvider {
   // Use Microsoft Graph if Entra credentials are provided
   if (process.env.AZURE_TENANT_ID && process.env.AZURE_CLIENT_ID && process.env.AZURE_CLIENT_SECRET) {
@@ -196,9 +209,10 @@ function getEmailHtmlContent(clubName: string, verificationLink: string): string
           <tr>
             <td style="padding: 40px 0; text-align: center;">
               <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                ${getLogoHeaderHtml()}
                 <tr>
-                  <td style="padding: 40px 30px; text-align: center; background-color: #2563eb; border-radius: 8px 8px 0 0;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 28px;">Welcome to ICGymHub!</h1>
+                  <td style="padding: 30px 30px 40px; text-align: center; background-color: #2563eb;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px;">Welcome to GymHub!</h1>
                   </td>
                 </tr>
                 <tr>
@@ -399,8 +413,9 @@ function getPasswordResetHtmlContent(resetLink: string): string {
           <tr>
             <td style="padding: 40px 0; text-align: center;">
               <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                ${getLogoHeaderHtml()}
                 <tr>
-                  <td style="padding: 40px 30px; text-align: center; background-color: #2563eb; border-radius: 8px 8px 0 0;">
+                  <td style="padding: 30px 30px 40px; text-align: center; background-color: #2563eb;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 28px;">Reset Your Password</h1>
                   </td>
                 </tr>
@@ -465,6 +480,145 @@ This link will expire in 1 hour. If you didn't request a password reset, you can
 
 © ${new Date().getFullYear()} ICGymHub. All rights reserved.
     `.trim()
+}
+
+// Welcome Email - sent after email verification
+interface SendWelcomeEmailParams {
+  to: string
+  clubName: string
+  domain: string
+  abn: string | null
+  address: string
+  city: string
+  state: string
+  postalCode: string
+  phone: string
+  adminFullName: string
+  username: string
+}
+
+export async function sendWelcomeEmail(params: SendWelcomeEmailParams) {
+  const htmlContent = getWelcomeHtmlContent(params)
+  const textContent = getWelcomeTextContent(params)
+
+  return sendEmail({
+    to: params.to,
+    subject: `Welcome to GymHub, ${params.clubName}!`,
+    htmlContent,
+    textContent,
+  })
+}
+
+function getWelcomeHtmlContent(p: SendWelcomeEmailParams): string {
+  return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to GymHub</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 40px 0; text-align: center;">
+              <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                ${getLogoHeaderHtml()}
+                <tr>
+                  <td style="padding: 30px 30px 40px; text-align: center; background-color: #2563eb;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px;">Welcome to GymHub!</h1>
+                    <p style="margin: 8px 0 0; color: #bfdbfe; font-size: 16px;">Your club is now active</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="margin: 0 0 20px; font-size: 16px; color: #333333; line-height: 1.5;">
+                      Hi ${p.adminFullName},
+                    </p>
+                    <p style="margin: 0 0 20px; font-size: 16px; color: #333333; line-height: 1.5;">
+                      Congratulations! <strong>${p.clubName}</strong> has been successfully registered and activated on GymHub. Here is a summary of your registration details.
+                    </p>
+
+                    <h2 style="margin: 30px 0 10px; font-size: 18px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px;">Club Details</h2>
+                    <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+                      <tr><td style="padding: 6px 8px; color: #666; width: 40%;">Club Name</td><td style="padding: 6px 8px; color: #333; font-weight: 600;">${p.clubName}</td></tr>
+                      <tr><td style="padding: 6px 8px; color: #666;">Domain</td><td style="padding: 6px 8px; color: #333;">${p.domain}</td></tr>
+                      ${p.abn ? `<tr><td style="padding: 6px 8px; color: #666;">ABN</td><td style="padding: 6px 8px; color: #333;">${p.abn}</td></tr>` : ''}
+                    </table>
+
+                    <h2 style="margin: 30px 0 10px; font-size: 18px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px;">Location</h2>
+                    <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+                      <tr><td style="padding: 6px 8px; color: #666; width: 40%;">Address</td><td style="padding: 6px 8px; color: #333;">${p.address}</td></tr>
+                      <tr><td style="padding: 6px 8px; color: #666;">City</td><td style="padding: 6px 8px; color: #333;">${p.city}</td></tr>
+                      <tr><td style="padding: 6px 8px; color: #666;">State</td><td style="padding: 6px 8px; color: #333;">${p.state}</td></tr>
+                      <tr><td style="padding: 6px 8px; color: #666;">Postal Code</td><td style="padding: 6px 8px; color: #333;">${p.postalCode}</td></tr>
+                      <tr><td style="padding: 6px 8px; color: #666;">Phone</td><td style="padding: 6px 8px; color: #333;">${p.phone}</td></tr>
+                    </table>
+
+                    <h2 style="margin: 30px 0 10px; font-size: 18px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px;">Your Admin Account</h2>
+                    <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+                      <tr><td style="padding: 6px 8px; color: #666; width: 40%;">Full Name</td><td style="padding: 6px 8px; color: #333;">${p.adminFullName}</td></tr>
+                      <tr><td style="padding: 6px 8px; color: #666;">Username</td><td style="padding: 6px 8px; color: #333; font-weight: 600;">${p.username}</td></tr>
+                    </table>
+
+                    <div style="margin: 30px 0; padding: 16px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;">
+                      <p style="margin: 0 0 8px; font-size: 14px; color: #1e40af; font-weight: 600;">Getting Started</p>
+                      <p style="margin: 0; font-size: 14px; color: #1e40af; line-height: 1.5;">
+                        Sign in at <a href="https://gymhub.club/sign-in" style="color: #2563eb; font-weight: 600;">gymhub.club/sign-in</a> using the username shown above to start setting up your club — add venues, zones, coaches, and equipment.
+                      </p>
+                    </div>
+
+                    <p style="margin: 20px 0 0; font-size: 14px; color: #666666; line-height: 1.5;">
+                      If you have any questions, reach out to us at <a href="mailto:GymHub@icb.solutions" style="color: #2563eb;">GymHub@icb.solutions</a>.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 30px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; color: #666666;">
+                      © ${new Date().getFullYear()} GymHub. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+}
+
+function getWelcomeTextContent(p: SendWelcomeEmailParams): string {
+  return `
+Welcome to GymHub!
+
+Hi ${p.adminFullName},
+
+Congratulations! ${p.clubName} has been successfully registered and activated on GymHub.
+
+Club Details
+- Club Name: ${p.clubName}
+- Domain: ${p.domain}${p.abn ? `\n- ABN: ${p.abn}` : ''}
+
+Location
+- Address: ${p.address}
+- City: ${p.city}
+- State: ${p.state}
+- Postal Code: ${p.postalCode}
+- Phone: ${p.phone}
+
+Your Admin Account
+- Full Name: ${p.adminFullName}
+- Username: ${p.username}
+
+Getting Started
+Sign in at https://gymhub.club/sign-in using your username to start setting up your club.
+
+If you have any questions, reach out to us at GymHub@icb.solutions.
+
+© ${new Date().getFullYear()} GymHub. All rights reserved.
+  `.trim()
 }
 
 async function sendGenericEmailViaSMTP({

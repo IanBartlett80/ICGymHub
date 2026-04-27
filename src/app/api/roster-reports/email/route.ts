@@ -383,6 +383,9 @@ function generateCoachAllocationEmail(
   </style>
 </head>
 <body>
+  <div style="text-align: center; margin-bottom: 20px;">
+    <img src="https://longhornfloorplans.blob.core.windows.net/client-resources/GymHub_Logo.png" alt="GymHub" width="180" style="display: inline-block; max-width: 180px; height: auto;" />
+  </div>
   <h1>Your Coaching Schedule</h1>
   <p>Hi ${coachName},</p>
   <p>Here is your coaching schedule for <strong>${dateRange}</strong>:</p>
@@ -416,7 +419,7 @@ function generateCoachAllocationEmail(
   
   <div class="footer">
     <p>If you have any questions or need to make changes to your schedule, please contact your supervisor.</p>
-    <p><em>This is an automated message. Please do not reply to this email.</em></p>
+    <p><em>This is an automated message from GymHub. Please do not reply to this email.</em></p>
   </div>
 </body>
 </html>

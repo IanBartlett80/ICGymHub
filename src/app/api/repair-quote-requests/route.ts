@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, getLogoHeaderHtml } from '@/lib/email'
 import { randomBytes } from 'crypto'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
@@ -218,8 +218,9 @@ export async function POST(req: NextRequest) {
         <table role="presentation" style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:40px 0;text-align:center;">
         <table role="presentation" style="width:640px;margin:0 auto;background:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+          ${getLogoHeaderHtml()}
           <tr>
-            <td style="padding:30px;background:#2563eb;border-radius:8px 8px 0 0;text-align:center;">
+            <td style="padding:30px;background:#2563eb;text-align:center;">
               <h1 style="margin:0;color:#ffffff;font-size:24px;">New Repair Quote Request</h1>
               <p style="margin:8px 0 0;color:#bfdbfe;font-size:14px;">Reference: ${requestReference}</p>
             </td>

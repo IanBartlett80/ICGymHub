@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, getLogoHeaderHtml } from '@/lib/email'
 
 // Helper to append to status history
 function appendStatusHistory(existing: string | null, status: string, actor: string, notes?: string) {
@@ -350,8 +350,9 @@ function buildClubNotificationEmail(
     <table role="presentation" style="width:100%;border-collapse:collapse;">
     <tr><td style="padding:40px 0;text-align:center;">
     <table role="presentation" style="width:600px;margin:0 auto;background:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+      ${getLogoHeaderHtml()}
       <tr>
-        <td style="padding:24px 30px;background:${accentColor};border-radius:8px 8px 0 0;text-align:center;">
+        <td style="padding:24px 30px;background:${accentColor};text-align:center;">
           <h1 style="margin:0;color:#ffffff;font-size:20px;">Repair Quote Update</h1>
           <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px;">Reference: ${reference}</p>
         </td>

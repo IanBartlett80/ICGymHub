@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/apiAuth';
 import { verifyPassword } from '@/lib/auth';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, getLogoHeaderHtml } from '@/lib/email';
 
 // POST - Immediately and permanently delete a club and all its data
 export async function POST(request: NextRequest) {
@@ -76,8 +76,9 @@ export async function POST(request: NextRequest) {
             <tr>
               <td style="padding:40px 0;text-align:center;">
                 <table role="presentation" style="width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                  ${getLogoHeaderHtml()}
                   <tr>
-                    <td style="padding:30px;text-align:center;background-color:#dc2626;border-radius:8px 8px 0 0;">
+                    <td style="padding:30px;text-align:center;background-color:#dc2626;">
                       <h1 style="margin:0;color:#ffffff;font-size:24px;">Club Account Deleted</h1>
                     </td>
                   </tr>

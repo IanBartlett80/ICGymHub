@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { clubRegistrationSchema, validateDomainMatch, isConsumerEmail, normalizeDomain } from '@/lib/validation'
-import { sendVerificationEmail, sendEmail } from '@/lib/email'
+import { sendVerificationEmail, sendEmail, getLogoHeaderHtml } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -247,8 +247,9 @@ export async function POST(req: NextRequest) {
             <tr>
               <td style="padding:40px 0;text-align:center;">
                 <table role="presentation" style="width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                  ${getLogoHeaderHtml()}
                   <tr>
-                    <td style="padding:30px;text-align:center;background-color:#2563eb;border-radius:8px 8px 0 0;">
+                    <td style="padding:30px;text-align:center;background-color:#2563eb;">
                       <h1 style="margin:0;color:#ffffff;font-size:24px;">New Club Registration</h1>
                     </td>
                   </tr>
