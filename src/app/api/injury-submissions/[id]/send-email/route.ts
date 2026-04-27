@@ -460,7 +460,7 @@ function buildInjuryReportEmailHtml({
                 Sent by ${senderName} via GymHub on ${new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
               <p style="margin: 6px 0 0; font-size: 11px; color: #9ca3af;">
-                &copy; ${new Date().getFullYear()} GymHub by ICB Solutions Pty Ltd. All rights reserved.
+                &copy; ${new Date().getFullYear()} ${club.name}. All rights reserved.
               </p>
             </td>
           </tr>
