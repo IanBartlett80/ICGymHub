@@ -217,7 +217,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   if (!resolvingSlot || resolveCoachIds.length === 0) return
   try {
    const res = await fetch(`/api/rosters/sessions/${resolvingSlot.session.id}/coaches`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
      coachIds: resolveCoachIds,
@@ -260,7 +260,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
    // Pick the first available coach
    try {
     const res = await fetch(`/api/rosters/sessions/${slot.session.id}/coaches`, {
-     method: 'PUT',
+     method: 'PATCH',
      headers: { 'Content-Type': 'application/json' },
      body: JSON.stringify({
       coachIds: [available[0].id],
