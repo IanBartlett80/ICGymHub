@@ -71,6 +71,39 @@ export async function POST(
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
 
+    // Resolve raw IDs to friendly names for venue/zone/equipment fields
+    const cuidRegex = /^c[a-z0-9]{20,}$/;
+    const idsToResolve: string[] = [];
+    for (const d of submission.data) {
+      try {
+        const parsed = JSON.parse(d.value);
+        const val = parsed.value || parsed.displayValue;
+        if (typeof val === 'string' && cuidRegex.test(val)) idsToResolve.push(val);
+      } catch {}
+    }
+    if (idsToResolve.length > 0) {
+      const [rvenues, rzones, reqItems] = await Promise.all([
+        prisma.venue.findMany({ where: { id: { in: idsToResolve } }, select: { id: true, name: true } }),
+        prisma.zone.findMany({ where: { id: { in: idsToResolve } }, select: { id: true, name: true } }),
+        prisma.equipment.findMany({ where: { id: { in: idsToResolve } }, select: { id: true, name: true } }),
+      ]);
+      const nameMap = new Map<string, string>();
+      for (const v of rvenues) nameMap.set(v.id, v.name);
+      for (const z of rzones) nameMap.set(z.id, z.name);
+      for (const e of reqItems) nameMap.set(e.id, e.name);
+      if (nameMap.size > 0) {
+        for (const d of submission.data) {
+          try {
+            const parsed = JSON.parse(d.value);
+            if (typeof parsed.value === 'string' && nameMap.has(parsed.value)) {
+              parsed.displayValue = nameMap.get(parsed.value);
+              d.value = JSON.stringify(parsed);
+            }
+          } catch {}
+        }
+      }
+    }
+
     // Parse submitter info
     const submitterInfo = submission.submitterInfo ? JSON.parse(submission.submitterInfo) : {};
 

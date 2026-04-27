@@ -294,16 +294,16 @@ export default function SubmissionDetailPage() {
    } catch {}
   }
   // Handle Venue field
-  else if (data.field.label.toLowerCase().includes('venue') && submission.venue) {
-   return submission.venue.name;
+  else if (data.field.label.toLowerCase().includes('venue')) {
+   if (submission.venue) return submission.venue.name;
   }
   // Handle Zone/Area field
-  else if ((data.field.label.toLowerCase().includes('zone') || data.field.label.toLowerCase().includes('area')) && submission.zone) {
-   return submission.zone.name;
+  else if (data.field.label.toLowerCase().includes('zone') || data.field.label.toLowerCase().includes('area')) {
+   if (submission.zone) return submission.zone.name;
   }
   // Handle Equipment field
-  else if ((data.field.label.toLowerCase().includes('equipment') || data.field.label.toLowerCase().includes('apparatus')) && submission.equipment) {
-   return submission.equipment.name;
+  else if (data.field.label.toLowerCase().includes('equipment') || data.field.label.toLowerCase().includes('apparatus')) {
+   if (submission.equipment) return submission.equipment.name;
   }
   // Handle array values
   else if (Array.isArray(value.value)) {

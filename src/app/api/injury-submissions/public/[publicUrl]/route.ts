@@ -125,7 +125,7 @@ export async function POST(
           active: true,
           id: { in: submittedStringValues },
         },
-        select: { id: true },
+        select: { id: true, name: true },
       }),
       prisma.zone.findMany({
         where: {
@@ -133,7 +133,7 @@ export async function POST(
           active: true,
           id: { in: submittedStringValues },
         },
-        select: { id: true },
+        select: { id: true, name: true },
       }),
       prisma.equipment.findMany({
         where: {
@@ -143,6 +143,7 @@ export async function POST(
         },
         select: {
           id: true,
+          name: true,
           zoneId: true,
         },
       }),
@@ -152,6 +153,12 @@ export async function POST(
     const zoneId = matchingZones[0]?.id || null;
     const equipmentRecord = matchingEquipment[0] || null;
     const equipmentId = equipmentRecord?.id || null;
+
+    // Build lookup maps for resolving IDs to friendly names when storing form data
+    const idToNameMap = new Map<string, string>();
+    for (const v of matchingVenues) idToNameMap.set(v.id, v.name);
+    for (const z of matchingZones) idToNameMap.set(z.id, z.name);
+    for (const e of matchingEquipment) idToNameMap.set(e.id, e.name);
 
     if (zoneId && equipmentRecord?.zoneId && equipmentRecord.zoneId !== zoneId) {
       return NextResponse.json(
@@ -271,10 +278,12 @@ export async function POST(
         };
       }
       
-      // Regular string/number value
+      // Regular string/number value — resolve IDs to friendly names if matched
+      const stringValue = String(value);
+      const friendlyName = idToNameMap.get(stringValue);
       return {
         fieldId,
-        value: JSON.stringify({ value, displayValue: value }),
+        value: JSON.stringify({ value: stringValue, displayValue: friendlyName || stringValue }),
       };
     });
 

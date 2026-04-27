@@ -177,6 +177,48 @@ export async function GET(
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
 
+    // Resolve raw IDs to friendly names for venue/zone/equipment fields
+    // This handles old submissions where displayValue was stored as the raw ID
+    if (submission.data && submission.data.length > 0) {
+      const cuidRegex = /^c[a-z0-9]{20,}$/;
+      const idsToResolve: string[] = [];
+
+      for (const d of submission.data) {
+        try {
+          const parsed = JSON.parse(d.value);
+          const val = parsed.value || parsed.displayValue;
+          if (typeof val === 'string' && cuidRegex.test(val)) {
+            idsToResolve.push(val);
+          }
+        } catch {}
+      }
+
+      if (idsToResolve.length > 0) {
+        const [venues, zones, equipmentItems] = await Promise.all([
+          prisma.venue.findMany({ where: { id: { in: idsToResolve } }, select: { id: true, name: true } }),
+          prisma.zone.findMany({ where: { id: { in: idsToResolve } }, select: { id: true, name: true } }),
+          prisma.equipment.findMany({ where: { id: { in: idsToResolve } }, select: { id: true, name: true } }),
+        ]);
+        const nameMap = new Map<string, string>();
+        for (const v of venues) nameMap.set(v.id, v.name);
+        for (const z of zones) nameMap.set(z.id, z.name);
+        for (const e of equipmentItems) nameMap.set(e.id, e.name);
+
+        if (nameMap.size > 0) {
+          for (const d of submission.data) {
+            try {
+              const parsed = JSON.parse(d.value);
+              const val = parsed.value;
+              if (typeof val === 'string' && nameMap.has(val)) {
+                parsed.displayValue = nameMap.get(val);
+                d.value = JSON.stringify(parsed);
+              }
+            } catch {}
+          }
+        }
+      }
+    }
+
     return NextResponse.json({ submission });
   } catch (error) {
     console.error('Error fetching injury submission:', error);
