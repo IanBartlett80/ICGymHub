@@ -180,6 +180,20 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   return conflictDetails.find(c => c.slotId === slotId)
  }
 
+ const getConflictingCoachIdsForSlot = (slot: RosterSlot): Set<string> => {
+  const detail = getConflictDetail(slot.id)
+  if (!detail) return new Set()
+  return new Set(detail.coachConflicts.map(cc => cc.coachId))
+ }
+
+ const getDefaultResolveCoachIds = (slot: RosterSlot): string[] => {
+  const conflictingCoachIds = getConflictingCoachIdsForSlot(slot)
+  // Keep only non-conflicting existing coaches selected by default.
+  return slot.session.coaches
+   .map(c => c.coach.id)
+   .filter(coachId => !conflictingCoachIds.has(coachId))
+ }
+
  const getAvailableCoachesForSlot = (slot: RosterSlot): AvailableCoach[] => {
   if (!roster) return []
   // Get all coaches that are NOT busy during this slot's time
@@ -215,12 +229,22 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
 
  const handleResolveCoach = async () => {
   if (!resolvingSlot || resolveCoachIds.length === 0) return
+
+  const conflictingCoachIds = getConflictingCoachIdsForSlot(resolvingSlot)
+  // Always remove conflicting coaches; selected replacements become the new assignments.
+  const replacementCoachIds = resolveCoachIds.filter(coachId => !conflictingCoachIds.has(coachId))
+
+  if (replacementCoachIds.length === 0) {
+   showToast.error('Select at least one replacement coach to resolve this conflict')
+   return
+  }
+
   try {
    const res = await fetch(`/api/rosters/sessions/${resolvingSlot.session.id}/coaches`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-     coachIds: resolveCoachIds,
+     coachIds: replacementCoachIds,
      sessionId: resolvingSlot.session.id,
      zoneScope: 'all',
     }),
@@ -822,7 +846,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                <button
                 onClick={() => {
                  setResolvingSlot(slot)
-                 setResolveCoachIds(slot.session.coaches.map(c => c.coach.id))
+                 setResolveCoachIds(getDefaultResolveCoachIds(slot))
                 }}
                 className="mt-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition w-fit"
                >
@@ -1241,6 +1265,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
      const detail = getConflictDetail(resolvingSlot.id)
      const availableForSlot = getAvailableCoachesForSlot(resolvingSlot)
      const currentCoachIds = resolvingSlot.session.coaches.map(c => c.coach.id)
+      const conflictingCoachIds = getConflictingCoachIdsForSlot(resolvingSlot)
+      const selectedReplacementCoachIds = resolveCoachIds.filter(id => !conflictingCoachIds.has(id))
 
      return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print" onClick={() => setResolvingSlot(null)}>
@@ -1292,7 +1318,14 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Current Coach{currentCoachIds.length !== 1 ? 'es' : ''}</h4>
           <div className="flex flex-wrap gap-2">
            {resolvingSlot.session.coaches.map(c => (
-            <span key={c.coach.id} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+              <span
+               key={c.coach.id}
+               className={`px-3 py-1 rounded-full text-sm font-medium ${
+                conflictingCoachIds.has(c.coach.id)
+                 ? 'bg-red-100 text-red-800'
+                 : 'bg-gray-100 text-gray-700'
+               }`}
+              >
              {c.coach.name}
             </span>
            ))}
@@ -1302,7 +1335,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
          {/* Available Coaches */}
          <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
-           Select Replacement Coach{resolveCoachIds.length !== 1 ? 'es' : ''}
+           Select Replacement Coach{selectedReplacementCoachIds.length !== 1 ? 'es' : ''}
           </h4>
           {availableForSlot.length > 0 ? (
            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
@@ -1379,7 +1412,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
           </button>
           <button
            onClick={handleResolveCoach}
-           disabled={resolveCoachIds.length === 0}
+           disabled={selectedReplacementCoachIds.length === 0}
            className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
           >
            Apply Coach Change
