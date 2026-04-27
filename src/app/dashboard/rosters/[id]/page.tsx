@@ -89,10 +89,51 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
  const [reorderedSlots, setReorderedSlots] = useState<RosterSlot[]>([])
 
+ // Conflict resolution state
+ type ConflictDetail = {
+  slotId: string
+  conflictType: string | null
+  coachConflicts: Array<{
+   coachId: string
+   coachName: string
+   clashingClassName: string
+   clashingZoneName: string
+   clashingTime: string
+   clashingRosterId: string
+   isSameRoster: boolean
+  }>
+  zoneConflicts: Array<{
+   zoneName: string
+   clashingClassName: string
+   clashingTime: string
+   isSameRoster: boolean
+  }>
+ }
+ type AvailableCoach = {
+  id: string
+  name: string
+  gymsports: Array<{ gymsport: { id: string; name: string } }>
+  availability: Array<{ dayOfWeek: string; startTimeLocal: string; endTimeLocal: string }>
+ }
+ const [conflictDetails, setConflictDetails] = useState<ConflictDetail[]>([])
+ const [allClubCoaches, setAllClubCoaches] = useState<AvailableCoach[]>([])
+ const [resolvingSlot, setResolvingSlot] = useState<RosterSlot | null>(null)
+ const [resolveCoachIds, setResolveCoachIds] = useState<string[]>([])
+ const [resolvingAll, setResolvingAll] = useState(false)
+
  useEffect(() => {
   fetchRoster()
   fetchCoaches()
  }, [resolvedParams.id])
+
+ // Fetch conflict details when roster has conflicts
+ useEffect(() => {
+  if (roster && roster.slots.some(s => s.conflictFlag)) {
+   fetchConflictDetails()
+  } else {
+   setConflictDetails([])
+  }
+ }, [roster])
 
  const fetchRoster = async () => {
   try {
@@ -120,6 +161,124 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   } catch (err) {
    console.error('Failed to fetch coaches')
   }
+ }
+
+ const fetchConflictDetails = async () => {
+  try {
+   const res = await fetch(`/api/rosters/${resolvedParams.id}/conflicts`)
+   if (res.ok) {
+    const data = await res.json()
+    setConflictDetails(data.conflictDetails || [])
+    setAllClubCoaches(data.allCoaches || [])
+   }
+  } catch (err) {
+   console.error('Failed to fetch conflict details')
+  }
+ }
+
+ const getConflictDetail = (slotId: string): ConflictDetail | undefined => {
+  return conflictDetails.find(c => c.slotId === slotId)
+ }
+
+ const getAvailableCoachesForSlot = (slot: RosterSlot): AvailableCoach[] => {
+  if (!roster) return []
+  // Get all coaches that are NOT busy during this slot's time
+  const slotStart = new Date(slot.startsAt)
+  const slotEnd = new Date(slot.endsAt)
+  const gymsportId = slot.session.template?.id ? 
+   allClubCoaches.find(c => c.gymsports.length > 0)?.gymsports[0]?.gymsport?.id : null
+
+  // Get IDs of coaches who have conflicts during this time
+  const busyCoachIds = new Set<string>()
+  const allSlots = roster.slots
+  for (const other of allSlots) {
+   if (other.id === slot.id) continue
+   const otherStart = new Date(other.startsAt)
+   const otherEnd = new Date(other.endsAt)
+   if (slotStart < otherEnd && otherStart < slotEnd) {
+    for (const c of other.session.coaches) {
+     busyCoachIds.add(c.coach.id)
+    }
+   }
+  }
+
+  // Also check cross-roster conflicts from conflict details
+  const detail = getConflictDetail(slot.id)
+  if (detail) {
+   for (const cc of detail.coachConflicts) {
+    busyCoachIds.add(cc.coachId)
+   }
+  }
+
+  return allClubCoaches.filter(coach => !busyCoachIds.has(coach.id))
+ }
+
+ const handleResolveCoach = async () => {
+  if (!resolvingSlot || resolveCoachIds.length === 0) return
+  try {
+   const res = await fetch(`/api/rosters/sessions/${resolvingSlot.session.id}/coaches`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+     coachIds: resolveCoachIds,
+     sessionId: resolvingSlot.session.id,
+     zoneScope: 'all',
+    }),
+   })
+   if (res.ok) {
+    showToast.success('Coach reassigned successfully')
+    setResolvingSlot(null)
+    setResolveCoachIds([])
+    await fetchRoster()
+   } else {
+    showToast.error('Failed to reassign coach')
+   }
+  } catch {
+   showToast.error('Failed to reassign coach')
+  }
+ }
+
+ const handleAutoResolveAll = async () => {
+  if (!roster) return
+  setResolvingAll(true)
+  let resolved = 0
+  let failed = 0
+
+  const conflictSlots = roster.slots.filter(s => s.conflictFlag && s.conflictType === 'coach')
+  // Group by session ID to avoid duplicate updates
+  const sessionIds = new Set<string>()
+
+  for (const slot of conflictSlots) {
+   if (sessionIds.has(slot.session.id)) continue
+   sessionIds.add(slot.session.id)
+
+   const available = getAvailableCoachesForSlot(slot)
+   if (available.length === 0) {
+    failed++
+    continue
+   }
+   // Pick the first available coach
+   try {
+    const res = await fetch(`/api/rosters/sessions/${slot.session.id}/coaches`, {
+     method: 'PUT',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({
+      coachIds: [available[0].id],
+      sessionId: slot.session.id,
+      zoneScope: 'all',
+     }),
+    })
+    if (res.ok) resolved++
+    else failed++
+   } catch {
+    failed++
+   }
+  }
+
+  setResolvingAll(false)
+  if (resolved > 0) showToast.success(`Resolved ${resolved} conflict${resolved !== 1 ? 's' : ''}`)
+  if (failed > 0) showToast.error(`${failed} conflict${failed !== 1 ? 's' : ''} could not be auto-resolved (no available coaches)`)
+  await fetchRoster()
  }
 
  const handleExport = async () => {
@@ -456,13 +615,31 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
         <div className="flex items-start gap-3">
          <span className="text-yellow-600 text-2xl">⚠️</span>
          <div className="flex-1">
-          <h4 className="font-semibold text-yellow-900 mb-2">
-           {conflictCount} Scheduling Conflict{conflictCount !== 1 ? 's' : ''} Detected
-          </h4>
+          <div className="flex items-center justify-between">
+           <h4 className="font-semibold text-yellow-900 mb-2">
+            {conflictCount} Scheduling Conflict{conflictCount !== 1 ? 's' : ''} Detected
+           </h4>
+           {coachConflicts > 0 && (
+            <button
+             onClick={handleAutoResolveAll}
+             disabled={resolvingAll}
+             className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition flex items-center gap-2"
+            >
+             {resolvingAll ? (
+              <>
+               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+               Resolving...
+              </>
+             ) : (
+              <>✨ Auto-Resolve All</>
+             )}
+            </button>
+           )}
+          </div>
           <div className="text-sm text-yellow-800 space-y-1">
            {coachConflicts> 0 && (
             <p>
-             • <strong>Coach Overlaps:</strong> {coachConflicts} time slot{coachConflicts !== 1 ? 's' : ''} where a coach is assigned to multiple classes or zones simultaneously
+             • <strong>Coach Overlaps:</strong> {coachConflicts} time slot{coachConflicts !== 1 ? 's' : ''} where a coach is assigned to multiple classes simultaneously
             </p>
            )}
            {zoneConflicts> 0 && (
@@ -471,15 +648,9 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
             </p>
            )}
           </div>
-          <div className="text-xs text-yellow-700 mt-2 space-y-1">
-           <p><strong>How to resolve:</strong></p>
-           {coachConflicts> 0 && (
-            <p>• Coach conflicts: Use "Edit Coaches" in the table view to assign different coaches to overlapping time slots</p>
-           )}
-           {zoneConflicts> 0 && (
-            <p>• Zone conflicts: Use "Edit Zone Order" to change which zones are used during overlapping time slots</p>
-           )}
-          </div>
+          <p className="text-xs text-yellow-700 mt-2">
+           Click <strong>Resolve</strong> on each conflict row for details, or use <strong>Auto-Resolve All</strong> to assign available coaches automatically.
+          </p>
          </div>
         </div>
        </div>
@@ -624,7 +795,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
             <td className="px-6 py-4 whitespace-nowrap no-print">
              {slot.conflictFlag ? (
               <div className="flex flex-col gap-1">
-               <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">⚠️ Conflict</span>
+               <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded inline-block w-fit">⚠️ Conflict</span>
                {slot.conflictType && (
                 <span className="text-xs text-gray-600">
                  {slot.conflictType === 'coach' && 'Coach overlap'}
@@ -632,6 +803,31 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                  {slot.conflictType === 'both' && 'Coach & Zone'}
                 </span>
                )}
+               {(() => {
+                const detail = getConflictDetail(slot.id)
+                if (!detail) return null
+                return (
+                 <div className="mt-1 space-y-0.5">
+                  {detail.coachConflicts.slice(0, 2).map((cc, i) => (
+                   <p key={i} className="text-xs text-red-700">
+                    {cc.coachName} → {cc.clashingClassName}
+                   </p>
+                  ))}
+                  {detail.coachConflicts.length > 2 && (
+                   <p className="text-xs text-red-500">+{detail.coachConflicts.length - 2} more</p>
+                  )}
+                 </div>
+                )
+               })()}
+               <button
+                onClick={() => {
+                 setResolvingSlot(slot)
+                 setResolveCoachIds(slot.session.coaches.map(c => c.coach.id))
+                }}
+                className="mt-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition w-fit"
+               >
+                Resolve
+               </button>
               </div>
              ) : (
               <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">✓ OK</span>
@@ -1039,6 +1235,162 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
       )
      })()}
     </div>
+
+    {/* Conflict Resolve Modal */}
+    {resolvingSlot && (() => {
+     const detail = getConflictDetail(resolvingSlot.id)
+     const availableForSlot = getAvailableCoachesForSlot(resolvingSlot)
+     const currentCoachIds = resolvingSlot.session.coaches.map(c => c.coach.id)
+
+     return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print" onClick={() => setResolvingSlot(null)}>
+       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-red-600 to-orange-600 px-6 py-4 rounded-t-xl">
+         <h3 className="text-lg font-bold text-white">Resolve Conflict</h3>
+         <p className="text-red-100 text-sm mt-1">
+          {resolvingSlot.session.template?.name} — {formatTime(resolvingSlot.startsAt)} to {formatTime(resolvingSlot.endsAt)}
+         </p>
+        </div>
+        <div className="p-6 space-y-4">
+         {/* Conflict Details */}
+         {detail && detail.coachConflicts.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+           <h4 className="text-sm font-semibold text-red-800 mb-2">Coach Conflicts</h4>
+           <div className="space-y-2">
+            {detail.coachConflicts.map((cc, i) => (
+             <div key={i} className="flex items-start gap-2 text-sm">
+              <span className="text-red-500 mt-0.5">•</span>
+              <p className="text-red-800">
+               <strong>{cc.coachName}</strong> is also coaching <strong>{cc.clashingClassName}</strong> in {cc.clashingZoneName}
+               {!cc.isSameRoster && <span className="text-red-600 font-medium"> (another roster)</span>}
+              </p>
+             </div>
+            ))}
+           </div>
+          </div>
+         )}
+
+         {detail && detail.zoneConflicts.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+           <h4 className="text-sm font-semibold text-amber-800 mb-2">Zone Conflicts</h4>
+           <div className="space-y-2">
+            {detail.zoneConflicts.map((zc, i) => (
+             <div key={i} className="flex items-start gap-2 text-sm">
+              <span className="text-amber-500 mt-0.5">•</span>
+              <p className="text-amber-800">
+               <strong>{zc.zoneName}</strong> is used by <strong>{zc.clashingClassName}</strong>
+               {!zc.isSameRoster && <span className="text-amber-600 font-medium"> (another roster)</span>}
+              </p>
+             </div>
+            ))}
+           </div>
+          </div>
+         )}
+
+         {/* Current Coaches */}
+         <div className="bg-gray-50 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">Current Coach{currentCoachIds.length !== 1 ? 'es' : ''}</h4>
+          <div className="flex flex-wrap gap-2">
+           {resolvingSlot.session.coaches.map(c => (
+            <span key={c.coach.id} className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+             {c.coach.name}
+            </span>
+           ))}
+          </div>
+         </div>
+
+         {/* Available Coaches */}
+         <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+           Select Replacement Coach{resolveCoachIds.length !== 1 ? 'es' : ''}
+          </h4>
+          {availableForSlot.length > 0 ? (
+           <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+            {availableForSlot.map(coach => {
+             const isSelected = resolveCoachIds.includes(coach.id)
+             const isCurrentConflict = currentCoachIds.includes(coach.id)
+             const gymsportNames = coach.gymsports.map(g => g.gymsport.name).join(', ')
+             return (
+              <label key={coach.id} className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition ${isSelected ? 'bg-green-50 border border-green-200' : 'hover:bg-gray-50'}`}>
+               <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => {
+                 setResolveCoachIds(prev =>
+                  prev.includes(coach.id) ? prev.filter(id => id !== coach.id) : [...prev, coach.id]
+                 )
+                }}
+                className="rounded text-green-600"
+               />
+               <div className="flex-1">
+                <span className="font-medium text-gray-900">{coach.name}</span>
+                {isCurrentConflict && <span className="ml-2 text-xs text-red-500">(conflicting)</span>}
+                {gymsportNames && <p className="text-xs text-gray-500">{gymsportNames}</p>}
+               </div>
+               <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">Available</span>
+              </label>
+             )
+            })}
+           </div>
+          ) : (
+           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">No available coaches found for this time slot. All coaches are busy or not configured.</p>
+           </div>
+          )}
+
+          {/* Also show busy coaches so admin can knowingly override */}
+          {allClubCoaches.filter(c => !availableForSlot.some(a => a.id === c.id)).length > 0 && (
+           <details className="mt-3">
+            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">Show busy/unavailable coaches</summary>
+            <div className="space-y-2 mt-2 max-h-32 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+             {allClubCoaches.filter(c => !availableForSlot.some(a => a.id === c.id)).map(coach => {
+              const isSelected = resolveCoachIds.includes(coach.id)
+              return (
+               <label key={coach.id} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition">
+                <input
+                 type="checkbox"
+                 checked={isSelected}
+                 onChange={() => {
+                  setResolveCoachIds(prev =>
+                   prev.includes(coach.id) ? prev.filter(id => id !== coach.id) : [...prev, coach.id]
+                  )
+                 }}
+                 className="rounded"
+                />
+                <div className="flex-1">
+                 <span className="text-gray-700">{coach.name}</span>
+                </div>
+                <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium">Busy</span>
+               </label>
+              )
+             })}
+            </div>
+           </details>
+          )}
+         </div>
+
+         {/* Actions */}
+         <div className="flex gap-3 pt-2">
+          <button
+           onClick={() => { setResolvingSlot(null); setResolveCoachIds([]) }}
+           className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+          >
+           Cancel
+          </button>
+          <button
+           onClick={handleResolveCoach}
+           disabled={resolveCoachIds.length === 0}
+           className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
+          >
+           Apply Coach Change
+          </button>
+         </div>
+        </div>
+       </div>
+      </div>
+     )
+    })()}
+
    </div>
   </DashboardLayout>
  )
