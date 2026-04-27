@@ -36,6 +36,15 @@ export async function POST(
         clubId: authResult.user.clubId,
       },
       include: {
+        club: {
+          select: {
+            name: true,
+            address: true,
+            city: true,
+            state: true,
+            phone: true,
+          },
+        },
         template: {
           include: {
             club: {
@@ -136,7 +145,7 @@ export async function POST(
       recipientName: recipientName?.trim() || undefined,
     });
 
-    const textContent = `Injury Report for ${athleteName} — ${submission.template.name}\n\nSubmitted: ${new Date(submission.submittedAt).toLocaleString()}\nStatus: ${submission.status}\nClub: ${submission.template.club.name}\n\nThis report was sent by ${authResult.user.fullName} via GymHub.\nPlease view the HTML version of this email for the full formatted report.`;
+    const textContent = `Injury Report for ${athleteName} — ${submission.template.name}\n\nSubmitted: ${new Date(submission.submittedAt).toLocaleString()}\nStatus: ${submission.status}\nClub: ${submission.club.name}\n\nThis report was sent by ${authResult.user.fullName} via GymHub.\nPlease view the HTML version of this email for the full formatted report.`;
 
     const subject = `Injury Report: ${athleteName} — ${submission.template.name}`;
 
@@ -178,7 +187,7 @@ function buildInjuryReportEmailHtml({
   senderName,
   recipientName,
 }: BuildEmailParams): string {
-  const club = submission.template.club;
+  const club = submission.club;
 
   const getConditionColor = (condition: string | null) => {
     if (!condition) return { bg: '#f3f4f6', text: '#6b7280', border: '#d1d5db' };
