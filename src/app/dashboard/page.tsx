@@ -347,7 +347,7 @@ export default function DashboardPage() {
         <h3 className="text-sm font-semibold text-gray-900">Weekly Class Schedule</h3>
         <p className="text-xs text-gray-600">Next 7 days</p>
        </div>
-       <Link href="/dashboard/rosters" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+       <Link href="/dashboard/class-rostering" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
         View All →
        </Link>
       </div>
