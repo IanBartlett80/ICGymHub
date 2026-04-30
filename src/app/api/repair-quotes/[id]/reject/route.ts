@@ -93,7 +93,7 @@ export async function POST(
         : null
 
       await sendEmail({
-        to: 'IanBartlett@icb.solutions',
+        to: 'GymHub@icb.solutions',
         subject: `[${existingQuote.requestReference || id}] Quote REJECTED - ${updated.equipment.name} at ${club.name}`,
         htmlContent: `
           <h2 style="color:#dc2626;">Quote Rejected</h2>

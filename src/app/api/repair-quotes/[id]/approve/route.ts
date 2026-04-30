@@ -86,7 +86,7 @@ export async function POST(
     // Notify ICB Solutions
     try {
       await sendEmail({
-        to: 'IanBartlett@icb.solutions',
+        to: 'GymHub@icb.solutions',
         subject: `[${existingQuote.requestReference || id}] Quote APPROVED - ${updated.equipment.name} at ${club.name}`,
         htmlContent: `
           <h2>Quote Approved</h2>

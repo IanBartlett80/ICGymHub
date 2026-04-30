@@ -278,7 +278,7 @@ export async function POST(req: NextRequest) {
       `
 
       await sendEmail({
-        to: 'IanBartlett@icb.solutions',
+        to: 'GymHub@icb.solutions',
         subject: `[${requestReference}] Repair Quote Request - ${equipment.name} at ${user.club.name} (${urgency || 'MEDIUM'})`,
         htmlContent: emailBody,
       })
