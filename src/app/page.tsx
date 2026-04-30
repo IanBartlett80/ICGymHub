@@ -61,45 +61,46 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero + Core Solutions Above Fold */}
+      {/* Hero */}
       <section className="container mx-auto px-6 pt-8 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
-          <div className="text-center lg:text-left">
-            <div className="inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-semibold mb-4">
-              Live Platform for Australian Gymnastics Clubs
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-              Club Management Made Easy with AI-Powered Business Intelligence
-            </h1>
-            <p className="text-base md:text-lg text-gray-600 mb-6 max-w-xl mx-auto lg:mx-0">
-              GymHub unifies rostering, injury workflows, equipment operations, compliance, and competition management into one secure platform.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-              <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-base font-semibold transition">
-                Register Your Club
-              </Link>
-              <Link href="#pricing" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-6 py-3 rounded-lg text-base font-semibold transition">
-                View Pricing
-              </Link>
-              <Link href="mailto:gymhub@icb.solutions" className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900 px-6 py-3 rounded-lg text-base font-semibold transition">
-                Contact Team
-              </Link>
-            </div>
+        <div className="text-center lg:text-left">
+          <div className="inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-semibold mb-4">
+            Live Platform for Australian Gymnastics Clubs
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+            Club Management Made Easy with AI-Powered Business Intelligence
+          </h1>
+          <p className="text-base md:text-lg text-gray-600 mb-6 max-w-xl mx-auto lg:mx-0">
+            GymHub unifies rostering, injury workflows, equipment operations, compliance, and competition management into one secure platform.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+            <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-base font-semibold transition">
+              Register Your Club
+            </Link>
+            <Link href="#pricing" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-6 py-3 rounded-lg text-base font-semibold transition">
+              View Pricing
+            </Link>
+            <Link href="mailto:gymhub@icb.solutions" className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900 px-6 py-3 rounded-lg text-base font-semibold transition">
+              Contact Team
+            </Link>
+          </div>
+        </div>
+      </section>
 
-          <div id="features" className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center lg:text-left">
-              Our Core Solutions
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {coreSolutions.map((service, idx) => (
-                <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition">
-                  <div className="text-2xl mb-2">{service.icon}</div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-1">{service.title}</h3>
-                  <p className="text-gray-600 text-sm">{service.description}</p>
-                </div>
-              ))}
-            </div>
+      {/* Core Solutions */}
+      <section id="features" className="container mx-auto px-6 pb-12">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center lg:text-left">
+            Our Core Solutions
+          </h2>
+          <div className="grid grid-cols-1 gap-4">
+            {coreSolutions.map((service, idx) => (
+              <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition">
+                <div className="text-2xl mb-2">{service.icon}</div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">{service.title}</h3>
+                <p className="text-gray-600 text-sm">{service.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
