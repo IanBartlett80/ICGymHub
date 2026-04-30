@@ -25,20 +25,39 @@ type Coach = {
  name: string
 }
 
+type ZoneOption = {
+ id: string
+ name: string
+ allowOverlap: boolean
+ isFirst: boolean
+ active?: boolean
+ venueId?: string | null
+}
+
 type RosterSlot = {
  id: string
  startsAt: string
  endsAt: string
  conflictFlag: boolean
  conflictType: string | null
- zone: { id: string; name: string; allowOverlap: boolean; isFirst: boolean }
+ zone: ZoneOption
  session: {
   id: string
   template: { 
    id: string
    name: string
    color: string | null
+   gymsport?: {
+    id: string
+    name: string
+   } | null
+   allowedZones?: Array<{
+    zone: ZoneOption
+   }>
   } | null
+  allowedZones?: Array<{
+   zone: ZoneOption
+  }>
   coaches: Array<{ 
    id: string
    coach: Coach 
@@ -88,6 +107,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
  const [zoneReorderScope, setZoneReorderScope] = useState<'single' | 'future'>('single')
  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
  const [reorderedSlots, setReorderedSlots] = useState<RosterSlot[]>([])
+ const [availableZones, setAvailableZones] = useState<ZoneOption[]>([])
 
  // Conflict resolution state
  type ConflictDetail = {
@@ -141,6 +161,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
    if (res.ok) {
     const data = await res.json()
     setRoster(data.roster)
+  setAvailableZones(data.availableZones || [])
    } else {
     setError('Failed to load roster')
    }
@@ -438,6 +459,28 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   setReorderingSessionId(sessionId)
   setShowZoneReorderModal(true)
   setZoneReorderScope('single')
+ }
+
+ const getSelectableZonesForSession = (session: RosterSlot['session']): ZoneOption[] => {
+  const uniqueById = (zones: ZoneOption[]) => Array.from(new Map(zones.map((zone) => [zone.id, zone])).values())
+
+  const sessionZones = (session.allowedZones || [])
+   .map((entry) => entry.zone)
+   .filter((zone) => zone?.active !== false)
+
+  if (sessionZones.length > 0) {
+   return uniqueById(sessionZones)
+  }
+
+  const templateZones = (session.template?.allowedZones || [])
+   .map((entry) => entry.zone)
+   .filter((zone) => zone?.active !== false)
+
+  if (templateZones.length > 0) {
+   return uniqueById(templateZones)
+  }
+
+  return uniqueById(availableZones)
  }
 
  const handleSaveZoneOrder = async (newOrder: Array<{ slotId: string; zoneId: string; order: number; startsAt: string; endsAt: string }>) => {
@@ -1090,6 +1133,24 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
       }
 
       const conflicts = checkConflicts()
+        const sessionZoneOptions = getSelectableZonesForSession(reorderedSlots[0].session)
+        const selectableZoneMap = new Map(sessionZoneOptions.map((zone) => [zone.id, zone]))
+
+        const handleZoneSelectionChange = (slotIndex: number, nextZoneId: string) => {
+         const selectedZone = selectableZoneMap.get(nextZoneId)
+         if (!selectedZone) return
+
+         setReorderedSlots((prev) =>
+          prev.map((slot, index) =>
+           index === slotIndex
+            ? {
+              ...slot,
+              zone: selectedZone,
+             }
+            : slot
+          )
+         )
+        }
 
       return (
        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print p-4">
@@ -1129,7 +1190,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
           )}
 
           <p className="text-sm text-gray-600">
-           Drag and drop rows to reorder zones within this session
+           Drag and drop rows to reorder time allocations, and use the dropdown to change the selected zone.
           </p>
          </div>
 
@@ -1139,7 +1200,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
             <tr>
              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zone</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Allocated Zone</th>
              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             </tr>
            </thead>
@@ -1169,15 +1230,32 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                <td className="px-4 py-3 whitespace-nowrap text-sm">
                 {startTime} - {endTime}
                </td>
-               <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                 <span className="font-medium">{slot.zone.name}</span>
-                 {slot.zone.isFirst && (
-                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
-                   ⭐ Priority
-                  </span>
-                 )}
-                </div>
+                 <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                   <select
+                    value={slot.zone.id}
+                    onChange={(e) => handleZoneSelectionChange(index, e.target.value)}
+                    className="w-full min-w-[220px] rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                   >
+                    {(() => {
+                     const currentInList = selectableZoneMap.has(slot.zone.id)
+                     const zoneOptions = currentInList
+                      ? sessionZoneOptions
+                      : [slot.zone, ...sessionZoneOptions]
+
+                     return zoneOptions.map((zone) => (
+                      <option key={zone.id} value={zone.id}>
+                       {zone.name}{zone.isFirst ? ' (Priority)' : ''}
+                      </option>
+                     ))
+                    })()}
+                   </select>
+                   {slot.zone.isFirst && (
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded whitespace-nowrap">
+                     ⭐ Priority
+                    </span>
+                   )}
+                  </div>
                </td>
                <td className="px-4 py-3 whitespace-nowrap text-sm">
                 {hasConflict ? (

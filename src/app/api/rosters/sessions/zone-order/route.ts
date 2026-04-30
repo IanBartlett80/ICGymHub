@@ -60,6 +60,30 @@ export async function PATCH(req: NextRequest) {
     const session = await prisma.classSession.findFirst({
       where: { id: sessionId, clubId: user.clubId },
       include: {
+        template: {
+          include: {
+            allowedZones: {
+              include: {
+                zone: {
+                  select: {
+                    id: true,
+                    active: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        allowedZones: {
+          include: {
+            zone: {
+              select: {
+                id: true,
+                active: true,
+              },
+            },
+          },
+        },
         rosterSlots: {
           include: {
             roster: true,
@@ -80,6 +104,39 @@ export async function PATCH(req: NextRequest) {
       startsAt: zo.startsAt,
       endsAt: zo.endsAt,
     }]))
+
+    // Validate submitted zones are allowed for this session's venue/gymsport configuration.
+    const sessionAllowedZoneIds = session.allowedZones
+      .filter((entry) => entry.zone.active)
+      .map((entry) => entry.zone.id)
+    const templateAllowedZoneIds = session.template?.allowedZones
+      ?.filter((entry) => entry.zone.active)
+      .map((entry) => entry.zone.id) ?? []
+
+    let allowedZoneIds = sessionAllowedZoneIds.length > 0
+      ? sessionAllowedZoneIds
+      : templateAllowedZoneIds
+
+    if (allowedZoneIds.length === 0) {
+      const venueScopedZones = await prisma.zone.findMany({
+        where: {
+          clubId: user.clubId,
+          active: true,
+          ...(session.venueId ? { venueId: session.venueId } : {}),
+        },
+        select: { id: true },
+      })
+      allowedZoneIds = venueScopedZones.map((zone) => zone.id)
+    }
+
+    const allowedZoneSet = new Set(allowedZoneIds)
+    const invalidZoneSelection = zoneOrder.find((entry) => !allowedZoneSet.has(entry.zoneId))
+    if (invalidZoneSelection) {
+      return NextResponse.json(
+        { error: 'One or more selected zones are not valid for this session' },
+        { status: 400 }
+      )
+    }
 
     if (scope === 'single') {
       // Update only this roster's slots

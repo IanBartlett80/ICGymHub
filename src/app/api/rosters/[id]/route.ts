@@ -41,7 +41,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           include: {
             session: {
               include: {
-                template: true,
+                template: {
+                  include: {
+                    gymsport: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                    allowedZones: {
+                      include: {
+                        zone: true,
+                      },
+                    },
+                  },
+                },
+                allowedZones: {
+                  include: {
+                    zone: true,
+                  },
+                },
                 coaches: { include: { coach: true } },
               },
             },
@@ -55,7 +74,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Roster not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ roster }, { status: 200 })
+    const availableZones = await prisma.zone.findMany({
+      where: {
+        clubId: user.clubId,
+        active: true,
+        ...(roster.venueId ? { venueId: roster.venueId } : {}),
+      },
+      orderBy: { name: 'asc' },
+    })
+
+    return NextResponse.json({ roster, availableZones }, { status: 200 })
   } catch (error) {
     console.error('Failed to fetch roster', error)
     return NextResponse.json({ error: 'Failed to fetch roster' }, { status: 500 })
