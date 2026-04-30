@@ -60,30 +60,6 @@ export async function PATCH(req: NextRequest) {
     const session = await prisma.classSession.findFirst({
       where: { id: sessionId, clubId: user.clubId },
       include: {
-        template: {
-          include: {
-            allowedZones: {
-              include: {
-                zone: {
-                  select: {
-                    id: true,
-                    active: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        allowedZones: {
-          include: {
-            zone: {
-              select: {
-                id: true,
-                active: true,
-              },
-            },
-          },
-        },
         rosterSlots: {
           include: {
             roster: true,
@@ -105,29 +81,16 @@ export async function PATCH(req: NextRequest) {
       endsAt: zo.endsAt,
     }]))
 
-    // Validate submitted zones are allowed for this session's venue/gymsport configuration.
-    const sessionAllowedZoneIds = session.allowedZones
-      .filter((entry) => entry.zone.active)
-      .map((entry) => entry.zone.id)
-    const templateAllowedZoneIds = session.template?.allowedZones
-      ?.filter((entry) => entry.zone.active)
-      .map((entry) => entry.zone.id) ?? []
-
-    let allowedZoneIds = sessionAllowedZoneIds.length > 0
-      ? sessionAllowedZoneIds
-      : templateAllowedZoneIds
-
-    if (allowedZoneIds.length === 0) {
-      const venueScopedZones = await prisma.zone.findMany({
-        where: {
-          clubId: user.clubId,
-          active: true,
-          ...(session.venueId ? { venueId: session.venueId } : {}),
-        },
-        select: { id: true },
-      })
-      allowedZoneIds = venueScopedZones.map((zone) => zone.id)
-    }
+    // Validate submitted zones are active and belong to the same venue scope as this roster/session.
+    const venueScopedZones = await prisma.zone.findMany({
+      where: {
+        clubId: user.clubId,
+        active: true,
+        ...(session.venueId ? { venueId: session.venueId } : {}),
+      },
+      select: { id: true },
+    })
+    const allowedZoneIds = venueScopedZones.map((zone) => zone.id)
 
     const allowedZoneSet = new Set(allowedZoneIds)
     const invalidZoneSelection = zoneOrder.find((entry) => !allowedZoneSet.has(entry.zoneId))

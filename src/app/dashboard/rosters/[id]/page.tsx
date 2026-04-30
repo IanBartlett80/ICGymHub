@@ -464,26 +464,8 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   setZoneReorderScope('single')
  }
 
- const getSelectableZonesForSession = (session: RosterSlot['session']): ZoneOption[] => {
-  const uniqueById = (zones: ZoneOption[]) => Array.from(new Map(zones.map((zone) => [zone.id, zone])).values())
-
-  const sessionZones = (session.allowedZones || [])
-   .map((entry) => entry.zone)
-   .filter((zone) => zone?.active !== false)
-
-  if (sessionZones.length > 0) {
-   return uniqueById(sessionZones)
-  }
-
-  const templateZones = (session.template?.allowedZones || [])
-   .map((entry) => entry.zone)
-   .filter((zone) => zone?.active !== false)
-
-  if (templateZones.length > 0) {
-   return uniqueById(templateZones)
-  }
-
-  return uniqueById(availableZones)
+ const getSelectableZonesForSession = (_session: RosterSlot['session']): ZoneOption[] => {
+  return Array.from(new Map(availableZones.map((zone) => [zone.id, zone])).values())
  }
 
  const handleSaveZoneOrder = async (newOrder: Array<{ slotId: string; zoneId: string; order: number; startsAt: string; endsAt: string }>) => {
