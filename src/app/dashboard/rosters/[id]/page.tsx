@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay } from 'date-fns'
 import DashboardLayout from '@/components/DashboardLayout'
@@ -86,13 +87,15 @@ type CalendarEvent = {
 
 export default function RosterViewPage({ params }: { params: Promise<{ id: string }> }) {
  const resolvedParams = use(params)
+ const searchParams = useSearchParams()
+ const requestedView = searchParams.get('view')
  const [roster, setRoster] = useState<Roster | null>(null)
  const [loading, setLoading] = useState(true)
  const [error, setError] = useState('')
  const [success, setSuccess] = useState('')
  const [exporting, setExporting] = useState(false)
  const [publishing, setPublishing] = useState(false)
- const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('calendar')
+ const [activeTab, setActiveTab] = useState<'calendar' | 'table'>(requestedView === 'table' ? 'table' : 'calendar')
  const [calendarView, setCalendarView] = useState<View>('week')
  const [calendarDate, setCalendarDate] = useState<Date>(
   startOfWeek(new Date(), { weekStartsOn: 1 })

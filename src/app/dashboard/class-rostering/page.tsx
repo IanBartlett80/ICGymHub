@@ -252,7 +252,7 @@ export default function ClassRosteringPage() {
  }
 
  const navigateToRoster = (rosterId: string) => {
-  router.push(`/dashboard/rosters/${rosterId}`)
+  router.push(`/dashboard/rosters/${rosterId}?view=table`)
  }
 
  const uniqueClasses = Array.from(
