@@ -143,7 +143,7 @@ export default function Home() {
             <div className="bg-white/10 border border-white/20 rounded-xl p-5">
               <p className="text-blue-100 text-sm mb-1">Ongoing Subscription</p>
               <p className="text-3xl font-bold">$25 AUD/week + GST</p>
-                <p className="text-blue-100 text-sm mt-2">Less then a coffee a Day :)</p>
+                <p className="text-blue-100 text-sm mt-2">Less then a coffee a day</p>
             </div>
             <div className="bg-white/10 border border-white/20 rounded-xl p-5">
               <p className="text-blue-100 text-sm mb-1">Support</p>
@@ -279,7 +279,18 @@ export default function Home() {
           </div>
           <div className="border-t border-gray-200 pt-8 text-center text-gray-600">
             <p className="mb-2">Questions? <Link href="mailto:gymhub@icb.solutions" className="text-blue-600 hover:text-blue-700">gymhub@icb.solutions</Link></p>
-            <p>&copy; 2025 GymHub. All rights reserved. Built for Australian gymnastics clubs.</p>
+            <p>
+              &copy; 2025 GymHub. All rights reserved. Built for Australian gymnastics clubs. GymHub is a product of{' '}
+              <a
+                href="https://icb.solutions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                ICB Solutions Pty Ltd
+              </a>
+              .
+            </p>
           </div>
         </div>
       </footer>
