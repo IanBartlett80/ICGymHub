@@ -4,99 +4,157 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export default function Home() {
+  const coreSolutions = [
+    {
+      title: 'Roster Management',
+      description: 'Build weekly class rosters, assign coaches, and prevent scheduling conflicts.',
+      icon: '📅',
+    },
+    {
+      title: 'Injury Management',
+      description: 'Capture incidents quickly with structured forms, QR workflows, and analytics.',
+      icon: '🏥',
+    },
+    {
+      title: 'Equipment Management',
+      description: 'Track equipment lifecycle, maintenance schedules, safety issues, and repair workflows.',
+      icon: '🔧',
+    },
+    {
+      title: 'Compliance Management',
+      description: 'Manage recurring compliance tasks with reminders, evidence files, and audit history.',
+      icon: '✅',
+    },
+    {
+      title: 'Competition Management',
+      description: 'Coordinate events, scoring, and athlete performance data in one place.',
+      icon: '🏆',
+    },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-white">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 bg-white">
-        <div className="container mx-auto flex items-center justify-end px-6 py-4">
+      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur">
+        <div className="container mx-auto flex items-center justify-between px-6 py-4">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/imgs/GymHub_Logo.png"
+              alt="GymHub Logo"
+              width={170}
+              height={85}
+              className="object-contain"
+              priority
+            />
+          </Link>
           <div className="flex gap-4">
-            <Link href="/sign-in" className="text-gray-700 hover:text-gray-900 transition">
+            <Link
+              href="/sign-in"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+            >
               Sign In
             </Link>
-            <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+              <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition">
               Register
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Logo */}
-      <div className="container mx-auto px-6 pt-6 pb-4 flex justify-center">
-        <Image 
-          src="/imgs/GymHub_Logo.png" 
-          alt="GymHub Logo" 
-          width={250} 
-          height={125}
-          className="object-contain"
-          priority
-        />
-      </div>
+      {/* Hero + Core Solutions Above Fold */}
+      <section className="container mx-auto px-6 pt-8 pb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-semibold mb-4">
+              Live Platform for Australian Gymnastics Clubs
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+              Club Management Made Easy with AI-Powered Business Intelligence
+            </h1>
+            <p className="text-base md:text-lg text-gray-600 mb-6 max-w-xl mx-auto lg:mx-0">
+              GymHub unifies rostering, injury workflows, equipment operations, compliance, and competition management into one secure platform.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+              <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-base font-semibold transition">
+                Register Your Club
+              </Link>
+              <Link href="#pricing" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-6 py-3 rounded-lg text-base font-semibold transition">
+                View Pricing
+              </Link>
+              <Link href="mailto:gymhub@icb.solutions" className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900 px-6 py-3 rounded-lg text-base font-semibold transition">
+                Contact Team
+              </Link>
+            </div>
+          </div>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-6 py-6 text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-          Club Management made easy through AI-Powered Business Intelligence!
-        </h1>
-        <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
-          Streamline class rostering, safety management, incident tracking, and competition scores. All in one place.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link href="/register" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition">
-            Register Your Club
-          </Link>
-          <Link href="#features" className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-4 rounded-lg text-lg font-semibold transition">
-            Learn More
-          </Link>
+          <div id="features" className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center lg:text-left">
+              Our Core Solutions
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {coreSolutions.map((service, idx) => (
+                <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-blue-400 hover:bg-blue-50 transition">
+                  <div className="text-2xl mb-2">{service.icon}</div>
+                  <h3 className="text-base font-semibold text-gray-900 mb-1">{service.title}</h3>
+                  <p className="text-gray-600 text-sm">{service.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Services Preview */}
-      <section id="features" className="container mx-auto px-6 py-20">
-        <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">
-          Our Core Solutions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {[
-            {
-              title: 'Class Rostering',
-              description: 'Manage classes, instructors, schedules, and student enrollment',
-              icon: '📅',
-            },
-            {
-              title: 'Injury / Incident Management',
-              description: 'Track incidents, create reports, and ensure compliance',
-              icon: '🏥',
-            },
-            {
-              title: 'Equipment Safety',
-              description: 'Schedule inspections, manage maintenance logs, ensure safety standards',
-              icon: '🔧',
-            },
-            {
-              title: 'ICScore Competition',
-              description: 'Manage competitions, scores, and athlete tracking',
-              icon: '🏆',
-            },
-            {
-              title: 'Maintenance',
-              description: 'Track facility and equipment maintenance tasks',
-              icon: '🛠️',
-            },
-          ].map((service, idx) => (
-            <div
-              key={idx}
-              className="bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-500 hover:shadow-lg transition"
-            >
-              <div className="text-4xl mb-3">{service.icon}</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{service.title}</h3>
-              <p className="text-gray-600 text-sm">{service.description}</p>
+      {/* Latest Updates */}
+      <section className="container mx-auto px-6 pb-12">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Latest Service Updates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              'Compliance Manager now supports recurring schedules, completion history, and evidence attachments.',
+              'Equipment workflows now include safety issue triage, quote requests, and maintenance scheduling.',
+              'Roster tools include improved conflict detection for coaches and zones across venues.',
+              'Injury analytics now includes trend insights and better incident follow-up visibility.',
+              'Multi-venue support now streamlines operations across clubs, venues, and zones.',
+              'Competition workflows are integrated for event operations and athlete score tracking.',
+            ].map((update, idx) => (
+              <div key={idx} className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                <p className="text-sm text-gray-700">{update}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="container mx-auto px-6 pb-14">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 md:p-10 text-white">
+          <h2 className="text-3xl font-bold text-center mb-2">Simple Pricing for Growing Clubs</h2>
+          <p className="text-blue-100 text-center mb-8">
+            One platform. All five core modules. Transparent pricing.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/10 border border-white/20 rounded-xl p-5">
+              <p className="text-blue-100 text-sm mb-1">Free Trial</p>
+              <p className="text-3xl font-bold">30 Days</p>
+              <p className="text-blue-100 text-sm mt-2">Full access to all core solutions.</p>
             </div>
-          ))}
+            <div className="bg-white/10 border border-white/20 rounded-xl p-5">
+              <p className="text-blue-100 text-sm mb-1">Ongoing Subscription</p>
+              <p className="text-3xl font-bold">$25 AUD/week + GST</p>
+              <p className="text-blue-100 text-sm mt-2">Equivalent to $100 AUD/month + GST invoicing after trial.</p>
+            </div>
+            <div className="bg-white/10 border border-white/20 rounded-xl p-5">
+              <p className="text-blue-100 text-sm mb-1">Support</p>
+              <p className="text-xl font-bold">gymhub@icb.solutions</p>
+              <p className="text-blue-100 text-sm mt-2">Contact us for onboarding and migration support.</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Why GymHub */}
-      <section className="bg-white container mx-auto px-6 py-20">
+      <section className="bg-white container mx-auto px-6 py-14 rounded-2xl border border-gray-100">
         <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">
           Why Choose GymHub?
         </h2>
@@ -116,7 +174,7 @@ export default function Home() {
             },
             {
               title: 'Affordable',
-              description: 'Flexible pricing designed for clubs of all sizes. Start with what you need and scale as you grow.',
+              description: 'Start with a 30-day free trial, then continue on a flat $25 AUD/week (+GST) subscription.',
             },
           ].map((benefit, idx) => (
             <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-8 hover:shadow-md transition">
@@ -135,9 +193,14 @@ export default function Home() {
         <p className="text-blue-100 mb-8 text-lg max-w-2xl mx-auto">
           Join Australian gymnastics clubs already using GymHub to streamline their operations.
         </p>
-        <Link href="/register" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-semibold transition inline-block">
-          Get Started Free
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link href="/register" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-semibold transition inline-block">
+            Get Started Free
+          </Link>
+          <Link href="mailto:gymhub@icb.solutions" className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold transition inline-block">
+            Contact gymhub@icb.solutions
+          </Link>
+        </div>
       </section>
 
       {/* FAQ */}
@@ -153,7 +216,7 @@ export default function Home() {
             },
             {
               q: 'What is the cost?',
-              a: 'Pricing details coming soon. We are designing flexible plans for clubs of all sizes. Early adopters will receive special rates.',
+              a: 'Every new club gets a 30-day free trial. Ongoing pricing is $25 AUD/week + GST (equivalent to $100 AUD/month + GST invoicing).',
             },
             {
               q: 'Is my club data secure?',
@@ -165,11 +228,11 @@ export default function Home() {
             },
             {
               q: 'What if I need help?',
-              a: 'We offer email support and a comprehensive help center. Premium plans include priority support.',
+              a: 'Email us at gymhub@icb.solutions for support, onboarding, or data migration help.',
             },
             {
               q: 'Can I import existing data?',
-              a: 'Yes. Contact our support team for assistance with data migration from your existing systems.',
+              a: 'Yes. Contact gymhub@icb.solutions and we can assist with migration from your existing systems.',
             },
           ].map((item, idx) => (
             <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition">
@@ -192,7 +255,7 @@ export default function Home() {
               <h4 className="text-gray-900 font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-gray-600">
                 <li><Link href="#features" className="hover:text-gray-900 transition">Features</Link></li>
-                <li><Link href="#" className="hover:text-gray-900 transition">Pricing</Link></li>
+                <li><Link href="#pricing" className="hover:text-gray-900 transition">Pricing</Link></li>
                 <li><Link href="#" className="hover:text-gray-900 transition">Roadmap</Link></li>
               </ul>
             </div>
@@ -201,7 +264,7 @@ export default function Home() {
               <ul className="space-y-2 text-gray-600">
                 <li><Link href="#" className="hover:text-gray-900 transition">About</Link></li>
                 <li><Link href="#" className="hover:text-gray-900 transition">Blog</Link></li>
-                <li><Link href="#" className="hover:text-gray-900 transition">Contact</Link></li>
+                <li><Link href="mailto:gymhub@icb.solutions" className="hover:text-gray-900 transition">gymhub@icb.solutions</Link></li>
               </ul>
             </div>
             <div>
@@ -214,6 +277,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-200 pt-8 text-center text-gray-600">
+            <p className="mb-2">Questions? <Link href="mailto:gymhub@icb.solutions" className="text-blue-600 hover:text-blue-700">gymhub@icb.solutions</Link></p>
             <p>&copy; 2025 GymHub. All rights reserved. Built for Australian gymnastics clubs.</p>
           </div>
         </div>
