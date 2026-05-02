@@ -297,7 +297,6 @@ export async function GET(req: NextRequest) {
 
     // INJURY TRENDS (last 6 months)
     const injuryTrends = []
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     for (let i = 5; i >= 0; i--) {
       const monthDate = new Date(now)
       monthDate.setMonth(now.getMonth() - i)
@@ -328,7 +327,7 @@ export async function GET(req: NextRequest) {
       })
 
       injuryTrends.push({
-        month: monthNames[monthDate.getMonth()],
+        month: monthDate.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' }),
         incidents,
         critical
       })
@@ -386,7 +385,7 @@ export async function GET(req: NextRequest) {
       })
 
       maintenanceTrends.push({
-        month: monthNames[monthDate.getMonth()],
+        month: monthDate.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' }),
         completed,
         pending
       })
@@ -411,25 +410,41 @@ export async function GET(req: NextRequest) {
       ? Math.round((coachUtilization.reduce((sum, c) => sum + (c._count || 0), 0) / totalCoaches) * 10) / 10
       : 0
 
-    // INJURY BY SEVERITY
-    const injuryBySeverity = await prisma.injurySubmission.groupBy({
-      by: ['status'],
+    // INJURY BY GYMSPORT (new reports this month)
+    const submissionsThisMonthWithData = await prisma.injurySubmission.findMany({
       where: {
         clubId: decoded.clubId,
-        submittedAt: {
-          gte: firstDayOfMonth
-        }
+        submittedAt: { gte: firstDayOfMonth }
       },
-      _count: true
+      select: {
+        data: {
+          where: {
+            field: { label: 'Gym Sport' }
+          },
+          select: { value: true }
+        }
+      }
     })
 
-    const injurySeverityData = injuryBySeverity.map(item => ({
-      name: item.status.replace('_', ' '),
-      value: item._count,
-      color: item.status === 'CLOSED' ? '#10b981' :
-             item.status === 'UNDER_REVIEW' ? '#f59e0b' :
-             item.status === 'RESOLVED' ? '#10b981' :
-             item.status === 'NEW' ? '#ef4444' : '#ef4444'
+    const GYMSPORT_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+    const gymsportCounts: Record<string, number> = {}
+    for (const submission of submissionsThisMonthWithData) {
+      let sportName = 'Unspecified'
+      if (submission.data.length > 0) {
+        try {
+          const parsed = JSON.parse(submission.data[0].value)
+          sportName = parsed.displayValue || parsed.name || 'Unspecified'
+        } catch {
+          sportName = submission.data[0].value || 'Unspecified'
+        }
+      }
+      gymsportCounts[sportName] = (gymsportCounts[sportName] || 0) + 1
+    }
+
+    const injuryByGymsportData = Object.entries(gymsportCounts).map(([name, value], index) => ({
+      name,
+      value,
+      color: GYMSPORT_COLORS[index % GYMSPORT_COLORS.length]
     }))
 
     // SAFETY ISSUE TRENDS
@@ -462,7 +477,7 @@ export async function GET(req: NextRequest) {
       })
 
       safetyIssueTrends.push({
-        month: monthNames[monthDate.getMonth()],
+        month: monthDate.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' }),
         total,
         critical
       })
@@ -565,7 +580,7 @@ export async function GET(req: NextRequest) {
         injuryTrends,
         equipmentStatus: equipmentStatusData,
         maintenanceTrends,
-        injurySeverity: injurySeverityData,
+        injuryByGymsport: injuryByGymsportData,
         safetyIssueTrends
       }
     })

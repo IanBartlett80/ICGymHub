@@ -65,7 +65,7 @@ interface DashboardStats {
   injuryTrends: Array<{ month: string; incidents: number; critical: number }>
   equipmentStatus: Array<{ name: string; value: number; color: string }>
   maintenanceTrends: Array<{ month: string; completed: number; pending: number }>
-  injurySeverity: Array<{ name: string; value: number; color: string }>
+  injuryByGymsport: Array<{ name: string; value: number; color: string }>
   safetyIssueTrends: Array<{ month: string; total: number; critical: number }>
  }
 }
@@ -185,7 +185,7 @@ export default function DashboardPage() {
   stats.charts.injuryTrends.some(item => item.incidents> 0 || item.critical> 0) ||
   stats.charts.equipmentStatus.some(item => item.value> 0) ||
   stats.charts.maintenanceTrends.some(item => item.completed> 0 || item.pending> 0) ||
-  stats.charts.injurySeverity.some(item => item.value> 0) ||
+  stats.charts.injuryByGymsport.some(item => item.value > 0) ||
   stats.charts.safetyIssueTrends.some(item => item.total> 0 || item.critical> 0)
  )
 
@@ -494,57 +494,33 @@ export default function DashboardPage() {
       )}
      </div>
 
-     {/* Injury Status */}
+     {/* Injury by Gym Sport */}
      <div className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
        <div>
-        <h3 className="text-base font-semibold text-gray-900">Injury Status</h3>
-        <p className="text-xs text-gray-600">This month</p>
+        <h3 className="text-base font-semibold text-gray-900">Injuries by Gym Sport</h3>
+        <p className="text-xs text-gray-600">New reports this month</p>
        </div>
        <Link href="/dashboard/injury-reports/analytics" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
         View Analytics →
        </Link>
       </div>
-      {stats?.charts?.injurySeverity && stats.charts.injurySeverity.length> 0 ? (
+      {stats?.charts?.injuryByGymsport && stats.charts.injuryByGymsport.length > 0 ? (
        <ResponsiveContainer width="100%" height={280}>
-        <PieChart>
-         <Pie
-          data={stats.charts.injurySeverity}
-          cx="50%"
-          cy="45%"
-          labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
-          label={({ name, value, x, y, midAngle }: any) => {
-           const RADIAN = Math.PI / 180
-           const angle = midAngle || 0
-           const radius = 10
-           const dx = Math.cos(-angle * RADIAN) * radius
-           const dy = Math.sin(-angle * RADIAN) * radius
-           return (
-            <text x={x + dx} y={y + dy} fill="#374151" textAnchor={x > 200 ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={500}>
-             {`${name}: ${value}`}
-            </text>
-           )
-          }}
-          outerRadius={75}
-          innerRadius={30}
-          fill="#8884d8"
-          dataKey="value"
-          paddingAngle={2}
->
-          {stats.charts.injurySeverity.map((entry, index) => (
+        <BarChart data={stats.charts.injuryByGymsport} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+         <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: '12px' }} />
+         <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} allowDecimals={false} />
+         <Tooltip
+          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+          formatter={(value: any) => [value, 'Reports']}
+         />
+         <Bar dataKey="value" name="Reports" radius={[4, 4, 0, 0]}>
+          {stats.charts.injuryByGymsport.map((entry, index) => (
            <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
-         </Pie>
-         <Tooltip 
-          contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-         />
-         <Legend 
-          verticalAlign="bottom" 
-          height={40}
-          wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }}
-          formatter={(value: string) => <span style={{ color: '#374151', fontWeight: 500 }}>{value}</span>}
-         />
-        </PieChart>
+         </Bar>
+        </BarChart>
        </ResponsiveContainer>
       ) : (
        <div className="h-64 flex items-center justify-center text-gray-400">
