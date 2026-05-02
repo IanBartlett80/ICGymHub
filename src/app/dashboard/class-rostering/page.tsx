@@ -322,10 +322,7 @@ export default function ClassRosteringPage() {
        value: selectedVenue,
        onChange: setSelectedVenue,
        customComponent: (
-        <div>
-         <label className="block text-sm font-medium text-gray-700 mb-2">Venue</label>
-         <VenueSelector value={selectedVenue} onChange={setSelectedVenue} showAllOption={true} />
-        </div>
+        <VenueSelector value={selectedVenue} onChange={setSelectedVenue} showAllOption={true} />
        ),
       },
       {
