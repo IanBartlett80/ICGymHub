@@ -110,10 +110,10 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Convert to array and sort by date
-    const dataArray = Object.values(monthlyData).sort((a: any, b: any) => {
-      return a.month.localeCompare(b.month);
-    });
+    // Convert to array and sort by date (sort on YYYY-MM key for correct chronological order)
+    const dataArray = Object.entries(monthlyData)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .map(([, value]) => value);
 
     return NextResponse.json({
       data: dataArray,
