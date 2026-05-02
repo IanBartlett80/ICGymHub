@@ -255,10 +255,7 @@ export default function RosterBuilderPage() {
  )
 
  return (
-  <DashboardLayout 
-   title="Create Roster Template"
-   
->
+  <DashboardLayout title="Create Roster Template">
     <div className="max-w-4xl mx-auto">
      <div className="mb-6">
       <p className="text-gray-600">
