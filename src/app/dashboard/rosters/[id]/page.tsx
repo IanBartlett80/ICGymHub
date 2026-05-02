@@ -514,7 +514,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
    <DashboardLayout 
     title="Roster View" 
     backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
-    
+    showClassRosteringNav={true}
 >
     <div className="p-8">Loading...</div>
    </DashboardLayout>
@@ -526,7 +526,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
    <DashboardLayout 
     title="Roster View" 
     backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
-    
+    showClassRosteringNav={true}
 >
     <div className="p-8">
      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -557,7 +557,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
   <DashboardLayout 
    title={`Roster - ${new Date(roster.startDate).toLocaleDateString()}`}
    backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
-   
+   showClassRosteringNav={true}
 >
    <style jsx global>{`
     @media print {
