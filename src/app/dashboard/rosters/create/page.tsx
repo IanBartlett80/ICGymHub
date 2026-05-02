@@ -249,11 +249,7 @@ export default function RosterBuilderPage() {
  }
 
  if (loading) return (
-  <DashboardLayout 
-   title="Create Roster Template"
-   backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
-   
->
+  <DashboardLayout title="Create Roster Template">
    <div className="p-8">Loading...</div>
   </DashboardLayout>
  )
@@ -261,10 +257,8 @@ export default function RosterBuilderPage() {
  return (
   <DashboardLayout 
    title="Create Roster Template"
-   backTo={{ label: 'Back to Rosters', href: '/dashboard/rosters' }}
    
 >
-   <div className="p-8">
     <div className="max-w-4xl mx-auto">
      <div className="mb-6">
       <p className="text-gray-600">
