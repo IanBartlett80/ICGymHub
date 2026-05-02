@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
+import IntelligenceFilter from '@/components/IntelligenceFilter'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -93,6 +94,7 @@ export default function ClassRosteringPage() {
  const [loading, setLoading] = useState(true)
  const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('calendar')
  const [selectedClass, setSelectedClass] = useState<string>('all')
+ const [selectedTemplateId, setSelectedTemplateId] = useState<string>('all')
  const [currentDate, setCurrentDate] = useState(new Date())
  const [calendarView, setCalendarView] = useState<'week' | 'day'>('week')
  const [showModal, setShowModal] = useState(false)
@@ -171,6 +173,15 @@ export default function ClassRosteringPage() {
    }
   } catch (error) {
    console.error('Error fetching roster slots:', error)
+  }
+ }
+
+ const handleTemplateChange = (value: string) => {
+  setSelectedTemplateId(value)
+  if (value === 'all') {
+   setSelectedTemplates(templates.map(t => t.id))
+  } else {
+   setSelectedTemplates([value])
   }
  }
 
@@ -300,66 +311,53 @@ export default function ClassRosteringPage() {
 
  return (
   <DashboardLayout title="Class Rostering" showClassRosteringNav={true}>
-   <div className="p-6">
+   <div className="p-6 space-y-4">
+    <IntelligenceFilter
+     title="Class Rostering Filters"
+     subtitle="Filter the roster by venue, template, and class"
+     filters={[
+      {
+       type: 'custom',
+       label: 'Venue',
+       value: selectedVenue,
+       onChange: setSelectedVenue,
+       customComponent: (
+        <div>
+         <label className="block text-sm font-medium text-gray-700 mb-2">Venue</label>
+         <VenueSelector value={selectedVenue} onChange={setSelectedVenue} showAllOption={true} />
+        </div>
+       ),
+      },
+      {
+       type: 'select',
+       label: 'Template',
+       value: selectedTemplateId,
+       onChange: handleTemplateChange,
+       options: [
+        { value: 'all', label: 'All Templates' },
+        ...templates.map(t => ({ value: t.id, label: t.name })),
+       ],
+      },
+      {
+       type: 'select',
+       label: 'Class',
+       value: selectedClass,
+       onChange: setSelectedClass,
+       options: [
+        { value: 'all', label: 'All Classes' },
+        ...uniqueClasses.map(c => ({ value: c, label: c })),
+       ],
+      },
+     ]}
+     filterCount={filteredSlots.length}
+     filterCountLabel="sessions"
+    />
     {/* Roster Calendar View */}
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-     {/* Header with Filter */}
+     {/* Header */}
      <div className="border-b border-gray-200 p-4">
       <div className="flex items-center justify-between mb-4">
        <h2 className="text-xl font-bold text-gray-900">Roster Calendar</h2>
-       
-       {/* Template and Class Filter Dropdowns */}
-       <div className="flex items-center gap-4">
-        {/* Venue Selector */}
-        <div className="flex items-center gap-2">
-         <VenueSelector 
-          value={selectedVenue} 
-          onChange={setSelectedVenue}
-          showAllOption={true}
-         />
-        </div>
-
-        <div className="flex items-center gap-2">
-         <label className="text-sm font-medium text-gray-700">View Template:</label>
-         <select
-          value={selectedTemplates.length === 1 ? selectedTemplates[0] : 'all'}
-          onChange={(e) => {
-           const value = e.target.value
-           console.log('Template dropdown changed to:', value)
-           if (value === 'all') {
-            const allIds = templates.map(t => t.id)
-            console.log('Setting all templates:', allIds)
-            setSelectedTemplates(allIds)
-           } else {
-            console.log('Setting single template:', value)
-            setSelectedTemplates([value])
-           }
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-          <option value="all">All Templates</option>
-          {templates.map(template => (
-           <option key={template.id} value={template.id}>
-            {template.name}
-           </option>
-          ))}
-         </select>
-        </div>
-        
-        <div className="flex items-center gap-2">
-         <label className="text-sm font-medium text-gray-700">Filter by Class:</label>
-         <select
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
->
-          <option value="all">All Classes</option>
-          {uniqueClasses.map(className => (
-           <option key={className} value={className}>{className}</option>
-          ))}
-         </select>
-        </div>
-       </div>
       </div>
 
       {/* Tabs */}
@@ -504,21 +502,6 @@ export default function ClassRosteringPage() {
        </div>
       ) : (
        <div>
-        {/* Class Filter for Table View */}
-        <div className="mb-4 flex items-center gap-2">
-         <label className="text-sm font-medium text-gray-700">Filter by Class:</label>
-         <select
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-          className="px-3 py-1.5 border border-gray-300 rounded text-sm"
->
-          <option value="all">All Classes</option>
-          {uniqueClasses.map(className => (
-           <option key={className} value={className}>{className}</option>
-          ))}
-         </select>
-        </div>
-
         {/* Table */}
         <div className="overflow-x-auto">
          <table className="min-w-full divide-y divide-gray-200">
