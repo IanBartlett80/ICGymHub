@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Validation error:', error);
     if (error.status) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: 'Request could not be processed' }, { status: error.status });
     }
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -349,7 +349,7 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('Restore execution error:', error);
     if (error.status) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: 'Request could not be processed' }, { status: error.status });
     }
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

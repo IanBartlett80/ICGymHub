@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { club } = await authenticateRequest(request);
 
     const { searchParams } = new URL(request.url);
-    const months = parseInt(searchParams.get('months') || '6'); // Default to 6 months
+    const months = Math.min(parseInt(searchParams.get('months') || '6'), 24); // Default 6, max 24 months
     const venueIdFilter = searchParams.get('venueId');
 
     // Calculate date range

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { triggerAutomations } from '@/lib/automationEngine';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 function isSchemaDriftError(error: unknown): boolean {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -72,6 +73,15 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ publicUrl: string }> }
 ) {
+  // 20 submissions per IP per 10 minutes — prevents spam flooding a club's queue
+  const ip = getClientIp(req)
+  const rl = rateLimit(`public-form:${ip}`, 20, 10 * 60 * 1000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many submissions. Please wait a few minutes before trying again.' },
+      { status: 429 }
+    )
+  }
   try {
     const { publicUrl } = await params;
     const body = await req.json();

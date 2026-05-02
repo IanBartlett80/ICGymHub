@@ -2,18 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashToken } from '@/lib/auth'
 import { sendPasswordResetEmail } from '@/lib/email'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
 
 export async function POST(req: NextRequest) {
-  console.log('[forgot-password] Route handler invoked')
+  // 5 reset requests per IP per hour
+  const ip = getClientIp(req)
+  const rl = rateLimit(`forgot-password:${ip}`, 5, 60 * 60 * 1000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { message: 'If an account exists with that email and username, a password reset link has been sent.' },
+      { status: 200 } // Return 200 to prevent enumeration even under rate limit
+    )
+  }
   try {
     const body = await req.json()
     const { email, username } = body
     console.log(`[forgot-password] Request received for username="${username}", email="${email}"`)
 
     if (!email || !username) {
-      console.log('[forgot-password] Missing email or username')
       return NextResponse.json(
         { error: 'Email and username are required' },
         { status: 400 }
@@ -36,16 +44,14 @@ export async function POST(req: NextRequest) {
     })
 
     if (!user) {
-      console.log(`[forgot-password] No active user found for username="${username.trim()}", email="${email.trim()}"`)
       return successResponse
     }
 
     if (user.club.status !== 'ACTIVE') {
-      console.log(`[forgot-password] User found but club status is "${user.club.status}" (not ACTIVE)`)
       return successResponse
     }
 
-    console.log(`[forgot-password] User matched: id=${user.id}, club="${user.club.name}", clubStatus="${user.club.status}"`)
+    console.log(`[forgot-password] User matched: id=${user.id}`)
 
 
     // Invalidate any existing unused reset tokens for this user
@@ -75,14 +81,12 @@ export async function POST(req: NextRequest) {
 
     // Send password reset email
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gymhub.club'
-    console.log(`[forgot-password] Sending reset email to ${user.email} for user ${user.username} (id: ${user.id})`)
     try {
-      const result = await sendPasswordResetEmail({
+      await sendPasswordResetEmail({
         to: user.email,
         resetToken: rawToken,
         appUrl,
       })
-      console.log(`[forgot-password] Email sent successfully:`, result)
     } catch (emailError) {
       console.error('[forgot-password] Failed to send password reset email:', emailError)
       return NextResponse.json(

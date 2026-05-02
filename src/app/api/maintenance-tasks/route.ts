@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const taskType = searchParams.get('taskType');
     const priority = searchParams.get('priority');
     const overdue = searchParams.get('overdue') === 'true';
-    const page = parseInt(searchParams.get('page') || '1');
+    const page = Math.max(1, Math.min(parseInt(searchParams.get('page') || '1'), 1000));
     const limit = parseInt(searchParams.get('limit') || '50');
 
     const where: any = {

@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken'
 import bcryptjs from 'bcryptjs'
 
+// Fail fast at startup if JWT secrets are not set — never run with fallback defaults in production
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set')
+  if (!process.env.JWT_REFRESH_SECRET) throw new Error('FATAL: JWT_REFRESH_SECRET environment variable is not set')
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key'
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-key'
 const SESSION_MAX_AGE = parseInt(process.env.SESSION_MAX_AGE || '3600')

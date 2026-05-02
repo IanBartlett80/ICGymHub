@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const days = parseInt(searchParams.get('days') || '7');
+    const days = Math.min(parseInt(searchParams.get('days') || '7'), 90); // Default 7, max 90 days
 
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);

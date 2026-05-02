@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const urgency = searchParams.get('urgency');
     const equipmentId = searchParams.get('equipmentId');
     const search = searchParams.get('search');
-    const page = parseInt(searchParams.get('page') || '1');
+    const page = Math.max(1, Math.min(parseInt(searchParams.get('page') || '1'), 1000));
     const limit = parseInt(searchParams.get('limit') || '50');
 
     const where: any = {

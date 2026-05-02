@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword, generateTokens } from '@/lib/auth'
 import { loginSchema } from '@/lib/validation'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 const MAX_LOGIN_ATTEMPTS = 5
 const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes
 
 export async function POST(req: NextRequest) {
+  // 10 login attempts per IP per 15 minutes
+  const ip = getClientIp(req)
+  const rl = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many login attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
   try {
     const body = await req.json()
 
