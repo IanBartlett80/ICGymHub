@@ -23,6 +23,7 @@ interface EquipmentWithRelations extends Equipment {
 
 interface EquipmentListProps {
   equipment: EquipmentWithRelations[];
+  zones?: Zone[];
   onEdit: (equipment: EquipmentWithRelations) => void;
   onDelete: (id: string) => void;
   onCheckout?: (id: string) => void;
@@ -87,6 +88,7 @@ function LazyRowPhoto({
 
 export default function EquipmentList({
   equipment,
+  zones = [],
   onEdit,
   onDelete,
   onCheckout,
@@ -96,6 +98,7 @@ export default function EquipmentList({
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
+  const [zoneFilter, setZoneFilter] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filteredEquipment, setFilteredEquipment] = useState(equipment);
 
@@ -125,8 +128,13 @@ export default function EquipmentList({
       filtered = filtered.filter(e => e.condition === conditionFilter);
     }
 
+    // Apply zone filter
+    if (zoneFilter) {
+      filtered = filtered.filter(e => e.zoneId === zoneFilter);
+    }
+
     setFilteredEquipment(filtered);
-  }, [search, categoryFilter, conditionFilter, equipment]);
+  }, [search, categoryFilter, conditionFilter, zoneFilter, equipment]);
 
   return (
     <div>
@@ -175,6 +183,22 @@ export default function EquipmentList({
             </select>
           </div>
 
+          {/* Zone Filter */}
+          {zones.length > 0 && (
+            <div className="sm:w-48">
+              <select
+                value={zoneFilter}
+                onChange={(e) => setZoneFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Zones</option>
+                {zones.map(zone => (
+                  <option key={zone.id} value={zone.id}>{zone.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* View Mode Toggle */}
           <div className="flex gap-2">
             <button
@@ -195,7 +219,7 @@ export default function EquipmentList({
         </div>
 
         {/* Active Filters */}
-        {(search || categoryFilter || conditionFilter) && (
+        {(search || categoryFilter || conditionFilter || zoneFilter) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {search && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
@@ -213,6 +237,12 @@ export default function EquipmentList({
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
                 Condition: {conditionFilter}
                 <button onClick={() => setConditionFilter('')} className="ml-2">×</button>
+              </span>
+            )}
+            {zoneFilter && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                Zone: {zones.find(z => z.id === zoneFilter)?.name || zoneFilter}
+                <button onClick={() => setZoneFilter('')} className="ml-2">×</button>
               </span>
             )}
           </div>

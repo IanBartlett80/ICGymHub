@@ -414,6 +414,7 @@ export default function AllEquipmentPage() {
     ) : (
      <EquipmentList
       equipment={filteredEquipment}
+      zones={zones}
       onEdit={handleEdit}
       onDelete={handleDelete}
       onCheckout={handleCheckout}
