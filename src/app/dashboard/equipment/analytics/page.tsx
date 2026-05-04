@@ -531,18 +531,21 @@ export default function EquipmentAnalyticsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          zone.status === 'CRITICAL'
+                          zone.status === 'CRITICAL_DEFECTS'
                             ? 'bg-red-100 text-red-800'
-                            : zone.status === 'ATTENTION_REQUIRED'
-                            ? 'bg-orange-100 text-orange-800'
-                            : zone.status === 'MAINTENANCE_DUE'
+                            : zone.status === 'REQUIRES_ATTENTION'
+                            ? 'bg-amber-100 text-amber-800'
+                            : zone.status === 'NON_CRITICAL_ISSUES'
                             ? 'bg-yellow-100 text-yellow-800'
-                            : zone.status === 'MINOR_ISSUES'
-                            ? 'bg-blue-100 text-blue-800'
                             : 'bg-green-100 text-green-800'
                         }`}
                       >
-                        {zone.status.replace(/_/g, ' ')}
+                        {{
+                          CRITICAL_DEFECTS: 'Critical Defects',
+                          REQUIRES_ATTENTION: 'Requires Attention',
+                          NON_CRITICAL_ISSUES: 'Non-Critical Issues',
+                          NO_DEFECTS: 'No Defects',
+                        }[zone.status] ?? zone.status.replace(/_/g, ' ')}
                       </span>
                     </td>
                   </tr>
