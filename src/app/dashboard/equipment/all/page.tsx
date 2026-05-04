@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Equipment, Zone, Venue } from '@prisma/client';
-import { PlusIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentTextIcon, FolderIcon, WrenchScrewdriverIcon, Squares2X2Icon, ListBulletIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import EquipmentList from '@/components/EquipmentList';
@@ -35,7 +35,9 @@ export default function AllEquipmentPage() {
  const [searchTerm, setSearchTerm] = useState('');
  const [categoryFilter, setCategoryFilter] = useState<string>('all');
  const [conditionFilter, setConditionFilter] = useState<string>('all');
+ const [zoneFilter, setZoneFilter] = useState<string>('all');
  const [venueId, setVenueId] = useState<string | null>(null);
+ const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
  useEffect(() => {
   loadData();
@@ -234,8 +236,9 @@ export default function AllEquipmentPage() {
   
   const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
   const matchesCondition = conditionFilter === 'all' || item.condition === conditionFilter;
+  const matchesZone = zoneFilter === 'all' || item.zoneId === zoneFilter;
 
-  return matchesSearch && matchesCategory && matchesCondition;
+  return matchesSearch && matchesCategory && matchesCondition && matchesZone;
  });
 
  if (loading) {
@@ -394,16 +397,51 @@ export default function AllEquipmentPage() {
             { value: 'Out of Service', label: 'Out of Service' },
           ],
         },
+        {
+          type: 'select',
+          label: 'Zone',
+          value: zoneFilter,
+          onChange: setZoneFilter,
+          icon: <MapPinIcon className="h-4 w-4" />,
+          options: [
+            { value: 'all', label: 'All Zones' },
+            ...zones.map(zone => ({
+              value: zone.id,
+              label: zone.name,
+            })),
+          ],
+        },
       ]}
       onReset={() => {
         setSearchTerm('');
         setCategoryFilter('all');
         setConditionFilter('all');
+        setZoneFilter('all');
         setVenueId(null);
       }}
       filterCount={filteredEquipment.length}
       filterCountLabel={`of ${equipment.length} items`}
-    />
+     />
+
+     {/* View Mode Toggle — bottom-right of filter section */}
+     <div className="flex justify-end mt-2">
+      <div className="flex gap-2">
+       <button
+        onClick={() => setViewMode('grid')}
+        className={`p-2 rounded-lg border transition-colors ${viewMode === 'grid' ? 'bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+        title="Grid view"
+       >
+        <Squares2X2Icon className="w-5 h-5" />
+       </button>
+       <button
+        onClick={() => setViewMode('list')}
+        className={`p-2 rounded-lg border transition-colors ${viewMode === 'list' ? 'bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+        title="List view"
+       >
+        <ListBulletIcon className="w-5 h-5" />
+       </button>
+      </div>
+     </div>
     </div>
 
     {/* Equipment List */}
@@ -414,7 +452,7 @@ export default function AllEquipmentPage() {
     ) : (
      <EquipmentList
       equipment={filteredEquipment}
-      zones={zones}
+      viewMode={viewMode}
       onEdit={handleEdit}
       onDelete={handleDelete}
       onCheckout={handleCheckout}
