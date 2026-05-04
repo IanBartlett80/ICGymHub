@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/apiAuth';
 
+// Cache for 60 seconds — zone status is used for dashboard badges and doesn't
+// need real-time accuracy. This dramatically reduces DB load on the equipment page.
+export const revalidate = 60;
+
 // GET /api/equipment/analytics/zone-status - Calculate status for each zone
 export async function GET(request: NextRequest) {
   try {

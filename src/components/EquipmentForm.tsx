@@ -182,24 +182,43 @@ export default function EquipmentForm({ equipment, zones, onSubmit, onCancel }: 
       return;
     }
 
-    // Validate file size (max 5MB)
+    // Validate file size (max 5MB raw)
     if (file.size > 5 * 1024 * 1024) {
       setErrors(prev => ({ ...prev, photo: 'Image must be less than 5MB' }));
       return;
     }
 
-    // Convert to base64
+    // Compress via canvas before storing as base64
     const reader = new FileReader();
     reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData(prev => ({ ...prev, photoUrl: base64String }));
-      setPhotoPreview(base64String);
-      // Clear photo error
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.photo;
-        return newErrors;
-      });
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIMENSION = 800;
+        let { width, height } = img;
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIMENSION) / width);
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round((width * MAX_DIMENSION) / height);
+            height = MAX_DIMENSION;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.75);
+        setFormData(prev => ({ ...prev, photoUrl: compressed }));
+        setPhotoPreview(compressed);
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.photo;
+          return newErrors;
+        });
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };

@@ -1,17 +1,19 @@
 'use client';
 
 import { Equipment, Zone, Venue } from '@prisma/client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import EquipmentCard from './EquipmentCard';
 import {
   MagnifyingGlassIcon,
   Squares2X2Icon,
   ListBulletIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 
 interface EquipmentWithRelations extends Equipment {
   zone?: (Zone & { venue?: Venue | null }) | null;
   venue?: Venue | null;
+  hasPhoto?: boolean;
   _count?: {
     maintenanceLogs: number;
     usageHistory: number;
@@ -26,6 +28,59 @@ interface EquipmentListProps {
   onCheckout?: (id: string) => void;
   onCheckin?: (id: string) => void;
   onViewDetails: (id: string) => void;
+}
+
+// Small helper component for lazy-loading a photo thumbnail in the list/table view.
+function LazyRowPhoto({
+  id,
+  hasPhoto,
+  inlineUrl,
+}: {
+  id: string;
+  hasPhoto?: boolean;
+  inlineUrl?: string | null;
+}) {
+  const [url, setUrl] = useState<string | null>(inlineUrl || null);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef<HTMLTableCellElement>(null);
+
+  useEffect(() => {
+    if (url || !hasPhoto) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          setLoading(true);
+          fetch(`/api/equipment/${id}/photo`)
+            .then((r) => r.json())
+            .then((d) => { if (d.photoUrl) setUrl(d.photoUrl); })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [id, hasPhoto, url]);
+
+  if (loading) {
+    return (
+      <div ref={ref as any} className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+        <PhotoIcon className="w-4 h-4 text-gray-300 animate-pulse" />
+      </div>
+    );
+  }
+  if (url) {
+    return (
+      <img src={url} alt="" className="w-10 h-10 object-cover rounded border border-gray-200" />
+    );
+  }
+  return (
+    <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+      <span className="text-xs text-gray-400">No photo</span>
+    </div>
+  );
 }
 
 export default function EquipmentList({
@@ -223,17 +278,7 @@ export default function EquipmentList({
                   return (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-3 py-2 whitespace-nowrap">
-                        {item.photoUrl ? (
-                          <img
-                            src={item.photoUrl}
-                            alt={item.name}
-                            className="w-10 h-10 object-cover rounded border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
-                            <span className="text-xs text-gray-400">No photo</span>
-                          </div>
-                        )}
+                        <LazyRowPhoto id={item.id} hasPhoto={item.hasPhoto} inlineUrl={item.photoUrl} />
                       </td>
                       <td className="px-3 py-2">
                         <button

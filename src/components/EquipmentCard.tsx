@@ -1,18 +1,20 @@
 'use client';
 
 import { Equipment, Zone, Venue } from '@prisma/client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   PencilIcon,
   TrashIcon,
   WrenchScrewdriverIcon,
   CheckCircleIcon,
   XCircleIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 
 interface EquipmentWithRelations extends Equipment {
   zone?: (Zone & { venue?: Venue | null }) | null;
   venue?: Venue | null;
+  hasPhoto?: boolean;
   _count?: {
     maintenanceLogs: number;
     usageHistory: number;
@@ -46,6 +48,38 @@ export default function EquipmentCard({
   onViewDetails,
 }: EquipmentCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(
+    // Use inline photoUrl if already present (e.g. edit form pre-population),
+    // otherwise defer to lazy-load via hasPhoto flag.
+    equipment.photoUrl || null
+  );
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // If the equipment already provided a photoUrl skip the lazy fetch
+    if (photoUrl || !equipment.hasPhoto) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          setPhotoLoading(true);
+          fetch(`/api/equipment/${equipment.id}/photo`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.photoUrl) setPhotoUrl(data.photoUrl);
+            })
+            .catch(() => { /* silently fail — card renders fine without photo */ })
+            .finally(() => setPhotoLoading(false));
+        }
+      },
+      { rootMargin: '200px' } // start loading 200px before the card enters view
+    );
+
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [equipment.id, equipment.hasPhoto, photoUrl]);
 
   const handleDelete = async () => {
     if (confirm(`Are you sure you want to delete "${equipment.name}"? This will also delete all maintenance logs and usage history.`)) {
@@ -61,7 +95,7 @@ export default function EquipmentCard({
   const isOverdue = equipment.nextMaintenance && new Date(equipment.nextMaintenance) < new Date();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div ref={cardRef} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
           <button
@@ -79,14 +113,21 @@ export default function EquipmentCard({
         </span>
       </div>
 
-      {/* Equipment Photo Thumbnail */}
-      {equipment.photoUrl && (
+      {/* Equipment Photo Thumbnail — lazy-loaded once card enters viewport */}
+      {(equipment.hasPhoto || photoUrl) && (
         <div className="mb-3">
-          <img
-            src={equipment.photoUrl}
-            alt={equipment.name}
-            className="w-full h-24 object-cover rounded border border-gray-200"
-          />
+          {photoLoading && (
+            <div className="w-full h-24 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+              <PhotoIcon className="w-6 h-6 text-gray-300 animate-pulse" />
+            </div>
+          )}
+          {photoUrl && !photoLoading && (
+            <img
+              src={photoUrl}
+              alt={equipment.name}
+              className="w-full h-24 object-cover rounded border border-gray-200"
+            />
+          )}
         </div>
       )}
 

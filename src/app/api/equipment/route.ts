@@ -42,16 +42,53 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const [equipment, total] = await Promise.all([
+    const [equipmentRaw, total, photosPresent] = await Promise.all([
       prisma.equipment.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          clubId: true,
+          name: true,
+          category: true,
+          active: true,
+          createdAt: true,
+          updatedAt: true,
+          serialNumber: true,
+          purchaseDate: true,
+          purchaseCost: true,
+          condition: true,
+          location: true,
+          zoneId: true,
+          lastMaintenance: true,
+          nextMaintenance: true,
+          maintenanceNotes: true,
+          inUse: true,
+          currentClass: true,
+          venueId: true,
+          lastCheckedDate: true,
+          lastCheckStatus: true,
+          lastCheckedBy: true,
+          installationDate: true,
+          supplier: true,
+          invoiceRef: true,
+          warrantyExpiryDate: true,
+          endOfLifeDate: true,
+          // Omit photoUrl and invoiceFileUrl (potentially large base64 blobs).
+          // Consumers use hasPhoto to show a lazy-loaded thumbnail via /api/equipment/[id]/photo.
+          photoUrl: false,
+          invoiceFileUrl: false,
           zone: {
-            include: {
-              venue: true,
+            select: {
+              id: true,
+              name: true,
+              venue: {
+                select: { id: true, name: true },
+              },
             },
           },
-          venue: true,
+          venue: {
+            select: { id: true, name: true },
+          },
           _count: {
             select: {
               maintenanceLogs: true,
@@ -59,22 +96,36 @@ export async function GET(request: NextRequest) {
               safetyIssues: {
                 where: {
                   status: {
-                    notIn: ['RESOLVED', 'CLOSED']
-                  }
-                }
+                    notIn: ['RESOLVED', 'CLOSED'],
+                  },
+                },
               },
             },
           },
         },
         orderBy: [
           { category: 'asc' },
-          { name: 'asc' }
+          { name: 'asc' },
         ],
         skip: (page - 1) * limit,
         take: limit,
       }),
       prisma.equipment.count({ where }),
+      // Single query to get which IDs on this page have a photo — no N+1
+      prisma.equipment.findMany({
+        where: { ...where, photoUrl: { not: null } },
+        select: { id: true },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
     ]);
+
+    const photoIds = new Set(photosPresent.map((p) => p.id));
+    // Inject hasPhoto flag so the card can lazy-load the actual image separately
+    const equipment = equipmentRaw.map((item) => ({
+      ...item,
+      hasPhoto: photoIds.has(item.id),
+    }));
 
     return NextResponse.json({
       equipment,
