@@ -42,7 +42,9 @@ function LazyRowPhoto({
 }) {
   const [url, setUrl] = useState<string | null>(inlineUrl || null);
   const [loading, setLoading] = useState(false);
-  const ref = useRef<HTMLTableCellElement>(null);
+  // ref must be on a wrapper that is ALWAYS rendered so the IntersectionObserver
+  // can observe it from the very first render (before loading state changes).
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (url || !hasPhoto) return;
@@ -64,21 +66,21 @@ function LazyRowPhoto({
     return () => observer.disconnect();
   }, [id, hasPhoto, url]);
 
-  if (loading) {
-    return (
-      <div ref={ref as any} className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
-        <PhotoIcon className="w-4 h-4 text-gray-300 animate-pulse" />
-      </div>
-    );
-  }
-  if (url) {
-    return (
-      <img src={url} alt="" className="w-10 h-10 object-cover rounded border border-gray-200" />
-    );
-  }
   return (
-    <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
-      <span className="text-xs text-gray-400">No photo</span>
+    <div ref={ref} className="w-10 h-10">
+      {loading && (
+        <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+          <PhotoIcon className="w-4 h-4 text-gray-300 animate-pulse" />
+        </div>
+      )}
+      {url && !loading && (
+        <img src={url} alt="" className="w-10 h-10 object-cover rounded border border-gray-200" />
+      )}
+      {!url && !loading && (
+        <div className="w-10 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+          <span className="text-xs text-gray-400">{hasPhoto ? '' : 'No photo'}</span>
+        </div>
+      )}
     </div>
   );
 }
