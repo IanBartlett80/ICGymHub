@@ -94,8 +94,8 @@ export default function EquipmentAnalyticsPage() {
 
       setOverviewStats(overviewRes.data);
       setZoneStatuses(Array.isArray(zoneStatusRes.data) ? zoneStatusRes.data : []);
-      setMonthlyIssues(monthlyIssuesRes.data.monthlyData || []);
-      setMonthlyIssuesByVenue(monthlyIssuesByVenueRes.data.monthlyData || []);
+      setMonthlyIssues(monthlyIssuesRes.data.data || []);
+      setMonthlyIssuesByVenue(monthlyIssuesByVenueRes.data.data || []);
     } catch (error) {
       console.error('Failed to load analytics:', error);
     } finally {
