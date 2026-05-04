@@ -353,6 +353,7 @@ export default function AllEquipmentPage() {
           label: 'Venue',
           value: venueId,
           onChange: setVenueId,
+          className: 'xl:col-span-1',
           customComponent: (
             <VenueSelector
               value={venueId}
@@ -367,6 +368,7 @@ export default function AllEquipmentPage() {
           value: searchTerm,
           onChange: setSearchTerm,
           placeholder: 'Search equipment...',
+          className: 'xl:col-span-1',
         },
         {
           type: 'select',
@@ -374,6 +376,7 @@ export default function AllEquipmentPage() {
           value: categoryFilter,
           onChange: setCategoryFilter,
           icon: <FolderIcon className="h-4 w-4" />,
+          className: 'xl:col-span-1',
           options: [
             { value: 'all', label: 'All Categories' },
             ...categories.map(category => ({
@@ -388,6 +391,7 @@ export default function AllEquipmentPage() {
           value: conditionFilter,
           onChange: setConditionFilter,
           icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
+          className: 'xl:col-span-1',
           options: [
             { value: 'all', label: 'All Conditions' },
             { value: 'Excellent', label: 'Excellent' },
@@ -403,6 +407,7 @@ export default function AllEquipmentPage() {
           value: zoneFilter,
           onChange: setZoneFilter,
           icon: <MapPinIcon className="h-4 w-4" />,
+          className: 'xl:col-span-1',
           options: [
             { value: 'all', label: 'All Zones' },
             ...zones.map(zone => ({
@@ -421,6 +426,7 @@ export default function AllEquipmentPage() {
       }}
       filterCount={filteredEquipment.length}
       filterCountLabel={`of ${equipment.length} items`}
+      maxCols={5}
      />
 
      {/* View Mode Toggle — bottom-right of filter section */}

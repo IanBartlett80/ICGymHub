@@ -33,6 +33,8 @@ interface IntelligenceFilterProps {
   showActiveCount?: boolean;
   filterCount?: number;
   filterCountLabel?: string;
+  /** Override the max columns in the filter grid at xl breakpoint. Defaults to 4. */
+  maxCols?: 2 | 3 | 4 | 5 | 6;
 }
 
 export default function IntelligenceFilter({
@@ -46,6 +48,7 @@ export default function IntelligenceFilter({
   showActiveCount = true,
   filterCount,
   filterCountLabel = 'items',
+  maxCols = 4,
 }: IntelligenceFilterProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -147,7 +150,13 @@ export default function IntelligenceFilter({
       {/* Filter Grid */}
       {isExpanded && (
         <div className="p-6 animate-in slide-in-from-top-2 duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${
+            maxCols === 2 ? 'xl:grid-cols-2' :
+            maxCols === 3 ? 'xl:grid-cols-3' :
+            maxCols === 5 ? 'xl:grid-cols-5' :
+            maxCols === 6 ? 'xl:grid-cols-6' :
+            'xl:grid-cols-4'
+          } gap-4`}>
             {filters.map((filter, index) => (
               <div key={index} className={filter.className || ''}>
                 {filter.type === 'custom' ? (
