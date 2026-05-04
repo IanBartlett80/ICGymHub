@@ -24,6 +24,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const page = Math.max(1, Math.min(parseInt(searchParams.get('page') || '1'), 1000));
     const limit = parseInt(searchParams.get('limit') || '50');
+    // ?minimal=true — lightweight mode for dropdown/picker callers.
+    // Returns only id, name, category, serialNumber, zone, venue.
+    // Single query, no photo presence check, no total count.
+    const minimal = searchParams.get('minimal') === 'true';
 
     const where: any = {
       clubId: auth.user.clubId,
@@ -40,6 +44,27 @@ export async function GET(request: NextRequest) {
         { name: { contains: search } },
         { serialNumber: { contains: search } },
       ];
+    }
+
+    if (minimal) {
+      const equipment = await prisma.equipment.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          serialNumber: true,
+          inUse: true,
+          condition: true,
+          zoneId: true,
+          venueId: true,
+          zone: { select: { id: true, name: true } },
+          venue: { select: { id: true, name: true } },
+        },
+        orderBy: [{ category: 'asc' }, { name: 'asc' }],
+        take: 500, // reasonable cap for a dropdown
+      });
+      return NextResponse.json({ equipment });
     }
 
     const [equipmentRaw, total, photosPresent] = await Promise.all([

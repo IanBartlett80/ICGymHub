@@ -49,21 +49,49 @@ export async function GET(request: NextRequest) {
       where.priority = priority;
     }
 
-    const issues = await prisma.safetyIssue.findMany({
-      where,
-      include: {
-        equipment: {
-          include: {
-            zone: true,
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 500);
+
+    const [issues, total] = await Promise.all([
+      prisma.safetyIssue.findMany({
+        where,
+        select: {
+          id: true,
+          clubId: true,
+          equipmentId: true,
+          issueType: true,
+          title: true,
+          description: true,
+          reportedBy: true,
+          reportedByEmail: true,
+          photos: true,
+          priority: true,
+          status: true,
+          resolvedAt: true,
+          resolvedBy: true,
+          resolutionNotes: true,
+          createdAt: true,
+          updatedAt: true,
+          venueId: true,
+          equipment: {
+            select: {
+              id: true,
+              name: true,
+              // Deliberately omit photoUrl — it's a potentially large base64 blob
+              zone: {
+                select: { id: true, name: true },
+              },
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.safetyIssue.count({ where }),
+    ]);
 
-    return NextResponse.json({ issues });
+    return NextResponse.json({ issues, total, page, limit });
   } catch (error: any) {
     console.error('Error fetching safety issues:', error);
     console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');

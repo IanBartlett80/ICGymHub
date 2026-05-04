@@ -233,7 +233,7 @@ export default function RepairQuotesPage() {
   if (equipmentList.length === 0) {
    setLoadingEquipment(true);
    try {
-    const res = await axiosInstance.get('/api/equipment');
+    const res = await axiosInstance.get('/api/equipment?minimal=true');
     setEquipmentList(res.data.equipment || res.data || []);
    } catch {
     showToast.error('Failed to load equipment');

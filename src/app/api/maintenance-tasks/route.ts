@@ -63,10 +63,39 @@ export async function GET(request: NextRequest) {
     const [tasks, total] = await Promise.all([
       prisma.maintenanceTask.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          clubId: true,
+          equipmentId: true,
+          taskType: true,
+          title: true,
+          description: true,
+          scheduledDate: true,
+          dueDate: true,
+          completedDate: true,
+          assignedTo: true,
+          assignedToName: true,
+          assignedToEmail: true,
+          completedBy: true,
+          status: true,
+          priority: true,
+          cost: true,
+          notes: true,
+          photos: true,
+          isRecurring: true,
+          recurringInterval: true,
+          recurringUnit: true,
+          venueId: true,
+          createdAt: true,
+          updatedAt: true,
           equipment: {
-            include: {
-              zone: true,
+            select: {
+              id: true,
+              name: true,
+              // Deliberately omit photoUrl — it's a potentially large base64 blob
+              zone: {
+                select: { id: true, name: true },
+              },
             },
           },
         },

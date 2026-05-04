@@ -80,7 +80,7 @@ export default function MaintenanceDuePage() {
 
    const [tasksRes, equipmentRes] = await Promise.all([
     fetch(`/api/maintenance-tasks?${params.toString()}`),
-    fetch(`/api/equipment?${venueId && venueId !== 'all' ? `venueId=${venueId}` : ''}`),
+    fetch(`/api/equipment?minimal=true${venueId && venueId !== 'all' ? `&venueId=${venueId}` : ''}`),
    ]);
 
    if (!tasksRes.ok) {

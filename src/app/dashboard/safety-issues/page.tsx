@@ -91,7 +91,7 @@ export default function SafetyIssuesPage() {
 
    const [issuesRes, equipmentRes] = await Promise.all([
     axiosInstance.get(`/api/safety-issues?${params.toString()}`),
-    axiosInstance.get(`/api/equipment?${venueId && venueId !== 'all' ? `venueId=${venueId}` : ''}`),
+    axiosInstance.get(`/api/equipment?minimal=true${venueId && venueId !== 'all' ? `&venueId=${venueId}` : ''}`),
    ]);
 
    setIssues(issuesRes.data.issues || []);
