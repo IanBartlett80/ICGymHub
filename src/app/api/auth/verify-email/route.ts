@@ -44,6 +44,19 @@ export async function POST(req: NextRequest) {
 
     // Check if already consumed
     if (verification.consumedAt) {
+      // If the club is already active the token was consumed successfully (e.g. by an
+      // email security scanner). Treat this as a success so the user can sign in.
+      if (verification.club.status === 'ACTIVE') {
+        return NextResponse.json(
+          {
+            message: 'Your club is already verified. You can now sign in.',
+            alreadyVerified: true,
+            clubId: verification.clubId,
+            clubName: verification.club.name,
+          },
+          { status: 200 }
+        )
+      }
       return NextResponse.json(
         { error: 'This verification token has already been used' },
         { status: 400 }

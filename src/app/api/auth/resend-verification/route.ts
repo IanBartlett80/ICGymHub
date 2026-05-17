@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendVerificationEmail } from '@/lib/email'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
+  // 3 resend attempts per IP per hour
+  const ip = getClientIp(req)
+  const rl = rateLimit(`resend-verification:${ip}`, 3, 60 * 60 * 1000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many resend attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const forwardedProto = req.headers.get('x-forwarded-proto')
     const forwardedHost = req.headers.get('x-forwarded-host')

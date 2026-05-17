@@ -12,6 +12,8 @@ type FormData = {
   password: string
 }
 
+const CLUB_NOT_ACTIVE_ERROR = 'Your club account is not active. Please contact support.'
+
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -22,6 +24,14 @@ function SignInForm() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Resend verification state
+  const [showResend, setShowResend] = useState(false)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState('')
+  const [resendError, setResendError] = useState('')
+
   const registered = searchParams.get('registered') === 'true'
   const verified = searchParams.get('verified') === 'true'
   const sessionExpired = searchParams.get('sessionExpired') === 'true'
@@ -39,6 +49,7 @@ function SignInForm() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setShowResend(false)
 
     try {
       const response = await axios.post('/api/auth/login', formData)
@@ -49,8 +60,33 @@ function SignInForm() {
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || 'Sign in failed. Please try again.'
       setError(errorMessage)
+      if (errorMessage === CLUB_NOT_ACTIVE_ERROR) {
+        setShowResend(true)
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResend = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setResendLoading(true)
+    setResendError('')
+    setResendSuccess('')
+
+    try {
+      await axios.post('/api/auth/resend-verification', { email: resendEmail })
+      setResendSuccess('Verification email sent! Check your inbox — the link is valid for 24 hours.')
+    } catch (err: any) {
+      const msg = err.response?.data?.error || 'Failed to send verification email. Please try again.'
+      // Treat "already verified" as a success message, not an error
+      if (msg === 'This club is already verified') {
+        setResendSuccess('Your club is already verified. You can sign in with your credentials.')
+      } else {
+        setResendError(msg)
+      }
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -102,6 +138,42 @@ function SignInForm() {
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
+            </div>
+          )}
+
+          {/* Resend verification — shown only when club is not yet active */}
+          {showResend && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+              <p className="text-amber-800 text-sm font-medium">
+                Your club account hasn&apos;t been verified yet.
+              </p>
+              <p className="text-amber-700 text-sm">
+                Enter your registered email address and we&apos;ll send a new verification link (valid for 24 hours).
+              </p>
+              {resendSuccess ? (
+                <p className="text-green-700 text-sm font-medium">{resendSuccess}</p>
+              ) : (
+                <form onSubmit={handleResend} className="flex gap-2">
+                  <input
+                    type="email"
+                    value={resendEmail}
+                    onChange={e => setResendEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    required
+                    className="flex-1 px-3 py-2 text-sm border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500 bg-white text-gray-900"
+                  />
+                  <button
+                    type="submit"
+                    disabled={resendLoading}
+                    className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-medium transition whitespace-nowrap"
+                  >
+                    {resendLoading ? 'Sending…' : 'Resend link'}
+                  </button>
+                </form>
+              )}
+              {resendError && (
+                <p className="text-red-600 text-sm">{resendError}</p>
+              )}
             </div>
           )}
 
