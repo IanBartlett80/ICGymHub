@@ -31,9 +31,9 @@ export async function POST(req: NextRequest) {
 
     const { username, password } = result.data
 
-    // Find user by username
+    // Find user by username (case-insensitive so Tanya@... and tanya@... both match)
     const user = await prisma.user.findFirst({
-      where: { username },
+      where: { username: { equals: username.trim(), mode: 'insensitive' } },
       include: { club: true },
     })
 

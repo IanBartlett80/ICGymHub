@@ -58,8 +58,12 @@ export async function POST(req: NextRequest) {
     const normalizedClubDomain = normalizeDomain(clubDomain) || clubDomain
     const domainForUse = normalizedClubDomain
 
+    // Normalize username and email to lowercase to prevent case-mismatch issues at login
+    const normalizedUsername = adminUsername.toLowerCase()
+    const normalizedEmail = adminEmail.toLowerCase()
+
     // Create full username with domain: username@domain
-    const fullUsername = `${adminUsername}@${domainForUse}`
+    const fullUsername = `${normalizedUsername}@${domainForUse}`
 
     // Check for duplicate club (name or domain or ABN if provided)
     const clubOrConditions: any[] = [
@@ -155,7 +159,7 @@ export async function POST(req: NextRequest) {
       monthlyRateAud: 100,
       users: {
         create: {
-          email: adminEmail,
+          email: normalizedEmail,
           username: fullUsername,
           passwordHash: hashedPassword,
           fullName: adminFullName,
@@ -192,7 +196,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: user.id,
         clubId: club.id,
-        email: adminEmail,
+        email: normalizedEmail,
         tokenHash,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
