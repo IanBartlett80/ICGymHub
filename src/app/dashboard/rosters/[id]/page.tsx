@@ -85,6 +85,15 @@ type CalendarEvent = {
  resource: RosterSlot
 }
 
+type ResolveReport = {
+ aiEnabled: boolean
+ resolvedCount: number
+ unresolvedCount: number
+ resolved: Array<{ sessionId: string; className: string; time: string; assignedCoaches: string[]; via: 'ai' | 'auto' }>
+ unresolved: Array<{ sessionId: string; className: string; time: string; reason: string }>
+ zoneSuggestions: Array<{ slotId: string; className: string; time: string; currentZone: string; suggestedZone: string | null; reason: string }>
+}
+
 export default function RosterViewPage({ params }: { params: Promise<{ id: string }> }) {
  const resolvedParams = use(params)
  const searchParams = useSearchParams()
@@ -143,6 +152,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
  const [resolvingSlot, setResolvingSlot] = useState<RosterSlot | null>(null)
  const [resolveCoachIds, setResolveCoachIds] = useState<string[]>([])
  const [resolvingAll, setResolvingAll] = useState(false)
+ const [resolveReport, setResolveReport] = useState<ResolveReport | null>(null)
 
  useEffect(() => {
   fetchRoster()
@@ -289,44 +299,27 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
  const handleAutoResolveAll = async () => {
   if (!roster) return
   setResolvingAll(true)
-  let resolved = 0
-  let failed = 0
-
-  const conflictSlots = roster.slots.filter(s => s.conflictFlag && s.conflictType === 'coach')
-  // Group by session ID to avoid duplicate updates
-  const sessionIds = new Set<string>()
-
-  for (const slot of conflictSlots) {
-   if (sessionIds.has(slot.session.id)) continue
-   sessionIds.add(slot.session.id)
-
-   const available = getAvailableCoachesForSlot(slot)
-   if (available.length === 0) {
-    failed++
-    continue
+  try {
+   const res = await fetch(`/api/rosters/${resolvedParams.id}/ai-resolve`, { method: 'POST' })
+   if (!res.ok) {
+    showToast.error('Could not run conflict resolution')
+    setResolvingAll(false)
+    return
    }
-   // Pick the first available coach
-   try {
-    const res = await fetch(`/api/rosters/sessions/${slot.session.id}/coaches`, {
-     method: 'PATCH',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({
-      coachIds: [available[0].id],
-      sessionId: slot.session.id,
-      zoneScope: 'all',
-     }),
-    })
-    if (res.ok) resolved++
-    else failed++
-   } catch {
-    failed++
+   const report: ResolveReport = await res.json()
+   setResolveReport(report)
+   if (report.resolvedCount > 0) {
+    showToast.success(`Resolved ${report.resolvedCount} conflict${report.resolvedCount !== 1 ? 's' : ''}`)
    }
+   if (report.resolvedCount === 0 && report.unresolvedCount > 0) {
+    showToast.error('No conflicts could be auto-resolved — see details')
+   }
+   await fetchRoster()
+  } catch {
+   showToast.error('Could not run conflict resolution')
+  } finally {
+   setResolvingAll(false)
   }
-
-  setResolvingAll(false)
-  if (resolved > 0) showToast.success(`Resolved ${resolved} conflict${resolved !== 1 ? 's' : ''}`)
-  if (failed > 0) showToast.error(`${failed} conflict${failed !== 1 ? 's' : ''} could not be auto-resolved (no available coaches)`)
-  await fetchRoster()
  }
 
  const handleExport = async () => {
@@ -668,7 +661,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
            <h4 className="font-semibold text-yellow-900 mb-2">
             {conflictCount} Scheduling Conflict{conflictCount !== 1 ? 's' : ''} Detected
            </h4>
-           {coachConflicts > 0 && (
+           {(coachConflicts > 0 || zoneConflicts > 0) && (
             <button
              onClick={handleAutoResolveAll}
              disabled={resolvingAll}
@@ -680,7 +673,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
                Resolving...
               </>
              ) : (
-              <>✨ Auto-Resolve All</>
+              <>✨ AI Resolve Conflicts</>
              )}
             </button>
            )}
@@ -698,7 +691,7 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
            )}
           </div>
           <p className="text-xs text-yellow-700 mt-2">
-           Click <strong>Resolve</strong> on each conflict row for details, or use <strong>Auto-Resolve All</strong> to assign available coaches automatically.
+           Click <strong>Resolve</strong> on each conflict row for details, or use <strong>AI Resolve Conflicts</strong> to reassign available, accredited coaches automatically. Zone clashes are flagged with a suggested free zone for you to apply.
           </p>
          </div>
         </div>
@@ -1319,6 +1312,99 @@ export default function RosterViewPage({ params }: { params: Promise<{ id: strin
       )
      })()}
     </div>
+
+    {/* AI Resolve Report Modal */}
+    {resolveReport && (
+     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 no-print">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+         <span className="text-xl">✨</span>
+         <h3 className="text-lg font-bold text-gray-900">Conflict Resolution Report</h3>
+        </div>
+        <button
+         onClick={() => setResolveReport(null)}
+         className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+         aria-label="Close"
+        >
+         ×
+        </button>
+       </div>
+
+       <div className="px-6 py-4 overflow-y-auto space-y-5">
+        <div className="flex flex-wrap gap-2">
+         <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 text-green-700 ring-1 ring-inset ring-green-200 px-3 py-1 text-sm font-medium">
+          <span className="font-semibold">{resolveReport.resolvedCount}</span> resolved
+         </span>
+         <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 text-red-700 ring-1 ring-inset ring-red-200 px-3 py-1 text-sm font-medium">
+          <span className="font-semibold">{resolveReport.unresolvedCount}</span> need attention
+         </span>
+         {resolveReport.zoneSuggestions.length > 0 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200 px-3 py-1 text-sm font-medium">
+           <span className="font-semibold">{resolveReport.zoneSuggestions.length}</span> zone suggestion{resolveReport.zoneSuggestions.length !== 1 ? 's' : ''}
+          </span>
+         )}
+        </div>
+
+        {resolveReport.resolved.length > 0 && (
+         <div>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">✅ Reassigned coaches</h4>
+          <ul className="space-y-2">
+           {resolveReport.resolved.map((r) => (
+            <li key={r.sessionId} className="rounded-lg border border-green-200 bg-green-50/60 px-3 py-2 text-sm">
+             <div className="font-medium text-gray-900">{r.className} <span className="text-gray-500 font-normal">· {r.time}</span></div>
+             <div className="text-gray-700">Now coached by {r.assignedCoaches.join(', ') || '—'}{r.via === 'ai' ? ' (AI suggested)' : ''}</div>
+            </li>
+           ))}
+          </ul>
+         </div>
+        )}
+
+        {resolveReport.unresolved.length > 0 && (
+         <div>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">⚠️ Could not auto-resolve</h4>
+          <ul className="space-y-2">
+           {resolveReport.unresolved.map((u) => (
+            <li key={u.sessionId} className="rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-sm">
+             <div className="font-medium text-gray-900">{u.className} <span className="text-gray-500 font-normal">· {u.time}</span></div>
+             <div className="text-red-700">{u.reason}</div>
+            </li>
+           ))}
+          </ul>
+         </div>
+        )}
+
+        {resolveReport.zoneSuggestions.length > 0 && (
+         <div>
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">🏟️ Zone conflict suggestions</h4>
+          <p className="text-xs text-gray-500 mb-2">Zone moves are not applied automatically — use <strong>Edit Class</strong> to apply a suggestion.</p>
+          <ul className="space-y-2">
+           {resolveReport.zoneSuggestions.map((z) => (
+            <li key={z.slotId} className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm">
+             <div className="font-medium text-gray-900">{z.className} <span className="text-gray-500 font-normal">· {z.time}</span></div>
+             <div className="text-gray-700">Currently in <strong>{z.currentZone}</strong>. {z.reason}</div>
+            </li>
+           ))}
+          </ul>
+         </div>
+        )}
+
+        {!resolveReport.aiEnabled && (
+         <p className="text-[11px] text-gray-400">AI planning is not enabled for this workspace — resolutions used the deterministic scheduler. Configure an OpenAI API key for AI-coordinated suggestions.</p>
+        )}
+       </div>
+
+       <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+        <button
+         onClick={() => setResolveReport(null)}
+         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+        >
+         Done
+        </button>
+       </div>
+      </div>
+     </div>
+    )}
 
     {/* Conflict Resolve Modal */}
     {resolvingSlot && (() => {
