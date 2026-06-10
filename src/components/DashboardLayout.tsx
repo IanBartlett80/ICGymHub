@@ -280,12 +280,9 @@ export default function DashboardLayout({ children, title, backTo }: DashboardLa
           )}
         </header>
 
-        {/* Left fly-out sub-navigation rail */}
-        <DashboardSideNav />
-
-        <div className="flex w-full">
-          {/* Spacer reserving the collapsed rail width so content is not hidden */}
-          <div className="w-16 shrink-0 print:hidden" aria-hidden="true" />
+        <div className="flex w-full items-start">
+          {/* Static left sub-navigation sidebar */}
+          <DashboardSideNav />
 
           <div className="min-w-0 flex-1">
         {/* Trial Period Banner (SKIPPED payment) */}
