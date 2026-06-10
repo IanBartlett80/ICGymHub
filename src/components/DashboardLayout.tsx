@@ -5,9 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from './AuthProvider'
-import ClassRosteringSubNav from './ClassRosteringSubNav'
-import ClubManagementSubNav from './ClubManagementSubNav'
-import AnalyticsSubNav from './AnalyticsSubNav'
+import DashboardSideNav from './DashboardSideNav'
 import NotificationBell from './NotificationBell'
 
 interface UserData {
@@ -35,7 +33,7 @@ interface DashboardLayoutProps {
 
 type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance' | 'analytics' | 'guides' | 'settings'
 
-export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false, showAnalyticsNav = false }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user: authUser, logout } = useAuth()
@@ -282,27 +280,14 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
           )}
         </header>
 
-        {/* Class Rostering Sub Navigation */}
-        {showClassRosteringNav && (
-          <div className="print:hidden">
-            <ClassRosteringSubNav />
-          </div>
-        )}
+        {/* Left fly-out sub-navigation rail */}
+        <DashboardSideNav />
 
-        {/* Club Management Sub Navigation */}
-        {showClubManagementNav && (
-          <div className="print:hidden">
-            <ClubManagementSubNav />
-          </div>
-        )}
+        <div className="flex w-full">
+          {/* Spacer reserving the collapsed rail width so content is not hidden */}
+          <div className="w-16 shrink-0 print:hidden" aria-hidden="true" />
 
-        {/* Analytics Sub Navigation */}
-        {showAnalyticsNav && (
-          <div className="print:hidden">
-            <AnalyticsSubNav />
-          </div>
-        )}
-
+          <div className="min-w-0 flex-1">
         {/* Trial Period Banner (SKIPPED payment) */}
         {isSkipped && !isTrialExpired && trialDaysRemaining !== null && (
           <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 print:hidden">
@@ -412,6 +397,8 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
           )}
           {children}
         </main>
+          </div>
+        </div>
       </div>
     </div>
   )
