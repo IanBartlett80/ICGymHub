@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { ExclamationTriangleIcon, CubeIcon, PlusIcon, CheckCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import MobileEquipmentForm from '@/components/MobileEquipmentForm';
 import PINVerificationModal, { useQRPINVerification } from '@/components/PINVerificationModal';
+import { showToast } from '@/lib/toast';
 
 interface Zone {
   id: string;
@@ -112,10 +113,10 @@ export default function PublicZoneReportPage() {
       await loadData();
       
       // Show brief success message (optional)
-      alert('Safety check recorded successfully!');
+      showToast.success('Safety check recorded successfully!');
     } catch (error) {
       console.error('Failed to record safety check:', error);
-      alert('Failed to record safety check. Please try again.');
+      showToast.error('Failed to record safety check. Please try again.');
     } finally {
       setCheckingEquipment(null);
     }
@@ -138,7 +139,7 @@ export default function PublicZoneReportPage() {
     const availableSlots = maxPhotos - photos.length;
     
     if (files.length > availableSlots) {
-      alert(`You can only upload ${maxPhotos} photos total. You have ${availableSlots} slot(s) remaining.`);
+      showToast.error(`You can only upload ${maxPhotos} photos total. You have ${availableSlots} slot(s) remaining.`);
       return;
     }
 
@@ -148,13 +149,13 @@ export default function PublicZoneReportPage() {
       
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select only image files');
+        showToast.error('Please select only image files');
         continue;
       }
 
       // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        alert(`Image ${file.name} is too large. Maximum size is 5MB.`);
+        showToast.error(`Image ${file.name} is too large. Maximum size is 5MB.`);
         continue;
       }
 
@@ -210,7 +211,7 @@ export default function PublicZoneReportPage() {
       setPhotos([]);
     } catch (error) {
       console.error('Failed to submit report:', error);
-      alert('Failed to submit report. Please try again.');
+      showToast.error('Failed to submit report. Please try again.');
     } finally {
       setSubmitting(false);
     }

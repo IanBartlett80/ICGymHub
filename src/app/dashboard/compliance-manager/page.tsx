@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
 import IntelligenceFilter from '@/components/IntelligenceFilter'
 import AISummaryPanel from '@/components/AISummaryPanel'
-import { confirmAndDelete, showToast } from '@/lib/toast'
+import { confirmAndDelete, confirmDialog, showToast } from '@/lib/toast'
 import axiosInstance from '@/lib/axios'
 import {
  Bar,
@@ -418,7 +418,12 @@ export default function ComplianceManagerPage() {
      `✓ The next instance will appear in Active Items\n\n` +
      `Continue?`
     )
-    const confirmed = window.confirm(message)
+    const confirmed = await confirmDialog({
+     title: 'Complete Recurring Item',
+     message,
+     confirmText: 'Complete',
+     variant: 'info',
+    })
     if (!confirmed) return
    }
    
@@ -439,13 +444,16 @@ export default function ComplianceManagerPage() {
   // Enhanced deletion confirmation for recurring items
   if (item.recurringSchedule !== 'NONE') {
     const instanceInfo = item.instanceNumber ? ` #${item.instanceNumber}` : ''
-    const confirmed = window.confirm(
-      `⚠️ DELETE RECURRING ITEM${instanceInfo}\n\n` +
-      `"${item.title}" is a ${item.recurringSchedule.toLowerCase()} recurring item.\n\n` +
-      `This will delete only THIS instance.\n` +
-      `Other instances in the series will not be affected.\n\n` +
-      `Are you sure you want to delete this instance?`
-    )
+    const confirmed = await confirmDialog({
+      title: `Delete Recurring Item${instanceInfo}`,
+      message:
+        `"${item.title}" is a ${item.recurringSchedule.toLowerCase()} recurring item.\n\n` +
+        `This will delete only THIS instance.\n` +
+        `Other instances in the series will not be affected.\n\n` +
+        `Are you sure you want to delete this instance?`,
+      confirmText: 'Delete',
+      variant: 'danger',
+    })
     if (!confirmed) return
   }
   

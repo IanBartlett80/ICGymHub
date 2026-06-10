@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { formatTimeShort } from '@/lib/timezone'
-import { showToast } from '@/lib/toast'
+import { confirmDialog, showToast } from '@/lib/toast'
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfDay, endOfDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
 
 type Coach = {
@@ -197,7 +197,13 @@ export default function RosterReportsPage() {
  }
 
  const handleEmailAll = async () => {
-  if (!window.confirm('Send roster report to all coaches via email?')) return
+  const confirmed = await confirmDialog({
+   title: 'Email All Coaches',
+   message: 'Send roster report to all coaches via email?',
+   confirmText: 'Send',
+   variant: 'info',
+  })
+  if (!confirmed) return
 
   setEmailingAll(true)
   setError('')
@@ -245,7 +251,13 @@ export default function RosterReportsPage() {
    return
   }
 
-  if (!window.confirm(`Send individual roster report to ${coach.name}?`)) return
+  const confirmed = await confirmDialog({
+   title: 'Email Coach',
+   message: `Send individual roster report to ${coach.name}?`,
+   confirmText: 'Send',
+   variant: 'info',
+  })
+  if (!confirmed) return
 
   setEmailingCoach(coachId)
   setError('')

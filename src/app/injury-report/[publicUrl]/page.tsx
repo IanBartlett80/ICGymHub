@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import PINVerificationModal, { useQRPINVerification } from '@/components/PINVerificationModal';
+import { showToast } from '@/lib/toast';
 
 interface Field {
   id: string;
@@ -108,7 +109,7 @@ export default function PublicSubmissionForm() {
           ]);
         }
       } else {
-        alert('Form not found or inactive');
+        showToast.error('Form not found or inactive');
       }
     } catch (error) {
       console.error('Error loading form:', error);
@@ -214,11 +215,11 @@ export default function PublicSubmissionForm() {
           }
         }
 
-        alert(`Failed to submit form (${res.status}): ${errorMessage}`);
+        showToast.error(`Failed to submit form (${res.status}): ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Failed to submit form. Please check your connection and try again.');
+      showToast.error('Failed to submit form. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
     }

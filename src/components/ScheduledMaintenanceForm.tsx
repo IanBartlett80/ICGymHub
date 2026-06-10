@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { showToast } from '@/lib/toast';
 
 interface ScheduledMaintenanceFormProps {
   equipmentId: string;
@@ -125,7 +126,7 @@ export default function ScheduledMaintenanceForm({
       onSuccess();
       onClose();
     } catch (error: any) {
-      alert(error.message || 'Failed to save maintenance task');
+      showToast.error(error.message || 'Failed to save maintenance task');
     } finally {
       setLoading(false);
     }

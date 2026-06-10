@@ -10,6 +10,7 @@ import {
   XCircleIcon,
   PhotoIcon,
 } from '@heroicons/react/24/outline';
+import { confirmDialog } from '@/lib/toast';
 
 interface EquipmentWithRelations extends Equipment {
   zone?: (Zone & { venue?: Venue | null }) | null;
@@ -82,7 +83,13 @@ export default function EquipmentCard({
   }, [equipment.id, equipment.hasPhoto, photoUrl]);
 
   const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete "${equipment.name}"? This will also delete all maintenance logs and usage history.`)) {
+    const confirmed = await confirmDialog({
+      title: 'Delete Equipment',
+      message: `Are you sure you want to delete "${equipment.name}"? This will also delete all maintenance logs and usage history.`,
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    if (confirmed) {
       setIsDeleting(true);
       try {
         await onDelete(equipment.id);

@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { confirmViaBridge, type BridgeConfirmOptions } from '@/lib/confirmBridge';
 
 /**
  * Toast notification utilities for consistent messaging across the app
@@ -98,12 +99,20 @@ export const showToast = {
 };
 
 /**
+ * Show a standardized confirmation dialog (styled modal) from anywhere,
+ * including non-component code. Returns a promise resolving to the user's choice.
+ */
+export const confirmDialog = (options: BridgeConfirmOptions): Promise<boolean> => {
+  return confirmViaBridge(options);
+};
+
+/**
  * Show a confirmation dialog before performing an action
  * @param message - The confirmation message to show
  * @param onConfirm - Callback function to execute if user confirms
  * @param options - Optional configuration
  */
-export const confirmDelete = (
+export const confirmDelete = async (
   message: string,
   onConfirm: () => void | Promise<void>,
   options?: {
@@ -116,16 +125,20 @@ export const confirmDelete = (
   const confirmText = options?.confirmText || 'Delete';
   const cancelText = options?.cancelText || 'Cancel';
 
-  const confirmed = window.confirm(`${title}\n\n${message}\n\n[${confirmText}] / [${cancelText}]`);
-  
+  const confirmed = await confirmViaBridge({
+    title,
+    message,
+    confirmText,
+    cancelText,
+    variant: 'danger',
+  });
+
   if (confirmed) {
-    const result = onConfirm();
-    // If onConfirm returns a promise, handle it
-    if (result instanceof Promise) {
-      result.catch((error) => {
-        showToast.error('An error occurred. Please try again.');
-        console.error('Delete operation failed:', error);
-      });
+    try {
+      await onConfirm();
+    } catch (error) {
+      showToast.error('An error occurred. Please try again.');
+      console.error('Delete operation failed:', error);
     }
   }
 };
@@ -137,7 +150,7 @@ export const confirmAndDelete = async (
   itemName: string,
   onDelete: () => void | Promise<void>
 ) => {
-  confirmDelete(
+  await confirmDelete(
     `Are you sure you want to delete this ${itemName}? This action cannot be undone.`,
     async () => {
       await onDelete();

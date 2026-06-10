@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { XMarkIcon, CameraIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { showToast } from '@/lib/toast';
 
 interface ExistingEquipment {
   id: string;
@@ -258,7 +259,7 @@ export default function MobileEquipmentForm({
       onSubmit();
     } catch (error) {
       console.error(`Failed to ${isEditMode ? 'update' : 'add'} equipment:`, error);
-      alert(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'add'} equipment. Please try again.`);
+      showToast.error(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'add'} equipment. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }

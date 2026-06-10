@@ -8,7 +8,7 @@ import VenueSelector from '@/components/VenueSelector';
 import SafetyIssueReviewModal from '@/components/SafetyIssueReviewModal';
 import IntelligenceFilter, { FilterConfig } from '@/components/IntelligenceFilter';
 import axiosInstance from '@/lib/axios';
-import { showToast } from '@/lib/toast';
+import { confirmDialog, showToast } from '@/lib/toast';
 import { 
  PlusIcon,
  XMarkIcon,
@@ -141,7 +141,13 @@ export default function SafetyIssuesPage() {
  };
 
  const handleDelete = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this safety issue?')) {
+  const confirmed = await confirmDialog({
+   title: 'Delete Safety Issue',
+   message: 'Are you sure you want to delete this safety issue?',
+   confirmText: 'Delete',
+   variant: 'danger',
+  });
+  if (!confirmed) {
    return;
   }
 

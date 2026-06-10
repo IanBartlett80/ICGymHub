@@ -7,7 +7,7 @@ import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import ScheduledMaintenanceForm from '@/components/ScheduledMaintenanceForm';
 import VenueSelector from '@/components/VenueSelector';
 import IntelligenceFilter from '@/components/IntelligenceFilter';
-import { showToast } from '@/lib/toast';
+import { confirmDialog, showToast } from '@/lib/toast';
 import axiosInstance from '@/lib/axios';
 import { MagnifyingGlassIcon, WrenchScrewdriverIcon, CheckCircleIcon, FlagIcon, ClipboardDocumentListIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
@@ -250,7 +250,12 @@ export default function MaintenanceDuePage() {
  };
 
  const deleteTask = async (task: MaintenanceTask) => {
-  const confirmed = window.confirm(`Delete task \"${task.title}\" for ${task.equipment.name}?`);
+  const confirmed = await confirmDialog({
+   title: 'Delete Maintenance Task',
+   message: `Delete task "${task.title}" for ${task.equipment.name}?`,
+   confirmText: 'Delete',
+   variant: 'danger',
+  });
   if (!confirmed) return;
 
   try {
@@ -273,9 +278,12 @@ export default function MaintenanceDuePage() {
  const createBulkTasksForUnlinkedEquipment = async () => {
   if (equipmentWithoutTasks.length === 0 || bulkCreating) return;
 
-  const confirmed = window.confirm(
-   `Create initial maintenance tasks for ${equipmentWithoutTasks.length} equipment records with no linked tasks?`
-  );
+  const confirmed = await confirmDialog({
+   title: 'Create Maintenance Tasks',
+   message: `Create initial maintenance tasks for ${equipmentWithoutTasks.length} equipment records with no linked tasks?`,
+   confirmText: 'Create',
+   variant: 'info',
+  });
 
   if (!confirmed) return;
 

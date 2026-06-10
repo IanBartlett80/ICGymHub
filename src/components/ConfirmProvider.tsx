@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { registerConfirm } from '@/lib/confirmBridge';
 
 interface ConfirmOptions {
   title?: string;
@@ -55,6 +56,13 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     }
     setIsOpen(false);
   }, [resolver]);
+
+  // Expose the styled confirm dialog to non-component code (e.g. toast helpers)
+  // so native window.confirm dialogs are never used across the app.
+  useEffect(() => {
+    registerConfirm(confirm);
+    return () => registerConfirm(null);
+  }, [confirm]);
 
   return (
     <ConfirmContext.Provider value={{ confirm }}>
