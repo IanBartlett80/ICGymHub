@@ -40,6 +40,12 @@ export async function GET(
           },
           orderBy: { order: 'asc' },
         },
+        club: {
+          select: {
+            name: true,
+            qrAccessPin: true,
+          },
+        },
       },
     });
 
@@ -47,7 +53,10 @@ export async function GET(
       return NextResponse.json({ error: 'Form not found or inactive' }, { status: 404 });
     }
 
-    // Return template without sensitive info
+    // Return template without sensitive info.
+    // The PIN hash itself is NEVER sent to the client — only a boolean indicating
+    // whether this club requires PIN verification for its QR forms. This keeps the
+    // public page's PIN gating scoped strictly to the form's own club.
     const publicTemplate = {
       id: template.id,
       name: template.name,
@@ -55,6 +64,8 @@ export async function GET(
       headerColor: template.headerColor,
       logoUrl: template.logoUrl,
       clubId: template.clubId,
+      clubName: template.club?.name ?? null,
+      requiresPin: !!template.club?.qrAccessPin,
       sections: template.sections,
     };
 

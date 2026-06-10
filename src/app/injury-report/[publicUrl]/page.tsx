@@ -31,6 +31,8 @@ interface Template {
   logoUrl: string | null;
   sections: Section[];
   clubId: string;
+  clubName: string | null;
+  requiresPin: boolean;
 }
 
 interface Coach {
@@ -81,9 +83,12 @@ export default function PublicSubmissionForm() {
     loadTemplate();
   }, [publicUrl]);
 
-  // Show PIN modal after template data loads if not verified
+  // Show PIN modal only when this form's club actually requires a PIN and the
+  // visitor hasn't already verified it. Clubs without a configured PIN are
+  // "unprotected" and must never be prompted (the gate is scoped to the form's
+  // own club via template.requiresPin / template.clubId).
   useEffect(() => {
-    if (!loading && template && !isChecking && !isVerified) {
+    if (!loading && template && template.requiresPin && !isChecking && !isVerified) {
       setShowPINModal(true);
     }
   }, [loading, template, isChecking, isVerified]);
@@ -730,10 +735,10 @@ export default function PublicSubmissionForm() {
       </div>
 
       {/* PIN Verification Modal */}
-      {showPINModal && template && (
+      {showPINModal && template && template.requiresPin && (
         <PINVerificationModal
           clubId={template.clubId}
-          clubName={template.name}
+          clubName={template.clubName || template.name}
           onVerified={() => {
             markAsVerified();
             setShowPINModal(false);
