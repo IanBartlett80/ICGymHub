@@ -17,6 +17,11 @@ export default function DashboardSideNav() {
   const isActive = (item: SubNavItem) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)
 
+  // The Home dashboard has its own full-width layout and needs no sub-nav.
+  if (pathname === '/dashboard') {
+    return null
+  }
+
   return (
     <aside className="hidden w-60 shrink-0 border-r border-gray-200 bg-white md:block print:hidden">
       <div className="sticky top-[97px] flex max-h-[calc(100vh-97px)] flex-col overflow-y-auto">
