@@ -135,10 +135,10 @@ export default function DailyBriefing() {
 
  const collapsedSummary =
   data.status === 'RED'
-   ? `Hello! Your facility health score is currently at ${data.healthScore}/100 (RED), indicating some urgent attention is needed.`
+   ? `Hello! Your club health score is currently at ${data.healthScore}/100 (RED), indicating some urgent attention is needed.`
    : data.status === 'YELLOW'
-   ? `Hello! Your facility health score is currently at ${data.healthScore}/100 (YELLOW), a few items need your attention.`
-   : `Hello! Your facility health score is currently at ${data.healthScore}/100 (GREEN), everything looks in good shape.`
+   ? `Hello! Your club health score is currently at ${data.healthScore}/100 (YELLOW), a few items need your attention.`
+   : `Hello! Your club health score is currently at ${data.healthScore}/100 (GREEN), everything looks in good shape.`
 
  const priorities: PriorityItem[] = [
   { label: 'overdue compliance item', count: m.overdueCompliance, href: '/dashboard/compliance-manager', tone: 'red' },
