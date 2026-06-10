@@ -2,8 +2,37 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useState, useEffect, useCallback } from 'react'
 
 export default function Home() {
+  const portalScreenshots = [
+    { src: '/imgs/dashboard-1.png', alt: 'GymHub admin dashboard with daily briefing and health score' },
+    { src: '/imgs/dashboard-2.png', alt: 'Analytics overview command centre' },
+    { src: '/imgs/dashboard-3.png', alt: 'Injuries & incidents analytics' },
+    { src: '/imgs/dashboard-4.png', alt: 'Equipment & safety analytics' },
+    { src: '/imgs/dashboard-5.png', alt: 'Compliance analytics' },
+    { src: '/imgs/dashboard-6.png', alt: 'Rosters & coaching analytics' },
+    { src: '/imgs/dashboard-7.png', alt: 'Equipment zone overview with venue QR codes' },
+    { src: '/imgs/dashboard-8.png', alt: 'Complete equipment inventory with condition and status tracking' },
+    { src: '/imgs/dashboard-9.png', alt: 'Injury report form with public QR code access' },
+    { src: '/imgs/dashboard-10.png', alt: 'Injury report automation workflow builder' },
+    { src: '/imgs/dashboard-11.png', alt: 'Equipment repair quote requests Kanban board' },
+    { src: '/imgs/dashboard-12.png', alt: 'Compliance Manager with deadlines, ownership and reminders' },
+  ]
+
+  const [activeShot, setActiveShot] = useState(0)
+
+  const goToShot = useCallback((index: number) => {
+    setActiveShot((index + portalScreenshots.length) % portalScreenshots.length)
+  }, [portalScreenshots.length])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveShot((prev) => (prev + 1) % portalScreenshots.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [portalScreenshots.length])
+
   const coreSolutions = [
     {
       title: 'Roster Management',
@@ -83,6 +112,77 @@ export default function Home() {
             <Link href="mailto:gymhub@icb.solutions" className="border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900 px-6 py-3 rounded-lg text-base font-semibold transition">
               Contact Team
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Showcase Carousel */}
+      <section id="showcase" className="container mx-auto px-6 pb-12">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            See GymHub in Action
+          </h2>
+          <p className="text-base text-gray-600 max-w-2xl mx-auto">
+            Take a tour of the GymHub admin portal — from the daily briefing dashboard to AI-powered analytics across injuries, equipment, compliance, and coaching.
+          </p>
+        </div>
+
+        <div className="relative max-w-5xl mx-auto">
+          <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+            <div className="relative aspect-[1036/768]">
+              {portalScreenshots.map((shot, idx) => (
+                <div
+                  key={shot.src}
+                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                    idx === activeShot ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
+                  aria-hidden={idx !== activeShot}
+                >
+                  <Image
+                    src={shot.src}
+                    alt={shot.alt}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 1024px"
+                    className="object-contain"
+                    priority={idx === 0}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Previous / Next arrows */}
+            <button
+              type="button"
+              onClick={() => goToShot(activeShot - 1)}
+              aria-label="Previous screenshot"
+              className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow hover:bg-white hover:text-blue-600 transition"
+            >
+              <span className="text-xl leading-none">‹</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => goToShot(activeShot + 1)}
+              aria-label="Next screenshot"
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow hover:bg-white hover:text-blue-600 transition"
+            >
+              <span className="text-xl leading-none">›</span>
+            </button>
+          </div>
+
+          {/* Dots */}
+          <div className="flex justify-center gap-2 mt-4">
+            {portalScreenshots.map((shot, idx) => (
+              <button
+                key={shot.src}
+                type="button"
+                onClick={() => goToShot(idx)}
+                aria-label={`Go to screenshot ${idx + 1}`}
+                aria-current={idx === activeShot}
+                className={`h-2.5 rounded-full transition-all ${
+                  idx === activeShot ? 'w-6 bg-blue-600' : 'w-2.5 bg-gray-300 hover:bg-gray-400'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </section>
