@@ -18,6 +18,7 @@ export default function Home() {
     { src: '/imgs/dashboard-10.png', alt: 'Injury report automation workflow builder' },
     { src: '/imgs/dashboard-11.png', alt: 'Equipment repair quote requests Kanban board' },
     { src: '/imgs/dashboard-12.png', alt: 'Compliance Manager with deadlines, ownership and reminders' },
+    { src: '/imgs/dashboard-13.png', alt: 'GymHub admin portal interface' },
   ]
 
   const [activeShot, setActiveShot] = useState(0)
