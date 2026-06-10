@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
 import IntelligenceFilter from '@/components/IntelligenceFilter'
+import AISummaryPanel from '@/components/AISummaryPanel'
 import { confirmAndDelete, showToast } from '@/lib/toast'
 import axiosInstance from '@/lib/axios'
 import {
@@ -612,6 +613,13 @@ export default function ComplianceManagerPage() {
       )}
      </div>
     </div>
+
+    <AISummaryPanel
+     endpoint="/api/dashboard/summaries/compliance"
+     title="Compliance Intelligence"
+     icon="📜"
+     accent="from-violet-600 to-purple-600"
+    />
 
     {/* Active/Closed Items Navigation */}
     <div className="bg-white border-b border-gray-200">

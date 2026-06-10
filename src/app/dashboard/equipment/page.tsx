@@ -7,6 +7,7 @@ import { QrCodeIcon, PrinterIcon, MinusIcon, PlusIcon, BuildingOfficeIcon, Shiel
 import DashboardLayout from '@/components/DashboardLayout';
 import EquipmentManagementSubNav from '@/components/EquipmentManagementSubNav';
 import IntelligenceFilter from '@/components/IntelligenceFilter';
+import AISummaryPanel from '@/components/AISummaryPanel';
 import QRCodeProtectionStatus from '@/components/QRCodeProtectionStatus';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axiosInstance from '@/lib/axios';
@@ -407,6 +408,13 @@ export default function EquipmentPage() {
       <p className="mt-2 text-3xl font-bold text-red-600">{stats.needsAttention}</p>
      </div>
     </div>
+
+    <AISummaryPanel
+     endpoint="/api/dashboard/summaries/equipment"
+     title="Equipment Intelligence"
+     icon="🔧"
+     accent="from-emerald-600 to-teal-600"
+    />
 
     {/* Filter Bar */}
     <IntelligenceFilter

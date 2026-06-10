@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import InjuryReportsSubNav from '@/components/InjuryReportsSubNav';
 import VenueSelector from '@/components/VenueSelector';
 import IntelligenceFilter from '@/components/IntelligenceFilter';
+import AISummaryPanel from '@/components/AISummaryPanel';
 import {
  LineChart, Line,
  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -272,6 +273,13 @@ export default function InjuryReportsDashboard() {
       </Link>
      </div>
     </div>
+
+    <AISummaryPanel
+     endpoint="/api/dashboard/summaries/injury"
+     title="Incident Intelligence"
+     icon="🩹"
+     accent="from-rose-600 to-red-600"
+    />
 
     {/* Statistics Cards */}
     {stats && (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import DashboardLayout from '@/components/DashboardLayout'
 import VenueSelector from '@/components/VenueSelector'
 import IntelligenceFilter from '@/components/IntelligenceFilter'
+import AISummaryPanel from '@/components/AISummaryPanel'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -348,6 +349,12 @@ export default function ClassRosteringPage() {
      ]}
      filterCount={filteredSlots.length}
      filterCountLabel="sessions"
+    />
+    <AISummaryPanel
+     endpoint="/api/dashboard/summaries/rosters"
+     title="Roster Intelligence"
+     icon="📅"
+     accent="from-indigo-600 to-blue-600"
     />
     {/* Roster Calendar View */}
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
