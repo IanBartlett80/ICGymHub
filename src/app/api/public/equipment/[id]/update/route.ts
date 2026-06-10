@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 // PUT /api/public/equipment/[id]/update - Update equipment from public mobile form (QR code scan)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Public QR endpoint — rate limit to prevent abuse.
+  const ip = getClientIp(request);
+  const rl = rateLimit(`public-equip-update:${ip}`, 30, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a few minutes and try again.' },
+      { status: 429 }
+    );
+  }
   try {
     const { id } = await params;
     const body = await request.json();

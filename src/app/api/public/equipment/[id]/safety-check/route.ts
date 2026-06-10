@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 // POST /api/public/equipment/[id]/safety-check - Record "No Issues Detected" safety check
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Public QR endpoint — rate limit to prevent audit-log spam.
+  const ip = getClientIp(request);
+  const rl = rateLimit(`public-safety-check:${ip}`, 30, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a few minutes and try again.' },
+      { status: 429 }
+    );
+  }
   try {
     const { id } = params;
 

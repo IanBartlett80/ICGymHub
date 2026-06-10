@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
+import { verifyAccessToken } from '@/lib/auth'
 import { sendEmail, getLogoHeaderHtml } from '@/lib/email'
 import { randomBytes } from 'crypto'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 // Generate a human-readable reference like RQ-2026-0042
 async function generateReference(clubId: string): Promise<string> {
@@ -38,7 +36,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; clubId: string }
+    const decoded = verifyAccessToken(token)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { searchParams } = new URL(req.url);
     const venueId = searchParams.get('venueId');
@@ -99,7 +100,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; clubId: string }
+    const decoded = verifyAccessToken(token)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const body = await req.json()
 
     const {

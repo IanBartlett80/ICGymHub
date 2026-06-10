@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 // POST /api/public/equipment/create - Create equipment from public form (QR code scan)
 export async function POST(request: NextRequest) {
+  // Public QR endpoint — rate limit to prevent spam creation.
+  const ip = getClientIp(request);
+  const rl = rateLimit(`public-equip-create:${ip}`, 20, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a few minutes and try again.' },
+      { status: 429 }
+    );
+  }
   try {
     const body = await request.json();
     const {

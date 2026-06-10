@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 // POST - Verify QR PIN for a club (public endpoint - no auth required)
 export async function POST(request: NextRequest) {
+  // Server-side brute-force protection: a 4-digit PIN has only 10,000
+  // combinations, so client-side attempt limits are not sufficient. Cap PIN
+  // verification attempts per IP per club to make guessing infeasible.
   try {
     const body = await request.json();
     const { clubId, pin } = body;
@@ -13,6 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Club ID and PIN are required' },
         { status: 400 }
+      );
+    }
+
+    const ip = getClientIp(request);
+    const rl = rateLimit(`verify-qr-pin:${clubId}:${ip}`, 10, 15 * 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many attempts. Please try again later.', verified: false },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
       );
     }
 

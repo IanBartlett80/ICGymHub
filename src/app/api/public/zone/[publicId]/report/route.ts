@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { rateLimit, getClientIp } from '@/lib/rateLimit';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ publicId: string }> }
 ) {
+  // Public QR endpoint — rate limit to prevent fake-report / payload spam.
+  const ip = getClientIp(request);
+  const rl = rateLimit(`public-zone-report:${ip}`, 20, 10 * 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a few minutes and try again.' },
+      { status: 429 }
+    );
+  }
   try {
     const { publicId } = await params;
     const body = await request.json();
