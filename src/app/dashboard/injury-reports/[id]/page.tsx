@@ -73,6 +73,8 @@ interface Submission {
  submittedAt: string;
  submitterInfo: string | null;
  assignedToName: string | null;
+ aiSummary: string | null;
+ aiSummaryGeneratedAt: string | null;
  template: {
   id: string;
   name: string;
@@ -121,6 +123,8 @@ export default function SubmissionDetailPage() {
  const [emailName, setEmailName] = useState('');
  const [sendingEmail, setSendingEmail] = useState(false);
  const [emailResult, setEmailResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+ const [generatingSummary, setGeneratingSummary] = useState(false);
+ const [summaryError, setSummaryError] = useState<string | null>(null);
 
  useEffect(() => {
   loadSubmission();
@@ -138,6 +142,31 @@ export default function SubmissionDetailPage() {
    console.error('Error loading submission:', error);
   } finally {
    setLoading(false);
+  }
+ };
+
+ const generateSummary = async () => {
+  setGeneratingSummary(true);
+  setSummaryError(null);
+  try {
+   const res = await fetch(`/api/injury-submissions/${submissionId}/generate-summary`, {
+    method: 'POST',
+   });
+   const data = await res.json();
+   if (res.ok) {
+    setSubmission((prev) =>
+     prev
+      ? { ...prev, aiSummary: data.aiSummary, aiSummaryGeneratedAt: data.aiSummaryGeneratedAt }
+      : prev
+    );
+   } else {
+    setSummaryError(data.error || 'Failed to generate summary.');
+   }
+  } catch (error) {
+   console.error('Error generating summary:', error);
+   setSummaryError('Failed to generate summary. Please try again.');
+  } finally {
+   setGeneratingSummary(false);
   }
  };
 
@@ -426,6 +455,66 @@ export default function SubmissionDetailPage() {
    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {/* Main Content */}
     <div className="lg:col-span-2 space-y-6">
+     {/* AI Summary */}
+     <div className="bg-white rounded-xl shadow-lg border border-indigo-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 flex items-center justify-between">
+       <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <span className="text-xl">✨</span>
+        AI Summary
+       </h2>
+       <button
+        onClick={generateSummary}
+        disabled={generatingSummary}
+        className="px-4 py-2 bg-white/15 hover:bg-white/25 text-white rounded-lg text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+       >
+        {generatingSummary ? (
+         <>
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Generating…
+         </>
+        ) : submission.aiSummary ? (
+         'Regenerate'
+        ) : (
+         'Generate Summary'
+        )}
+       </button>
+      </div>
+      <div className="p-6">
+       {summaryError && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+         {summaryError}
+        </div>
+       )}
+       {submission.aiSummary ? (
+        <>
+         <div className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
+          {submission.aiSummary}
+         </div>
+         <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>
+           AI-generated summary — always verify against the original report below.
+           {submission.aiSummaryGeneratedAt && (
+            <> Generated {formatDateTime(submission.aiSummaryGeneratedAt)}.</>
+           )}
+          </span>
+         </div>
+        </>
+       ) : (
+        !generatingSummary && (
+         <p className="text-sm text-gray-500">
+          Generate a concise, professional AI summary of this report from the submitted details below.
+         </p>
+        )
+       )}
+      </div>
+     </div>
+
      {/* Submission Info */}
      <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">

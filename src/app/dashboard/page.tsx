@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import ConfigWizard from '@/components/ConfigWizard/ConfigWizard'
+import DailyBriefing from '@/components/DailyBriefing'
 import axiosInstance from '@/lib/axios'
-import { 
+import {
  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts'
@@ -215,6 +216,9 @@ export default function DashboardPage() {
       Here's what's happening at {user.clubName} today
      </p>
     </div>
+
+    {/* Daily Briefing */}
+    <DailyBriefing />
 
     {analyticsError && (
      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">

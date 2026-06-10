@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/apiAuth';
+import { ensureInjurySummary } from '@/lib/injurySummary';
+
+const GYMHUB_LOGO_URL = 'https://longhornfloorplans.blob.core.windows.net/client-resources/GymHub_Logo.png';
 
 // GET /api/injury-submissions/[id]/export-pdf - Export submission as PDF
 export async function GET(
@@ -159,6 +162,41 @@ export async function GET(
 
     const conditionColors = getConditionColor(submission.equipment?.condition || null);
     const safetyColors = getSafetyStatusColor(submission.equipment?.lastCheckStatus || null);
+
+    // Ensure an AI incident summary exists (uses cache, generates if missing).
+    let aiSummaryText: string | null = null;
+    try {
+      const summaryResult = await ensureInjurySummary(submission.id, authResult.user.clubId);
+      aiSummaryText = summaryResult?.aiSummary ?? null;
+    } catch (err) {
+      console.error('Failed to ensure AI summary for PDF:', err);
+    }
+
+    // Determine the incident date — prefer an explicit incident/injury date
+    // field from the report, falling back to the submission timestamp.
+    let incidentDate = new Date(submission.submittedAt);
+    for (const d of submission.data) {
+      const label = d.field.label.toLowerCase();
+      if (label.includes('date') && (label.includes('incident') || label.includes('injury') || label.includes('occur'))) {
+        try {
+          const v = JSON.parse(d.value);
+          const dv = v.value || v.displayValue;
+          const parsed = new Date(dv);
+          if (!isNaN(parsed.getTime())) {
+            incidentDate = parsed;
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    // Human-readable incident reference number, e.g. INC-20260531-A1B2
+    const idSuffix = submission.id.slice(-4).toUpperCase();
+    const incidentNumber = `INC-${incidentDate.getFullYear()}${String(incidentDate.getMonth() + 1).padStart(2, '0')}${String(incidentDate.getDate()).padStart(2, '0')}-${idSuffix}`;
+
+    const incidentDateStr = incidentDate.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
+    const packageGeneratedStr = new Date().toLocaleString('en-AU', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const facilityName = submission.template.club.name;
 
     // Build HTML for PDF
     const html = `
@@ -516,7 +554,191 @@ export async function GET(
       font-weight: 600;
       color: #92400e;
     }
-    
+
+    /* ─── Formal Cover Page ─────────────────────────────── */
+    .cover {
+      page-break-after: always;
+      padding: 0;
+    }
+
+    .cover-band {
+      background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+      color: #ffffff;
+      padding: 36px 40px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+      margin: -40px -40px 0 -40px;
+    }
+
+    .cover-logo {
+      background: #ffffff;
+      display: inline-block;
+      padding: 12px 22px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+
+    .cover-logo img {
+      display: block;
+      height: 42px;
+      width: auto;
+    }
+
+    .cover-tagline {
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #c9a227;
+      font-weight: 700;
+    }
+
+    .cover-body {
+      text-align: center;
+      padding: 48px 40px 32px;
+    }
+
+    .cover-emblem {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      border: 4px solid #c9a227;
+    }
+
+    .cover-emblem svg { width: 42px; height: 42px; }
+
+    .cover-title {
+      font-size: 34px;
+      font-weight: 800;
+      color: #1e3a5f;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .cover-facility {
+      font-size: 17px;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    .cover-divider {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #c9a227, transparent);
+      margin: 28px 0;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 22px 40px;
+      text-align: left;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .cover-meta-label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .cover-meta-value {
+      font-size: 16px;
+      color: #1e3a5f;
+      font-weight: 700;
+    }
+
+    .cover-privileged {
+      max-width: 620px;
+      margin: 36px auto 0;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      border-left: 4px solid #c9a227;
+      border-radius: 8px;
+      padding: 16px 20px;
+      text-align: left;
+    }
+
+    .cover-privileged-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #9a3412;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .cover-privileged-text {
+      font-size: 12px;
+      color: #7c2d12;
+      line-height: 1.5;
+    }
+
+    /* ─── Branded continuation header ───────────────────── */
+    .doc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+      color: #ffffff;
+      border-radius: 8px;
+      margin-bottom: 28px;
+    }
+
+    .doc-header-logo {
+      background: #ffffff;
+      padding: 7px 14px;
+      border-radius: 8px;
+    }
+
+    .doc-header-logo img { display: block; height: 26px; width: auto; }
+
+    .doc-header-meta { text-align: right; font-size: 12px; line-height: 1.5; }
+    .doc-header-meta strong { font-size: 14px; }
+
+    /* ─── Incident Summary (AI) ─────────────────────────── */
+    .summary-section {
+      border: 1px solid #c7d2fe;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+
+    .summary-header {
+      background: linear-gradient(90deg, #1e3a5f 0%, #4f46e5 100%);
+      color: #ffffff;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .summary-content {
+      padding: 24px;
+      background: #f8fafc;
+      color: #1f2937;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .summary-disclaimer {
+      margin-top: 16px;
+      font-size: 11px;
+      color: #92400e;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+
     @media print {
       body {
         background: white;
@@ -550,30 +772,95 @@ export async function GET(
     </button>
   </div>
 
-  <div class="page">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-title">
-        📋 Injury Report Details for ${athleteName}
+  <div class="page cover">
+    <!-- Cover Band -->
+    <div class="cover-band">
+      <div class="cover-logo">
+        <img src="${GYMHUB_LOGO_URL}" alt="GymHub" />
       </div>
-      <div class="header-subtitle">${submission.template.name}</div>
-      ${sportInfo ? `<div class="header-subtitle">${sportInfo}</div>` : ''}
-      <div class="header-meta">
-        📅 Submitted on ${new Date(submission.submittedAt).toLocaleString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })}
+      <div class="cover-tagline">Safety &amp; Risk Management Platform</div>
+    </div>
+
+    <!-- Cover Body -->
+    <div class="cover-body">
+      <div class="cover-emblem">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z" fill="#1e3a5f" stroke="#c9a227" stroke-width="1.5"/>
+          <path d="M9 12l2 2 4-4" stroke="#c9a227" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div class="club-info">
-        <strong>${submission.template.club.name}</strong><br>
-        ${submission.template.club.address || ''} ${submission.template.club.city || ''} ${submission.template.club.state || ''}<br>
-        ${submission.template.club.phone ? `Phone: ${submission.template.club.phone}` : ''}
+      <div class="cover-title">Incident Report</div>
+      <div class="cover-facility">${facilityName}</div>
+      ${sportInfo ? `<div class="cover-facility" style="font-size: 14px; color: #64748b;">${sportInfo}</div>` : ''}
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-meta">
+        <div>
+          <div class="cover-meta-label">Facility Name</div>
+          <div class="cover-meta-value">${facilityName}</div>
+        </div>
+        <div>
+          <div class="cover-meta-label">Incident Number</div>
+          <div class="cover-meta-value">${incidentNumber}</div>
+        </div>
+        <div>
+          <div class="cover-meta-label">Incident Date</div>
+          <div class="cover-meta-value">${incidentDateStr}</div>
+        </div>
+        <div>
+          <div class="cover-meta-label">Participant</div>
+          <div class="cover-meta-value">${athleteName}</div>
+        </div>
+        <div>
+          <div class="cover-meta-label">Report Type</div>
+          <div class="cover-meta-value">${submission.template.name}</div>
+        </div>
+        <div>
+          <div class="cover-meta-label">Report Generated</div>
+          <div class="cover-meta-value">${packageGeneratedStr}</div>
+        </div>
+      </div>
+
+      <div class="cover-divider"></div>
+
+      <div class="cover-privileged">
+        <div class="cover-privileged-title">&#9888; CONFIDENTIAL &amp; PRIVILEGED</div>
+        <div class="cover-privileged-text">
+          This document contains sensitive personal and safety information. It is to be handled
+          in accordance with Australian WHS regulations and the Privacy Act 1988. Unauthorised
+          review, distribution, or disclosure is strictly prohibited.
+        </div>
       </div>
     </div>
+  </div>
+
+  <div class="page">
+    <!-- Branded continuation header -->
+    <div class="doc-header">
+      <div class="doc-header-logo">
+        <img src="${GYMHUB_LOGO_URL}" alt="GymHub" />
+      </div>
+      <div class="doc-header-meta">
+        <strong>${incidentNumber}</strong><br>
+        ${athleteName} &middot; ${incidentDateStr}
+      </div>
+    </div>
+
+    ${aiSummaryText ? `
+    <!-- Incident Summary (AI-assisted) -->
+    <div class="summary-section">
+      <div class="summary-header">
+        Incident Summary
+      </div>
+      <div class="summary-content">${aiSummaryText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        <div class="summary-disclaimer">
+          &#9888; AI-assisted summary generated from the submitted report details. Always verify against the original report data below.
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
 
     <!-- Submission Information -->
     <div class="section section-blue">

@@ -698,6 +698,8 @@ model InjurySubmission {
   updatedAt                    DateTime                  @updatedAt
   venueId                      String?
   templateName                 String?
+  aiSummary                    String?
+  aiSummaryGeneratedAt         DateTime?
   zoneId                       String?
   equipmentId                  String?
   equipmentMaintenanceSnapshot String?

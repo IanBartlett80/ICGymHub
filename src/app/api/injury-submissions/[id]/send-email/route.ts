@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/apiAuth';
 import { sendEmail, getLogoHeaderHtml } from '@/lib/email';
+import { ensureInjurySummary } from '@/lib/injurySummary';
 
 const GYMHUB_LOGO_URL = 'https://longhornfloorplans.blob.core.windows.net/client-resources/GymHub_Logo.png';
 
@@ -135,6 +136,15 @@ export async function POST(
     const classLevel = getFieldValue('class');
     const sportInfo = [gymSport, classLevel].filter(Boolean).join(' — ');
 
+    // Ensure an AI incident summary exists (uses cache, generates if missing).
+    let aiSummaryText: string | null = null;
+    try {
+      const summaryResult = await ensureInjurySummary(submission.id, authResult.user.clubId);
+      aiSummaryText = summaryResult?.aiSummary ?? null;
+    } catch (err) {
+      console.error('Failed to ensure AI summary for email:', err);
+    }
+
     // Build email HTML
     const htmlContent = buildInjuryReportEmailHtml({
       submission,
@@ -143,6 +153,7 @@ export async function POST(
       sportInfo,
       senderName: authResult.user.fullName,
       recipientName: recipientName?.trim() || undefined,
+      aiSummaryText,
     });
 
     const textContent = `Injury Report for ${athleteName} — ${submission.template.name}\n\nSubmitted: ${new Date(submission.submittedAt).toLocaleString()}\nStatus: ${submission.status}\nClub: ${submission.club.name}\n\nThis report was sent by ${authResult.user.fullName} via GymHub.\nPlease view the HTML version of this email for the full formatted report.`;
@@ -177,6 +188,7 @@ interface BuildEmailParams {
   sportInfo: string;
   senderName: string;
   recipientName?: string;
+  aiSummaryText?: string | null;
 }
 
 function buildInjuryReportEmailHtml({
@@ -186,6 +198,7 @@ function buildInjuryReportEmailHtml({
   sportInfo,
   senderName,
   recipientName,
+  aiSummaryText,
 }: BuildEmailParams): string {
   const club = submission.club;
 
@@ -229,6 +242,26 @@ function buildInjuryReportEmailHtml({
 
   const sc = statusColors[statusClass] || statusColors['new'];
   const pc = priorityClass ? priorityColors[priorityClass] || null : null;
+
+  // AI incident summary block (only rendered when a summary is available).
+  const summaryHtml = aiSummaryText
+    ? `
+    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+      <tr>
+        <td style="padding: 14px 20px; background: linear-gradient(90deg, #1e3a5f, #4f46e5); color: #ffffff; font-weight: bold; font-size: 15px; border-radius: 8px 8px 0 0;">
+          Incident Summary
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px; background: #f8fafc; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin: 0; font-size: 14px; color: #1f2937; line-height: 1.7; white-space: pre-wrap;">${aiSummaryText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+          <p style="margin: 14px 0 0; font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px;">
+            &#9888; AI-assisted summary generated from the submitted report details. Always verify against the original report data below.
+          </p>
+        </td>
+      </tr>
+    </table>`
+    : '';
 
   // Build report data rows
   const reportDataRows = submission.data
@@ -390,6 +423,8 @@ function buildInjuryReportEmailHtml({
           <!-- Body -->
           <tr>
             <td style="padding: 16px 30px 30px;">
+
+              ${summaryHtml}
 
               <!-- Submission Info -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
