@@ -313,6 +313,12 @@ export default function ClassRosteringPage() {
  return (
   <DashboardLayout title="Class Rostering" showClassRosteringNav={true}>
    <div className="p-6 space-y-4">
+    <AISummaryPanel
+     endpoint="/api/dashboard/summaries/rosters"
+     title="Roster Intelligence"
+     icon="📅"
+     accent="from-indigo-600 to-blue-600"
+    />
     <IntelligenceFilter
      title="Class Rostering Filters"
      subtitle="Filter the roster by venue, template, and class"
@@ -349,12 +355,6 @@ export default function ClassRosteringPage() {
      ]}
      filterCount={filteredSlots.length}
      filterCountLabel="sessions"
-    />
-    <AISummaryPanel
-     endpoint="/api/dashboard/summaries/rosters"
-     title="Roster Intelligence"
-     icon="📅"
-     accent="from-indigo-600 to-blue-600"
     />
     {/* Roster Calendar View */}
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">

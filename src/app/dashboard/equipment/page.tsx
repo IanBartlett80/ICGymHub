@@ -389,26 +389,6 @@ export default function EquipmentPage() {
      </button>
     </div>
 
-    {/* Stats */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-     <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <p className="text-sm font-medium text-gray-600">Total Equipment</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
-     </div>
-     <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <p className="text-sm font-medium text-gray-600">Currently In Use</p>
-      <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inUse}</p>
-     </div>
-     <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <p className="text-sm font-medium text-gray-600">Maintenance Due</p>
-      <p className="mt-2 text-3xl font-bold text-orange-600">{stats.maintenanceDue}</p>
-     </div>
-     <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <p className="text-sm font-medium text-gray-600">Needs Attention</p>
-      <p className="mt-2 text-3xl font-bold text-red-600">{stats.needsAttention}</p>
-     </div>
-    </div>
-
     <AISummaryPanel
      endpoint="/api/dashboard/summaries/equipment"
      title="Equipment Intelligence"

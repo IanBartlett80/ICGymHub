@@ -73,6 +73,22 @@ export default function DailyBriefing() {
  const [data, setData] = useState<BriefingData | null>(null)
  const [loading, setLoading] = useState(true)
  const [error, setError] = useState<string | null>(null)
+ const [collapsed, setCollapsed] = useState(false)
+
+ useEffect(() => {
+  if (typeof window === 'undefined') return
+  setCollapsed(window.localStorage.getItem('dailyBriefingCollapsed') === '1')
+ }, [])
+
+ const toggleCollapsed = () => {
+  setCollapsed((prev) => {
+   const next = !prev
+   if (typeof window !== 'undefined') {
+    window.localStorage.setItem('dailyBriefingCollapsed', next ? '1' : '0')
+   }
+   return next
+  })
+ }
 
  useEffect(() => {
   let active = true
@@ -117,6 +133,13 @@ export default function DailyBriefing() {
  const styles = STATUS_STYLES[data.status]
  const m = data.metrics
 
+ const collapsedSummary =
+  data.status === 'RED'
+   ? `Hello! Your facility health score is currently at ${data.healthScore}/100 (RED), indicating some urgent attention is needed.`
+   : data.status === 'YELLOW'
+   ? `Hello! Your facility health score is currently at ${data.healthScore}/100 (YELLOW), a few items need your attention.`
+   : `Hello! Your facility health score is currently at ${data.healthScore}/100 (GREEN), everything looks in good shape.`
+
  const priorities: PriorityItem[] = [
   { label: 'overdue compliance item', count: m.overdueCompliance, href: '/dashboard/compliance-manager', tone: 'red' },
   { label: 'critical equipment safety issue', count: m.criticalSafetyIssues, href: '/dashboard/equipment', tone: 'red' },
@@ -124,6 +147,38 @@ export default function DailyBriefing() {
   { label: 'overdue maintenance task', count: m.overdueMaintenance, href: '/dashboard/maintenance', tone: 'amber' },
   { label: 'roster conflict this week', count: m.rosterConflicts, href: '/dashboard/class-rostering', tone: 'amber' },
  ].filter((p) => p.count > 0)
+
+ if (collapsed) {
+  return (
+   <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 p-5">
+    <div className="flex items-center justify-between gap-4">
+     <div className="flex items-center gap-4 min-w-0">
+      <HealthRing score={data.healthScore} status={data.status} />
+      <div className="min-w-0">
+       <div className="flex items-center gap-2 mb-1">
+        <span className="text-xl">🌅</span>
+        <h3 className="text-base font-bold text-gray-900">Daily Briefing</h3>
+        <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-white border ${styles.text} border-current/20`}>
+         {styles.label}
+        </span>
+       </div>
+       <p className="text-sm text-gray-800 leading-relaxed">{collapsedSummary}</p>
+      </div>
+     </div>
+     <button
+      onClick={toggleCollapsed}
+      aria-expanded={false}
+      className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50"
+     >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+      Expand
+     </button>
+    </div>
+   </div>
+  )
+ }
 
  return (
   <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 p-5">
@@ -135,9 +190,21 @@ export default function DailyBriefing() {
       <p className="text-xs text-gray-500">Your facility status for today</p>
      </div>
     </div>
-    <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-white border ${styles.text} border-current/20`}>
-     {styles.label}
-    </span>
+    <div className="flex items-center gap-2">
+     <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-white border ${styles.text} border-current/20`}>
+      {styles.label}
+     </span>
+     <button
+      onClick={toggleCollapsed}
+      aria-expanded={true}
+      className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50"
+     >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+      Collapse
+     </button>
+    </div>
    </div>
 
    <div className="flex flex-col sm:flex-row gap-5">
