@@ -29,46 +29,40 @@ export async function POST(request: NextRequest) {
       console.warn('Could not create backup record:', e);
     }
 
-    // Gather all club data
-    const [
-      coaches,
-      gymsports,
-      zones,
-      venues,
-      equipment,
-      equipmentCategories,
-      classTemplates,
-      classSessions,
-      rosters,
-      rosterTemplates,
-      rosterSlots,
-      injuryFormTemplates,
-      injurySubmissions,
-      complianceCategories,
-      complianceItems,
-      maintenanceTasks,
-      safetyIssues,
-      users,
-    ] = await Promise.all([
-      prisma.coach.findMany({ where: { clubId } }),
-      prisma.gymsport.findMany({ where: { clubId } }),
-      prisma.zone.findMany({ where: { clubId } }),
-      prisma.venue.findMany({ where: { clubId } }),
-      prisma.equipment.findMany({ where: { clubId } }),
-      prisma.equipmentCategory.findMany({ where: { clubId } }),
-      prisma.classTemplate.findMany({ where: { clubId } }),
-      prisma.classSession.findMany({ where: { clubId } }),
-      prisma.roster.findMany({ where: { clubId } }),
-      prisma.rosterTemplate.findMany({ where: { clubId } }),
-      prisma.rosterSlot.findMany({ where: { clubId } }),
-      prisma.injuryFormTemplate.findMany({ where: { clubId }, include: { sections: { include: { fields: true } }, automations: true } }),
-      prisma.injurySubmission.findMany({ where: { clubId }, include: { data: true, comments: true } }),
-      prisma.complianceCategory.findMany({ where: { clubId } }),
-      prisma.complianceItem.findMany({ where: { clubId } }),
-      prisma.maintenanceTask.findMany({ where: { clubId } }),
-      prisma.safetyIssue.findMany({ where: { clubId } }),
-      prisma.user.findMany({ where: { clubId }, select: { id: true, username: true, email: true, fullName: true, role: true, createdAt: true } }),
-    ]);
+    // Gather all club data.
+    // NOTE: queries run SEQUENTIALLY (not Promise.all) on purpose. A parallel
+    // fan-out opened ~18 DB connections at once, which made this the first
+    // endpoint to fail whenever the database pool was under pressure
+    // ("remaining connection slots are reserved"). Sequential gathering uses a
+    // single connection at a time — slightly slower but reliable, and backup is
+    // not latency-sensitive.
+    const coaches = await prisma.coach.findMany({ where: { clubId } });
+    const gymsports = await prisma.gymsport.findMany({ where: { clubId } });
+    const zones = await prisma.zone.findMany({ where: { clubId } });
+    const venues = await prisma.venue.findMany({ where: { clubId } });
+    const equipment = await prisma.equipment.findMany({ where: { clubId } });
+    const equipmentCategories = await prisma.equipmentCategory.findMany({ where: { clubId } });
+    const classTemplates = await prisma.classTemplate.findMany({ where: { clubId } });
+    const classSessions = await prisma.classSession.findMany({ where: { clubId } });
+    const rosters = await prisma.roster.findMany({ where: { clubId } });
+    const rosterTemplates = await prisma.rosterTemplate.findMany({ where: { clubId } });
+    const rosterSlots = await prisma.rosterSlot.findMany({ where: { clubId } });
+    const injuryFormTemplates = await prisma.injuryFormTemplate.findMany({
+      where: { clubId },
+      include: { sections: { include: { fields: true } }, automations: true },
+    });
+    const injurySubmissions = await prisma.injurySubmission.findMany({
+      where: { clubId },
+      include: { data: true, comments: true },
+    });
+    const complianceCategories = await prisma.complianceCategory.findMany({ where: { clubId } });
+    const complianceItems = await prisma.complianceItem.findMany({ where: { clubId } });
+    const maintenanceTasks = await prisma.maintenanceTask.findMany({ where: { clubId } });
+    const safetyIssues = await prisma.safetyIssue.findMany({ where: { clubId } });
+    const users = await prisma.user.findMany({
+      where: { clubId },
+      select: { id: true, username: true, email: true, fullName: true, role: true, createdAt: true },
+    });
 
     const backupData = {
       version: '1.0',

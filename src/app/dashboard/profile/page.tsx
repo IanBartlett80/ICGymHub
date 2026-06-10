@@ -270,7 +270,21 @@ export default function ProfilePage() {
    setLastBackupDate(new Date().toISOString())
    setMessage({ type: 'success', text: 'Backup downloaded successfully' })
   } catch (error: any) {
-   setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to create backup' })
+   // The response is a Blob (responseType: 'blob'), so an error body needs to be
+   // read back as text to surface the real server message.
+   let text = 'Failed to create backup'
+   const data = error.response?.data
+   if (data instanceof Blob) {
+    try {
+     const parsed = JSON.parse(await data.text())
+     text = parsed.error || text
+    } catch {
+     // keep default
+    }
+   } else if (typeof data?.error === 'string') {
+    text = data.error
+   }
+   setMessage({ type: 'error', text })
   } finally {
    setBackupLoading(false)
   }
