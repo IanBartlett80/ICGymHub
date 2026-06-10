@@ -107,7 +107,6 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     { id: 'safety' as ServiceType, name: 'Injury & Incidents', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
     { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
-    { id: 'guides' as ServiceType, name: 'Admin Guides', basePath: '/dashboard/welcome/help/settings' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
   ]
 
@@ -173,6 +172,15 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
                             onClick={() => setShowUserMenu(false)}
                           >
                             Profile Settings
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/dashboard/welcome/help/settings"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            Admin Guides
                           </Link>
                         </li>
                         <li>
