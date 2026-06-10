@@ -1,13 +1,12 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
-import VenueSelector from '@/components/VenueSelector';
-import IntelligenceFilter from '@/components/IntelligenceFilter';
-import axiosInstance from '@/lib/axios';
+import { useCallback, useEffect, useState } from 'react'
+import axiosInstance from '@/lib/axios'
+import DashboardLayout from '@/components/DashboardLayout'
+import VenueSelector from '@/components/VenueSelector'
+import { KpiCards, InsightPanel, ChartCard } from '@/components/analytics/AnalyticsKit'
+import type { Kpi, InsightAction, SeriesPoint, Bucket } from '@/lib/analytics/types'
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -19,547 +18,283 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import {
-  ChartBarIcon,
-  ChartPieIcon,
-  ExclamationTriangleIcon,
-  WrenchScrewdriverIcon,
-  CubeIcon,
-  ShieldExclamationIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+} from 'recharts'
 
-interface OverviewStats {
-  totalCount: number;
-  inUseCount: number;
-  availableCount: number;
-  maintenanceDueCount: number;
-  needsAttentionCount: number;
-  byCategory: { category: string; count: number }[];
-  byCondition: { condition: string; count: number }[];
+interface VenueHealth {
+  venueName: string
+  equipment: number
+  outOfService: number
+  openSafety: number
+  overdueMaintenance: number
+  riskScore: number
+}
+interface Upcoming {
+  title: string
+  equipment: string | null
+  priority: string
+  dueDate: string | null
+  daysUntil: number | null
+}
+interface EquipmentData {
+  kpis: Kpi[]
+  conditionBreakdown: Bucket[]
+  categoryBreakdown: { category: string; count: number }[]
+  safetyByType: Bucket[]
+  maintStatus: Bucket[]
+  safetyTrend: SeriesPoint[]
+  venueHealth: VenueHealth[]
+  upcoming: Upcoming[]
+  insight: { narrative: string | null; actions: InsightAction[]; aiEnabled: boolean; generatedAt: string }
+  generatedAt: string
 }
 
-interface ZoneStatus {
-  zoneId: string;
-  zoneName: string;
-  status: string;
-  statusPriority: number;
-  equipmentCount: number;
-  criticalIssues: number;
-  nonCriticalIssues: number;
-  recommendations: number;
-  overdueMaintenance: number;
-  upcomingMaintenance: number;
-  outOfServiceEquipment: number;
-  poorConditionEquipment: number;
+const TONE_HEX: Record<NonNullable<Bucket['tone']>, string> = {
+  red: '#ef4444',
+  amber: '#f59e0b',
+  green: '#10b981',
+  neutral: '#94a3b8',
 }
 
-interface MonthlyData {
-  month: string;
-  total: number;
-  [key: string]: number | string;
+function riskBadge(score: number) {
+  if (score >= 12) return 'bg-red-50 text-red-700'
+  if (score >= 5) return 'bg-amber-50 text-amber-700'
+  return 'bg-green-50 text-green-700'
 }
 
 export default function EquipmentAnalyticsPage() {
-  const [loading, setLoading] = useState(true);
-  const [venueId, setVenueId] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<number>(6); // months
-  
-  // Analytics data
-  const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null);
-  const [zoneStatuses, setZoneStatuses] = useState<ZoneStatus[]>([]);
-  const [monthlyIssues, setMonthlyIssues] = useState<MonthlyData[]>([]);
-  const [monthlyIssuesByVenue, setMonthlyIssuesByVenue] = useState<MonthlyData[]>([]);
+  const [data, setData] = useState<EquipmentData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [venueId, setVenueId] = useState<string | null>(null)
+
+  const load = useCallback(
+    async (refresh: boolean) => {
+      if (refresh) setRefreshing(true)
+      else setLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (venueId && venueId !== 'all') params.append('venueId', venueId)
+        const res = await axiosInstance.get<EquipmentData>(`/api/analytics/equipment?${params}`)
+        setData(res.data)
+      } catch {
+        // fail silently — page shows empty state
+      } finally {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    },
+    [venueId]
+  )
 
   useEffect(() => {
-    loadAnalytics();
-  }, [venueId, timeRange]);
-
-  const loadAnalytics = async () => {
-    try {
-      setLoading(true);
-
-      // Build query params
-      const venueParam = venueId && venueId !== 'all' ? `?venueId=${venueId}` : '';
-      const monthsParam = `months=${timeRange}`;
-
-      const [overviewRes, zoneStatusRes, monthlyIssuesRes, monthlyIssuesByVenueRes] = await Promise.all([
-        axiosInstance.get(`/api/equipment/analytics/overview${venueParam}`),
-        axiosInstance.get(`/api/equipment/analytics/zone-status${venueParam}`),
-        axiosInstance.get(`/api/equipment/analytics/safety-issues-monthly?${monthsParam}`),
-        axiosInstance.get(`/api/equipment/analytics/safety-issues-monthly-by-venue?${monthsParam}`),
-      ]);
-
-      setOverviewStats(overviewRes.data);
-      setZoneStatuses(Array.isArray(zoneStatusRes.data) ? zoneStatusRes.data : []);
-      setMonthlyIssues(monthlyIssuesRes.data.data || []);
-      setMonthlyIssuesByVenue(monthlyIssuesByVenueRes.data.data || []);
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Chart colors
-  const CONDITION_COLORS: Record<string, string> = {
-    'Excellent': '#10b981',
-    'Good': '#3b82f6',
-    'Fair': '#f59e0b',
-    'Poor': '#ef4444',
-    'Out of Service': '#991b1b',
-  };
-
-  const STATUS_COLORS = ['#ef4444', '#f59e0b', '#eab308', '#84cc16', '#10b981', '#6366f1'];
-
-  // Calculate safety issue totals for pie chart
-  const getSafetyIssueSummary = () => {
-    const summary = {
-      critical: 0,
-      nonCritical: 0,
-      recommendations: 0,
-    };
-
-    zoneStatuses.forEach(zone => {
-      summary.critical += zone.criticalIssues;
-      summary.nonCritical += zone.nonCriticalIssues;
-      summary.recommendations += zone.recommendations;
-    });
-
-    return [
-      { name: 'Critical Issues', value: summary.critical, color: '#dc2626' },
-      { name: 'Non-Critical Issues', value: summary.nonCritical, color: '#f59e0b' },
-      { name: 'Recommendations', value: summary.recommendations, color: '#3b82f6' },
-    ].filter(item => item.value > 0);
-  };
-
-  // Calculate maintenance summary
-  const getMaintenanceSummary = () => {
-    const summary = {
-      overdue: 0,
-      upcoming: 0,
-    };
-
-    zoneStatuses.forEach(zone => {
-      summary.overdue += zone.overdueMaintenance;
-      summary.upcoming += zone.upcomingMaintenance;
-    });
-
-    return [
-      { name: 'Overdue', value: summary.overdue, color: '#dc2626' },
-      { name: 'Due Soon (7 days)', value: summary.upcoming, color: '#f59e0b' },
-    ].filter(item => item.value > 0);
-  };
-
-  if (loading) {
-    return (
-      <DashboardLayout showAnalyticsNav>
-        <div className="p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading analytics...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
+    load(false)
+  }, [load])
 
   return (
     <DashboardLayout showAnalyticsNav>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="mx-auto max-w-7xl space-y-6 px-6 py-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Equipment & Safety Analytics</h1>
-            <p className="text-gray-600 mt-1">Comprehensive insights into equipment status and safety metrics</p>
+            <h1 className="text-2xl font-bold text-gray-900">Equipment &amp; Safety Analytics</h1>
+            <p className="text-sm text-gray-500">Fleet condition, safety issues and maintenance backlog, backed by AI.</p>
           </div>
-          <a
-            href="/api/analytics/export?section=equipment"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-          >
-            Export PDF
-          </a>
+          <div className="flex items-center gap-3">
+            <VenueSelector value={venueId} onChange={setVenueId} showLabel={false} />
+            <a
+              href={`/api/analytics/export?section=equipment${venueId && venueId !== 'all' ? `&venueId=${venueId}` : ''}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              <span aria-hidden>📄</span> Export
+            </a>
+          </div>
         </div>
 
-        {/* Filters */}
-        <IntelligenceFilter
-          title="Analytics Filters"
-          subtitle="Customize your equipment and safety analytics view"
-          variant="gradient"
-          filters={[
-            {
-              type: 'custom',
-              label: 'Venue',
-              value: venueId,
-              onChange: setVenueId,
-              customComponent: (
-                <VenueSelector
-                  value={venueId}
-                  onChange={setVenueId}
-                  showAllOption={true}
-                />
-              ),
-            },
-            {
-              type: 'select',
-              label: 'Time Range',
-              value: String(timeRange),
-              onChange: (val) => setTimeRange(Number(val)),
-              icon: <ClockIcon className="h-4 w-4" />,
-              options: [
-                { value: '3', label: 'Last 3 Months' },
-                { value: '6', label: 'Last 6 Months' },
-                { value: '12', label: 'Last 12 Months' },
-              ],
-            },
-          ]}
-          onReset={() => {
-            setVenueId(null);
-            setTimeRange(3);
-          }}
-        />
-
-        {/* Overview Stats Cards */}
-        {overviewStats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Equipment</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{overviewStats.totalCount}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {overviewStats.inUseCount} in use
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <CubeIcon className="h-8 w-8 text-blue-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Maintenance Due</p>
-                  <p className="text-3xl font-bold text-orange-600 mt-2">{overviewStats.maintenanceDueCount}</p>
-                  <p className="text-sm text-gray-500 mt-1">Next 7 days</p>
-                </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <WrenchScrewdriverIcon className="h-8 w-8 text-orange-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Needs Attention</p>
-                  <p className="text-3xl font-bold text-red-600 mt-2">{overviewStats.needsAttentionCount}</p>
-                  <p className="text-sm text-gray-500 mt-1">Fair/Poor condition</p>
-                </div>
-                <div className="p-3 bg-red-50 rounded-lg">
-                  <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Available</p>
-                  <p className="text-3xl font-bold text-green-600 mt-2">{overviewStats.availableCount}</p>
-                  <p className="text-sm text-gray-500 mt-1">Ready for use</p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <ShieldExclamationIcon className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-            </div>
+        {loading && (
+          <div className="space-y-4">
+            <div className="h-32 animate-pulse rounded-2xl bg-gray-100" />
+            <div className="h-24 animate-pulse rounded-2xl bg-gray-100" />
           </div>
         )}
 
-        {/* Equipment Breakdowns */}
-        {overviewStats && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Equipment by Category */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <ChartPieIcon className="h-6 w-6 text-gray-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Equipment by Category</h2>
-              </div>
-              {overviewStats.byCategory && overviewStats.byCategory.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={overviewStats.byCategory}
-                      dataKey="count"
-                      nameKey="category"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label
-                    >
-                      {overviewStats.byCategory.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
-                      ))}
-                    </Pie>
+        {data && (
+          <>
+            <KpiCards kpis={data.kpis} />
+
+            <InsightPanel
+              title="Equipment Intelligence"
+              icon="🛠️"
+              accent="from-amber-600 to-orange-600"
+              narrative={data.insight.narrative}
+              actions={data.insight.actions}
+              aiEnabled={data.insight.aiEnabled}
+              generatedAt={data.insight.generatedAt}
+              refreshing={refreshing}
+              onRefresh={() => load(true)}
+            />
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <ChartCard title="Condition distribution" subtitle="Active equipment by condition">
+                {data.conditionBreakdown.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-400">No equipment recorded.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={data.conditionBreakdown}
+                        dataKey="value"
+                        nameKey="label"
+                        innerRadius={55}
+                        outerRadius={90}
+                        paddingAngle={2}
+                      >
+                        {data.conditionBreakdown.map((c, i) => (
+                          <Cell key={i} fill={TONE_HEX[c.tone || 'neutral']} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+
+              <ChartCard title="Safety issue trend" subtitle="Reported vs resolved, last 6 months">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={data.safetyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                     <Tooltip />
                     <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-center text-gray-500 py-12">No category data available</p>
-              )}
-            </div>
-
-            {/* Equipment by Condition */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <ChartBarIcon className="h-6 w-6 text-gray-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Equipment by Condition</h2>
-              </div>
-              {overviewStats.byCondition && overviewStats.byCondition.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={overviewStats.byCondition}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="condition" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                      {overviewStats.byCondition.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CONDITION_COLORS[entry.condition] || '#6b7280'} />
-                      ))}
-                    </Bar>
+                    <Bar dataKey="reported" fill="#f59e0b" name="Reported" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="resolved" fill="#10b981" name="Resolved" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              </ChartCard>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <ChartCard title="Open safety issues by type" subtitle="What's being reported">
+                {data.safetyByType.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-400">No open safety issues. 🎉</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={Math.max(220, data.safetyByType.length * 34)}>
+                    <BarChart data={data.safetyByType} layout="vertical" margin={{ left: 24 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <YAxis type="category" dataKey="label" width={120} tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#f59e0b" name="Open" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+
+              <ChartCard title="Maintenance status" subtitle="All maintenance tasks by status">
+                {data.maintStatus.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-400">No maintenance tasks.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={data.maintStatus}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="value" name="Tasks" radius={[4, 4, 0, 0]}>
+                        {data.maintStatus.map((m, i) => (
+                          <Cell key={i} fill={TONE_HEX[m.tone || 'neutral']} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+            </div>
+
+            <ChartCard title="Venue health" subtitle="Equipment risk by venue">
+              {data.venueHealth.length === 0 ? (
+                <p className="py-8 text-center text-sm text-gray-400">No venue-linked equipment.</p>
               ) : (
-                <p className="text-center text-gray-500 py-12">No condition data available</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
+                        <th className="py-2 pr-3 font-medium">Venue</th>
+                        <th className="py-2 px-2 text-center font-medium">Equipment</th>
+                        <th className="py-2 px-2 text-center font-medium">Out of service</th>
+                        <th className="py-2 px-2 text-center font-medium">Open safety</th>
+                        <th className="py-2 px-2 text-center font-medium">Overdue maint.</th>
+                        <th className="py-2 pl-2 text-right font-medium">Risk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.venueHealth.map((v) => (
+                        <tr key={v.venueName} className="border-b border-gray-50 last:border-0">
+                          <td className="py-2.5 pr-3 font-medium text-gray-900">{v.venueName}</td>
+                          <td className="py-2.5 px-2 text-center text-gray-600">{v.equipment}</td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className={v.outOfService > 0 ? 'font-semibold text-red-600' : 'text-gray-400'}>{v.outOfService}</span>
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className={v.openSafety > 0 ? 'font-semibold text-amber-600' : 'text-gray-400'}>{v.openSafety}</span>
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className={v.overdueMaintenance > 0 ? 'font-semibold text-red-600' : 'text-gray-400'}>{v.overdueMaintenance}</span>
+                          </td>
+                          <td className="py-2.5 pl-2 text-right">
+                            <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${riskBadge(v.riskScore)}`}>{v.riskScore}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
+            </ChartCard>
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <ChartCard title="Upcoming maintenance" subtitle="Due in the next 30 days">
+                {data.upcoming.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-400">Nothing due in the next 30 days.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {data.upcoming.map((u, i) => (
+                      <li key={i} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-900">{u.title}</p>
+                          <p className="text-xs text-gray-500">{u.equipment || 'Unassigned equipment'}</p>
+                        </div>
+                        <span
+                          className={`ml-3 shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            u.daysUntil !== null && u.daysUntil <= 7 ? 'bg-amber-50 text-amber-700' : 'bg-gray-50 text-gray-600'
+                          }`}
+                        >
+                          {u.daysUntil === null ? '—' : u.daysUntil <= 0 ? 'due today' : `${u.daysUntil}d`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ChartCard>
+
+              <ChartCard title="Equipment by category" subtitle="Active fleet composition">
+                {data.categoryBreakdown.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-gray-400">No categories configured.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {data.categoryBreakdown.map((c) => (
+                      <div key={c.category} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+                        <span className="text-sm font-medium text-gray-900">{c.category}</span>
+                        <span className="rounded-full bg-gray-50 px-2.5 py-0.5 text-xs text-gray-600">{c.count} item{c.count === 1 ? '' : 's'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ChartCard>
             </div>
-          </div>
+          </>
         )}
-
-        {/* Safety Issues Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Safety Issues Breakdown */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <ExclamationTriangleIcon className="h-6 w-6 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Active Safety Issues</h2>
-            </div>
-            {getSafetyIssueSummary().length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={getSafetyIssueSummary()}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {getSafetyIssueSummary().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <ShieldExclamationIcon className="h-16 w-16 text-green-400 mb-4" />
-                <p className="text-center text-gray-500">No active safety issues</p>
-                <p className="text-sm text-gray-400 mt-1">Great work! Keep up the safety standards</p>
-              </div>
-            )}
-          </div>
-
-          {/* Maintenance Summary */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <WrenchScrewdriverIcon className="h-6 w-6 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Maintenance Summary</h2>
-            </div>
-            {getMaintenanceSummary().length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={getMaintenanceSummary()}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {getMaintenanceSummary().map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <WrenchScrewdriverIcon className="h-16 w-16 text-green-400 mb-4" />
-                <p className="text-center text-gray-500">All maintenance up to date</p>
-                <p className="text-sm text-gray-400 mt-1">Excellent maintenance schedule!</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Safety Issues Trends */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <ChartBarIcon className="h-6 w-6 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Zone</h2>
-          </div>
-          {monthlyIssues && monthlyIssues.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={monthlyIssues}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                {Object.keys(monthlyIssues[0] || {})
-                  .filter(key => key !== 'month' && key !== 'total')
-                  .map((zoneName, index) => (
-                    <Line
-                      key={zoneName}
-                      type="monotone"
-                      dataKey={zoneName}
-                      stroke={STATUS_COLORS[index % STATUS_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                    />
-                  ))}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-center text-gray-500 py-12">No trend data available</p>
-          )}
-        </div>
-
-        {/* Safety Issues by Venue Trend */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <ChartBarIcon className="h-6 w-6 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Safety Issues Trend by Venue</h2>
-          </div>
-          {monthlyIssuesByVenue && monthlyIssuesByVenue.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={monthlyIssuesByVenue}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                {Object.keys(monthlyIssuesByVenue[0] || {})
-                  .filter(key => key !== 'month' && key !== 'total')
-                  .map((venueName, index) => (
-                    <Line
-                      key={venueName}
-                      type="monotone"
-                      dataKey={venueName}
-                      stroke={STATUS_COLORS[index % STATUS_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                    />
-                  ))}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-center text-gray-500 py-12">No venue trend data available</p>
-          )}
-        </div>
-
-        {/* Zone-by-Zone Breakdown */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <ChartBarIcon className="h-6 w-6 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Zone-by-Zone Analysis</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Zone
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Equipment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Critical Issues
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Non-Critical
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Overdue Maint.
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {zoneStatuses.map((zone) => (
-                  <tr key={zone.zoneId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {zone.zoneName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {zone.equipmentCount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${zone.criticalIssues > 0 ? 'text-red-600' : 'text-gray-400'}`}>
-                        {zone.criticalIssues}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${zone.nonCriticalIssues > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
-                        {zone.nonCriticalIssues}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${zone.overdueMaintenance > 0 ? 'text-red-600' : 'text-gray-400'}`}>
-                        {zone.overdueMaintenance}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          zone.status === 'CRITICAL_DEFECTS'
-                            ? 'bg-red-100 text-red-800'
-                            : zone.status === 'REQUIRES_ATTENTION'
-                            ? 'bg-amber-100 text-amber-800'
-                            : zone.status === 'NON_CRITICAL_ISSUES'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}
-                      >
-                        {{
-                          CRITICAL_DEFECTS: 'Critical Defects',
-                          REQUIRES_ATTENTION: 'Requires Attention',
-                          NON_CRITICAL_ISSUES: 'Non-Critical Issues',
-                          NO_DEFECTS: 'No Defects',
-                        }[zone.status] ?? zone.status.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </DashboardLayout>
-  );
+  )
 }
