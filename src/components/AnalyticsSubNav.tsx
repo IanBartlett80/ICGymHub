@@ -3,11 +3,11 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export default function EquipmentManagementSubNav() {
+export default function AnalyticsSubNav() {
   const pathname = usePathname()
 
   const isActive = (path: string) => {
-    if (path === '/dashboard/equipment') {
+    if (path === '/dashboard/analytics') {
       return pathname === path
     }
     return pathname?.startsWith(path)
@@ -15,34 +15,34 @@ export default function EquipmentManagementSubNav() {
 
   const navItems = [
     {
-      label: 'Zone Overview',
-      href: '/dashboard/equipment',
-      icon: '📊',
+      label: 'Overview',
+      href: '/dashboard/analytics',
+      icon: '🧭',
     },
     {
-      label: 'All Equipment',
-      href: '/dashboard/equipment/all',
-      icon: '📦',
+      label: 'Injuries & Incidents',
+      href: '/dashboard/analytics/injuries',
+      icon: '🩹',
     },
     {
-      label: 'Safety Issues',
-      href: '/dashboard/safety-issues',
-      icon: '⚠️',
-    },
-    {
-      label: 'Maintenance Due',
-      href: '/dashboard/equipment/maintenance',
-      icon: '🔧',
-    },
-    {
-      label: 'Repair Quotes',
-      href: '/dashboard/equipment/repair-quotes',
-      icon: '💰',
-    },
-    {
-      label: 'Analytics',
+      label: 'Equipment & Safety',
       href: '/dashboard/analytics/equipment',
-      icon: '📈',
+      icon: '🛠️',
+    },
+    {
+      label: 'Compliance',
+      href: '/dashboard/analytics/compliance',
+      icon: '✅',
+    },
+    {
+      label: 'Rosters & Coaching',
+      href: '/dashboard/analytics/rosters',
+      icon: '📅',
+    },
+    {
+      label: 'AI Insights',
+      href: '/dashboard/analytics/insights',
+      icon: '✨',
     },
   ]
 

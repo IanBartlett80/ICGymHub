@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useAuth } from './AuthProvider'
 import ClassRosteringSubNav from './ClassRosteringSubNav'
 import ClubManagementSubNav from './ClubManagementSubNav'
+import AnalyticsSubNav from './AnalyticsSubNav'
 import NotificationBell from './NotificationBell'
 
 interface UserData {
@@ -29,11 +30,12 @@ interface DashboardLayoutProps {
   backTo?: { label: string; href: string }
   showClassRosteringNav?: boolean
   showClubManagementNav?: boolean
+  showAnalyticsNav?: boolean
 }
 
-type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance' | 'guides' | 'settings'
+type ServiceType = 'dashboard' | 'rosters' | 'safety' | 'equipment' | 'compliance' | 'analytics' | 'guides' | 'settings'
 
-export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, backTo, showClassRosteringNav = false, showClubManagementNav = false, showAnalyticsNav = false }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user: authUser, logout } = useAuth()
@@ -63,6 +65,8 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
       setActiveService('equipment')
     } else if (pathname?.startsWith('/dashboard/compliance-manager')) {
       setActiveService('compliance')
+    } else if (pathname?.startsWith('/dashboard/analytics')) {
+      setActiveService('analytics')
     } else if (pathname?.startsWith('/dashboard/welcome/help')) {
       setActiveService('guides')
     } else if (pathname?.startsWith('/dashboard/admin-config') || pathname?.startsWith('/dashboard/profile')) {
@@ -107,6 +111,7 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
     { id: 'safety' as ServiceType, name: 'Injury & Incidents', basePath: '/dashboard/injury-reports' },
     { id: 'equipment' as ServiceType, name: 'Equipment', basePath: '/dashboard/equipment' },
     { id: 'compliance' as ServiceType, name: 'Compliance', basePath: '/dashboard/compliance-manager' },
+    { id: 'analytics' as ServiceType, name: 'Analytics', basePath: '/dashboard/analytics' },
     { id: 'icscore', name: 'ICScore', basePath: 'https://icscore.club', external: true },
   ]
 
@@ -288,6 +293,13 @@ export default function DashboardLayout({ children, title, backTo, showClassRost
         {showClubManagementNav && (
           <div className="print:hidden">
             <ClubManagementSubNav />
+          </div>
+        )}
+
+        {/* Analytics Sub Navigation */}
+        {showAnalyticsNav && (
+          <div className="print:hidden">
+            <AnalyticsSubNav />
           </div>
         )}
 
